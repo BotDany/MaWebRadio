@@ -25,6 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkAuth() {
         try {
             const response = await fetch('/api/auth-status');
+
+            if (!response.ok) {
+                console.error('Auth status HTTP error:', response.status);
+                loginForm.style.display = 'block';
+                adminPanel.style.display = 'none';
+                return;
+            }
+
             const data = await response.json();
 
             if (data.authenticated) {
@@ -58,11 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ username, password })
             });
 
-            if (response.ok) {
-                await checkAuth();
-            } else {
-                alert('Identifiants incorrects');
+            if (!response.ok) {
+                console.error('Login HTTP error:', response.status);
+                alert('Erreur de login (' + response.status + ')');
+                return;
             }
+
+            await checkAuth();
         } catch (error) {
             console.error('Erreur connexion:', error);
             alert('Erreur de connexion');
@@ -134,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Boutons du lecteur
     playBtn.addEventListener('click', () => {
         if (!audioPlayer.src) return;
+
         if (audioPlayer.paused) {
             audioPlayer.play()
                 .then(() => {
@@ -161,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         audioPlayer.volume = v / 100;
     });
 
-    // Quand la radio se termine
     audioPlayer.addEventListener('ended', stopPlayback);
 
     // ---------- RADIOS ----------
@@ -263,5 +273,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkAuth();
     loadRadios();
-    hidePlayer(); // Le lecteur est caché au début
+    hidePlayer(); // lecteur caché au début
 });
