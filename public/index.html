@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma WebRadio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Ma WebRadio</h1>
+            <p>Écoutez vos radios préférées en ligne</p>
+        </header>
+
+        <div id="auth-section">
+            <div id="login-form" style="display: block;">
+                <h3>Connexion Admin</h3>
+                <input type="text" id="username" placeholder="Utilisateur">
+                <input type="password" id="password" placeholder="Mot de passe">
+                <button id="login-btn">Se connecter</button>
+            </div>
+            <div id="admin-panel" style="display: none;">
+                <p>Connecté: <span id="admin-username"></span></p>
+                <button id="logout-btn">Déconnexion</button>
+            </div>
+        </div>
+
+        <div class="player">
+            <div class="now-playing">
+                <h2>En écoute</h2>
+                <div id="current-radio">
+                    <p>Sélectionnez une radio</p>
+                </div>
+                <audio id="audio-player" controls></audio>
+            </div>
+
+            <div class="controls">
+                <button id="play-btn" disabled>▶️ Lecture</button>
+                <button id="stop-btn" disabled>⏹️ Arrêter</button>
+                <div class="volume-control">
+                    <span>Volume:</span>
+                    <input type="range" id="volume" min="0" max="1" step="0.1" value="0.8">
+                </div>
+            </div>
+        </div>
+
+        <div class="radio-list">
+            <h2>Liste des radios</h2>
+            <div class="add-radio">
+                <input type="text" id="radio-name" placeholder="Nom de la radio">
+                <input type="url" id="radio-url" placeholder="URL du flux (http:// ou https://)">
+                <input type="text" id="radio-genre" placeholder="Genre (optionnel)">
+                <button id="add-radio">+ Ajouter</button>
+            </div>
+            <ul id="radio-stations"></ul>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
