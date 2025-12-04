@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const radioUrlInput = document.getElementById('radio-url');
     const radioGenreInput = document.getElementById('radio-genre');
     const currentRadioDisplay = document.getElementById('current-radio');
+    const nowPlayingCover = document.getElementById('now-playing-cover');
 
     const loginForm = document.getElementById('login-form');
     const adminPanel = document.getElementById('admin-panel');
@@ -113,6 +114,25 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRadioDisplay.textContent = `${currentRadio.name} (${currentRadio.url})`;
     }
 
+    async function loadStationMeta(radio) {
+        try {
+            const res = await fetch('/api/station-meta?url=' + encodeURIComponent(radio.url));
+            const data = await res.json();
+
+            nowPlayingCover.innerHTML = '';
+
+            if (data.found && data.favicon) {
+                const img = document.createElement('img');
+                img.src = data.favicon;
+                img.alt = radio.name;
+                nowPlayingCover.appendChild(img);
+            }
+        } catch (err) {
+            console.error('Erreur station-meta:', err);
+            nowPlayingCover.innerHTML = '';
+        }
+    }
+
     function playRadio(radio) {
         currentRadio = radio;
         audioPlayer.src = radio.url;
@@ -123,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 playBtn.textContent = '⏸️';
                 updateCurrentRadioDisplay();
                 showPlayer();
+                loadStationMeta(radio);
             })
             .catch(err => {
                 console.error(err);
@@ -138,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playBtn.textContent = '▶️';
         currentRadio = null;
         updateCurrentRadioDisplay();
+        nowPlayingCover.innerHTML = '';
         hidePlayer();
     }
 
@@ -217,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             li.querySelector('.delete-btn').addEventListener('click', async () => {
-                if (!confirm('Supprimer cette radio ?')) return;
+                if (!confirm(`Tu veux supprimer cette radio qui est ${radio.name} ?`)) return;
                 try {
                     await fetch(`/api/radios/${radio.id}`, { method: 'DELETE' });
                     await loadRadios();
@@ -231,7 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Ajout de radio AVEC validation
+    // Ajout de radio AVEC validation + possibilité de forcer
+
     addRadioBtn.addEventListener('click', async () => {
         const name = radioNameInput.value.trim();
         const url = radioUrlInput.value.trim();
@@ -246,8 +269,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const check = await fetch(`/api/validate-stream/${encodeURIComponent(url)}`);
             const checkData = await check.json();
             if (!checkData.valid) {
-                alert('URL de flux non valide ou inaccessible.');
-                return;
+                const proceed = confirm(
+                    "La validation du flux a échoué (URL de flux non valide ou inaccessible depuis le serveur).\n\n" +
+                    "Si tu es sûr que l'URL fonctionne dans ton navigateur, tu peux l’ajouter quand même.\n\n" +
+                    "Ajouter cette radio malgré tout ?"
+                );
+                if (!proceed) return;
             }
 
             const res = await fetch('/api/radios', {
