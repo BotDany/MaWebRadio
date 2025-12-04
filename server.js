@@ -33,8 +33,8 @@ app.use(
         "style-src": ["'self'", "'unsafe-inline'"],
         "img-src": ["'self'", "data:"],
         "connect-src": ["'self'"],
-        // Autoriser les flux audio externes
-        "media-src": ["'self'", "https://radio6.pro-fhi.net"],
+        // Autoriser les flux audio (mp3, etc.) depuis n'importe quel domaine HTTPS
+        "media-src": ["'self'", "https:", "data:"],
         "frame-ancestors": ["'self'"]
       }
     }
@@ -128,6 +128,42 @@ app.get('/api/validate-stream/:url', async (req, res) => {
   } catch (error) {
     console.error('validate-stream error:', error.message);
     res.json({ valid: false, error: error.message });
+  }
+});
+
+// ---------- METADONNÉES STATION (RadioBrowser) ----------
+
+app.get('/api/station-meta', async (req, res) => {
+  const streamUrl = req.query.url;
+  if (!streamUrl) {
+    return res.status(400).json({ error: 'url manquante' });
+  }
+
+  try {
+    const rbResponse = await axios.get(
+      'https://de1.api.radio-browser.info/json/stations/byurl/' +
+        encodeURIComponent(streamUrl),
+      { timeout: 5000 }
+    );
+
+    const stations = rbResponse.data;
+    if (!stations || stations.length === 0) {
+      return res.json({ found: false });
+    }
+
+    const station = stations[0];
+
+    res.json({
+      found: true,
+      name: station.name,
+      favicon: station.favicon || null,
+      tags: station.tags || '',
+      country: station.country || '',
+      homepage: station.homepage || ''
+    });
+  } catch (error) {
+    console.error('station-meta error:', error.message);
+    res.json({ found: false, error: error.message });
   }
 });
 
