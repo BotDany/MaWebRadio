@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
 
     const playerContainer = document.querySelector('.player');
+    const adminRadiosSection = document.getElementById('admin-radios');
 
     let currentRadio = null;
 
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Auth status HTTP error:', response.status);
                 loginForm.style.display = 'block';
                 adminPanel.style.display = 'none';
+                if (adminRadiosSection) adminRadiosSection.style.display = 'none';
                 return;
             }
 
@@ -40,14 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginForm.style.display = 'none';
                 adminPanel.style.display = 'flex';
                 adminUsername.textContent = data.username;
+                if (adminRadiosSection) adminRadiosSection.style.display = 'block';
             } else {
                 loginForm.style.display = 'block';
                 adminPanel.style.display = 'none';
+                if (adminRadiosSection) adminRadiosSection.style.display = 'none';
             }
         } catch (error) {
             console.error('Erreur auth:', error);
             loginForm.style.display = 'block';
             adminPanel.style.display = 'none';
+            if (adminRadiosSection) adminRadiosSection.style.display = 'none';
         }
     }
 
@@ -115,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadStationMeta(radio) {
+        if (!nowPlayingCover) return;
         try {
             const res = await fetch('/api/station-meta?url=' + encodeURIComponent(radio.url));
             const data = await res.json();
@@ -159,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playBtn.textContent = '▶️';
         currentRadio = null;
         updateCurrentRadioDisplay();
-        nowPlayingCover.innerHTML = '';
+        if (nowPlayingCover) nowPlayingCover.innerHTML = '';
         hidePlayer();
     }
 

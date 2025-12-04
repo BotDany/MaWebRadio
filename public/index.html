@@ -5,6 +5,7 @@
     <title>Ma Web Radio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
 </head>
 <body>
     <div class="container">
@@ -29,7 +30,8 @@
             </div>
         </section>
 
-        <section class="radio-list">
+        <!-- Panel admin pour gérer les stations (caché par défaut) -->
+        <section id="admin-radios" class="radio-list" style="display:none;">
             <h2>Stations de radio</h2>
 
             <div class="add-radio">
@@ -46,8 +48,11 @@
     <!-- Lecteur flottant -->
     <div class="player">
         <div class="now-playing">
-            <span>Lecture en cours :</span>
-            <div id="current-radio">Aucune lecture en cours</div>
+            <div class="now-playing-cover" id="now-playing-cover"></div>
+            <div class="now-playing-text">
+                <span>Lecture en cours :</span>
+                <div id="current-radio">Aucune lecture en cours</div>
+            </div>
         </div>
         <div class="controls">
             <button id="play-btn" class="play-btn-large">▶️</button>
