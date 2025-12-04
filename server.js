@@ -21,8 +21,26 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Middlewares
-app.use(helmet());
+// ---------- MIDDLEWARES ----------
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", "data:"],
+        "connect-src": ["'self'"],
+        // Autoriser les flux audio externes
+        "media-src": ["'self'", "https://radio6.pro-fhi.net"],
+        "frame-ancestors": ["'self'"]
+      }
+    }
+  })
+);
+
 app.use(compression());
 app.use(cors());
 app.use(express.json());
