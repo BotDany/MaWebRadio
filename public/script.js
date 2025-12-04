@@ -10,92 +10,161 @@ document.addEventListener('DOMContentLoaded', () => {
     const radioGenreInput = document.getElementById('radio-genre');
     const currentRadioDisplay = document.getElementById('current-radio');
 
-    // Éléments d'authentification
     const loginForm = document.getElementById('login-form');
     const adminPanel = document.getElementById('admin-panel');
     const adminUsername = document.getElementById('admin-username');
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
 
+    const playerContainer = document.querySelector('.player');
+
     let currentRadio = null;
 
-    // Vérifier l'état d'authentification au chargement
-    checkAuth();
+    // ---------- AUTH ----------
 
-    // Charger les radios depuis l'API
-    loadRadios();
+    async function checkAuth() {
+        try {
+            const response = await fetch('/api/auth-status');
+            const data = await response.json();
 
-    // Volume initial
-    audioPlayer.volume = volumeControl.value;
-    playBtn.disabled = true;
-    stopBtn.disabled = true;
-
-    volumeControl.addEventListener('input', e => {
-        audioPlayer.volume = e.target.value;
-    });
-
-    playBtn.addEventListener('click', () => {
-        if (!audioPlayer.src) return;
-
-        if (audioPlayer.paused) {
-            audioPlayer.play()
-                .then(() => {
-                    playBtn.textContent = '⏸️ Pause';
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('Impossible de lire le flux.');
-                });
-        } else {
-            audioPlayer.pause();
-            playBtn.textContent = '▶️ Lecture';
+            if (data.authenticated) {
+                loginForm.style.display = 'none';
+                adminPanel.style.display = 'flex';
+                adminUsername.textContent = data.username;
+            } else {
+                loginForm.style.display = 'block';
+                adminPanel.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Erreur auth:', error);
+            loginForm.style.display = 'block';
+            adminPanel.style.display = 'none';
         }
-    });
+    }
 
-    stopBtn.addEventListener('click', () => {
-        audioPlayer.pause();
-        audioPlayer.currentTime = 0;
-        playBtn.textContent = '▶️ Lecture';
-        currentRadio = null;
-        updateCurrentRadioDisplay();
-    });
+    async function login() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
 
-    addRadioBtn.addEventListener('click', async () => {
-        const name = radioNameInput.value.trim();
-        const url = radioUrlInput.value.trim();
-        const genre = radioGenreInput.value.trim();
-
-        if (!name || !url) {
-            alert('Nom et URL sont obligatoires.');
+        if (!username || !password) {
+            alert('Veuillez saisir un nom d’utilisateur et un mot de passe.');
             return;
         }
 
         try {
-            const check = await fetch(`/api/validate-stream/${encodeURIComponent(url)}`);
-            const checkData = await check.json();
-            if (!checkData.valid) {
-                alert('URL de flux non valide ou inaccessible.');
-                return;
-            }
-
-            const res = await fetch('/api/radios', {
+            const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, url, genre })
+                body: JSON.stringify({ username, password })
             });
 
-            if (!res.ok) throw new Error('Erreur API');
+            if (response.ok) {
+                await checkAuth();
+            } else {
+                alert('Identifiants incorrects');
+            }
+        } catch (error) {
+            console.error('Erreur connexion:', error);
+            alert('Erreur de connexion');
+        }
+    }
 
-            radioNameInput.value = '';
-            radioUrlInput.value = '';
-            radioGenreInput.value = '';
+    async function logout() {
+        try {
+            await fetch('/api/logout', { method: 'POST' });
+            await checkAuth();
+        } catch (error) {
+            console.error('Erreur déconnexion:', error);
+        }
+    }
 
-            await loadRadios();
-        } catch (err) {
-            console.error(err);
-            alert('Erreur lors de l’enregistrement de la radio.');
+    loginBtn.addEventListener('click', login);
+    logoutBtn.addEventListener('click', logout);
+
+    // ---------- LECTEUR ----------
+
+    function showPlayer() {
+        if (playerContainer) {
+            playerContainer.classList.add('active');
+        }
+    }
+
+    function hidePlayer() {
+        if (playerContainer) {
+            playerContainer.classList.remove('active');
+        }
+    }
+
+    function updateCurrentRadioDisplay() {
+        if (!currentRadio) {
+            currentRadioDisplay.textContent = 'Aucune lecture en cours';
+            return;
+        }
+        currentRadioDisplay.textContent = `${currentRadio.name} (${currentRadio.url})`;
+    }
+
+    function playRadio(radio) {
+        currentRadio = radio;
+        audioPlayer.src = radio.url;
+        audioPlayer.play()
+            .then(() => {
+                playBtn.disabled = false;
+                stopBtn.disabled = false;
+                playBtn.textContent = '⏸️';
+                updateCurrentRadioDisplay();
+                showPlayer();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Impossible de lire cette station (flux indisponible ou bloqué).');
+                hidePlayer();
+            });
+    }
+
+    function stopPlayback() {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        audioPlayer.src = '';
+        playBtn.textContent = '▶️';
+        currentRadio = null;
+        updateCurrentRadioDisplay();
+        hidePlayer();
+    }
+
+    // Boutons du lecteur
+    playBtn.addEventListener('click', () => {
+        if (!audioPlayer.src) return;
+        if (audioPlayer.paused) {
+            audioPlayer.play()
+                .then(() => {
+                    playBtn.textContent = '⏸️';
+                    showPlayer();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Impossible de lire le flux.');
+                    hidePlayer();
+                });
+        } else {
+            audioPlayer.pause();
+            playBtn.textContent = '▶️';
         }
     });
+
+    stopBtn.addEventListener('click', stopPlayback);
+
+    // Volume
+    audioPlayer.volume = 0.5;
+    volumeControl.value = 50;
+    volumeControl.addEventListener('input', e => {
+        const v = parseInt(e.target.value, 10) || 0;
+        audioPlayer.volume = v / 100;
+    });
+
+    // Quand la radio se termine
+    audioPlayer.addEventListener('ended', stopPlayback);
+
+    // ---------- RADIOS ----------
 
     async function loadRadios() {
         try {
@@ -152,30 +221,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function playRadio(radio) {
-        currentRadio = radio;
-        audioPlayer.src = radio.url;
-        audioPlayer.play()
-            .then(() => {
-                playBtn.disabled = false;
-                stopBtn.disabled = false;
-                playBtn.textContent = '⏸️ Pause';
-                updateCurrentRadioDisplay();
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Impossible de lire cette station (HTTP/HTTPS bloqué ou flux indisponible).');
-            });
-    }
+    // Ajout de radio
+    addRadioBtn.addEventListener('click', async () => {
+        const name = radioNameInput.value.trim();
+        const url = radioUrlInput.value.trim();
+        const genre = radioGenreInput.value.trim();
 
-    function updateCurrentRadioDisplay() {
-        if (!currentRadio) {
-            currentRadioDisplay.innerHTML = '<p>Aucune lecture en cours</p>';
+        if (!name || !url) {
+            alert('Nom et URL sont obligatoires.');
             return;
         }
-        currentRadioDisplay.innerHTML = `
-            <p><strong>${currentRadio.name}</strong></p>
-            <p><small>${currentRadio.url}</small></p>
-        `;
-    }
+
+        try {
+            const check = await fetch(`/api/validate-stream/${encodeURIComponent(url)}`);
+            const checkData = await check.json();
+            if (!checkData.valid) {
+                alert('URL de flux non valide ou inaccessible.');
+                return;
+            }
+
+            const res = await fetch('/api/radios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, url, genre })
+            });
+
+            if (!res.ok) throw new Error('Erreur API');
+
+            radioNameInput.value = '';
+            radioUrlInput.value = '';
+            radioGenreInput.value = '';
+
+            await loadRadios();
+        } catch (err) {
+            console.error(err);
+            alert('Erreur lors de l’enregistrement de la radio.');
+        }
+    });
+
+    // ---------- INIT ----------
+
+    checkAuth();
+    loadRadios();
+    hidePlayer(); // Le lecteur est caché au début
 });
