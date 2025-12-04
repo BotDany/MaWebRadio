@@ -90,13 +90,25 @@ app.delete('/api/radios/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Validation des URLs de streaming
+// ---------- VALIDATION DES URLS DE STREAMING ----------
+// Utilise GET en mode stream (HEAD est souvent refusé par les serveurs de radio)
+
 app.get('/api/validate-stream/:url', async (req, res) => {
   const { url } = req.params;
   try {
-    const response = await axios.head(url, { timeout: 5000 });
-    res.json({ valid: true, contentType: response.headers['content-type'] });
+    const response = await axios.get(url, {
+      method: 'GET',
+      responseType: 'stream',
+      timeout: 7000,
+      maxContentLength: 1024 * 50 // 50 Ko max
+    });
+
+    res.json({
+      valid: true,
+      contentType: response.headers['content-type'] || null
+    });
   } catch (error) {
+    console.error('validate-stream error:', error.message);
     res.json({ valid: false, error: error.message });
   }
 });
@@ -208,7 +220,7 @@ async function initDB() {
     const adminsCount = await pool.query('SELECT COUNT(*) FROM admins');
     if (parseInt(adminsCount.rows[0].count, 10) === 0) {
       const defaultUsername = 'admin';
-      const defaultPassword = 'admin123'; // change-le après la première connexion
+      const defaultPassword = 'admin123'; // À changer après la première connexion
       const hash = await bcrypt.hash(defaultPassword, 10);
 
       await pool.query(

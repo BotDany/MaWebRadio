@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Ajout de radio
+    // Ajout de radio AVEC validation
     addRadioBtn.addEventListener('click', async () => {
         const name = radioNameInput.value.trim();
         const url = radioUrlInput.value.trim();
