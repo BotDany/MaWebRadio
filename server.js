@@ -9,6 +9,7 @@ const axios = require('axios');
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const bcrypt = require('bcryptjs');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 dotenv.config();
 

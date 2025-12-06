@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentRadio = null;
 
+    // ---------- UTILS ----------
+
+    function getProxyUrl(url) {
+        if (url.startsWith('http://')) {
+            return '/proxy-stream/' + url.replace('http://', '');
+        }
+        return url;
+    }
+
     // ---------- AUTH ----------
 
     async function checkAuth() {
