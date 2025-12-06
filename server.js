@@ -149,7 +149,8 @@ app.get('/api/openradio/search', async (req, res) => {
   const { query, country, genre, limit = 20 } = req.query;
   
   try {
-    let url = 'https://api.openradio.co/search?';
+    // URL corrigée pour OpenRadio
+    let url = 'http://api.openradio.co/search?';
     const params = [];
     
     if (query) params.push(`query=${encodeURIComponent(query)}`);
@@ -159,7 +160,9 @@ app.get('/api/openradio/search', async (req, res) => {
     
     url += params.join('&');
     
-    const response = await axios.get(url, { timeout: 5000 });
+    console.log('OpenRadio search URL:', url);
+    const response = await axios.get(url, { timeout: 10000 });
+    console.log('OpenRadio response:', response.data);
     res.json(response.data);
   } catch (error) {
     console.error('OpenRadio search error:', error.message);
@@ -169,7 +172,8 @@ app.get('/api/openradio/search', async (req, res) => {
 
 app.get('/api/openradio/countries', async (req, res) => {
   try {
-    const response = await axios.get('https://api.openradio.co/countries', { timeout: 5000 });
+    const response = await axios.get('http://api.openradio.co/countries', { timeout: 10000 });
+    console.log('OpenRadio countries:', response.data);
     res.json(response.data);
   } catch (error) {
     console.error('OpenRadio countries error:', error.message);
@@ -179,7 +183,8 @@ app.get('/api/openradio/countries', async (req, res) => {
 
 app.get('/api/openradio/genres', async (req, res) => {
   try {
-    const response = await axios.get('https://api.openradio.co/genres', { timeout: 5000 });
+    const response = await axios.get('http://api.openradio.co/genres', { timeout: 10000 });
+    console.log('OpenRadio genres:', response.data);
     res.json(response.data);
   } catch (error) {
     console.error('OpenRadio genres error:', error.message);
