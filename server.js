@@ -47,11 +47,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Sessions
-app.use(
-  session({
-    store: new PgSession({
-      pool,
+// Proxy pour les flux audio HTTP (évite mixed content)
+app.use('/proxy-stream', createProxyMiddleware({
+  target: 'http://',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/proxy-stream/': '',
+  },
+  onProxyRes(proxyRes) {
+    proxyRes.headers['access-control-allow-origin'] = '*';
       tableName: 'user_sessions'
     }),
     secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
