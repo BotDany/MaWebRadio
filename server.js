@@ -56,6 +56,29 @@ app.use('/proxy-stream', createProxyMiddleware({
   },
   onProxyRes(proxyRes) {
     proxyRes.headers['access-control-allow-origin'] = '*';
+  }
+}));
+
+// Sessions
+app.use(
+  session({
+    store: new PgSession({
+      pool,
+      tableName: 'user_sessions'
+    }),
+    secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
+    }
+  })
+);
+
+// Middleware de protection des routes admin
+function requireAuth(req, res, next) {
+  if (req.session && req.session.user) {
     return next();
   }
   return res.status(401).json({ error: 'Non autorisé' });
