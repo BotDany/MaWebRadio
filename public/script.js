@@ -130,6 +130,33 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRadioDisplay.textContent = cleanName;
     }
 
+    function updateNowPlayingMetadata() {
+        if (!currentRadio || !audioPlayer.src) return;
+        
+        // Pour les flux radio, on essaie de lire les métadonnées ICY
+        let metadataText = 'En cours de lecture...';
+        
+        // Vérifier si le navigateur supporte les métadonnées audio
+        if (audioPlayer.textTracks && audioPlayer.textTracks.length > 0) {
+            const track = audioPlayer.textTracks[0];
+            if (track.activeCues && track.activeCues.length > 0) {
+                const cue = track.activeCues[0];
+                metadataText = cue.text || 'En cours de lecture...';
+            }
+        }
+        
+        // Créer ou mettre à jour l'élément de métadonnées
+        let metadataElement = document.getElementById('now-playing-metadata');
+        if (!metadataElement) {
+            metadataElement = document.createElement('div');
+            metadataElement.id = 'now-playing-metadata';
+            metadataElement.className = 'now-playing-metadata';
+            currentRadioDisplay.parentNode.insertBefore(metadataElement, currentRadioDisplay.nextSibling);
+        }
+        
+        metadataElement.textContent = metadataText;
+    }
+
     async function loadStationMeta(radio) {
         if (!nowPlayingCover) return;
         try {
@@ -161,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateCurrentRadioDisplay();
                 showPlayer();
                 loadStationMeta(radio);
+                updateNowPlayingMetadata();
             })
             .catch(err => {
                 console.error(err);
@@ -177,6 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRadio = null;
         updateCurrentRadioDisplay();
         if (nowPlayingCover) nowPlayingCover.innerHTML = '';
+        const metadataElement = document.getElementById('now-playing-metadata');
+        if (metadataElement) metadataElement.remove();
         hidePlayer();
     }
 
