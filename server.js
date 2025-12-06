@@ -144,50 +144,52 @@ app.get('/api/validate-stream/:url', async (req, res) => {
   }
 });
 
-// ---------- OPENRADIO API ----------
+// ---------- RADIOBROWSER API ----------
+
 app.get('/api/openradio/search', async (req, res) => {
   const { query, country, genre, limit = 20 } = req.query;
   
   try {
-    // URL corrigée pour OpenRadio
-    let url = 'http://api.openradio.co/search?';
+    let url = 'https://de1.api.radio-browser.info/json/stations/search?';
     const params = [];
     
-    if (query) params.push(`query=${encodeURIComponent(query)}`);
+    if (query) params.push(`name=${encodeURIComponent(query)}`);
     if (country) params.push(`country=${encodeURIComponent(country)}`);
-    if (genre) params.push(`genre=${encodeURIComponent(genre)}`);
+    if (genre) params.push(`tag=${encodeURIComponent(genre)}`);
     params.push(`limit=${limit}`);
+    params.push(`order=clickcount`);
+    params.push(`reverse=true`);
     
     url += params.join('&');
     
-    console.log('OpenRadio search URL:', url);
+    console.log('RadioBrowser search URL:', url);
     const response = await axios.get(url, { timeout: 10000 });
-    console.log('OpenRadio response:', response.data);
-    res.json(response.data);
+    console.log('RadioBrowser stations found:', response.data.length);
+    res.json({ stations: response.data });
   } catch (error) {
-    console.error('OpenRadio search error:', error.message);
+    console.error('RadioBrowser search error:', error.message);
     res.json({ stations: [], error: error.message });
   }
 });
 
 app.get('/api/openradio/countries', async (req, res) => {
   try {
-    const response = await axios.get('http://api.openradio.co/countries', { timeout: 10000 });
-    console.log('OpenRadio countries:', response.data);
-    res.json(response.data);
+    const response = await axios.get('https://de1.api.radio-browser.info/json/countries', { timeout: 10000 });
+    console.log('RadioBrowser countries:', response.data.length);
+    res.json({ countries: response.data });
   } catch (error) {
-    console.error('OpenRadio countries error:', error.message);
+    console.error('RadioBrowser countries error:', error.message);
     res.json({ countries: [], error: error.message });
   }
 });
 
 app.get('/api/openradio/genres', async (req, res) => {
   try {
-    const response = await axios.get('http://api.openradio.co/genres', { timeout: 10000 });
-    console.log('OpenRadio genres:', response.data);
-    res.json(response.data);
+    const response = await axios.get('https://de1.api.radio-browser.info/json/tags', { timeout: 10000 });
+    console.log('RadioBrowser genres:', response.data.length);
+    res.json({ genres: response.data });
   } catch (error) {
-    console.error('OpenRadio genres error:', error.message);
+    console.error('RadioBrowser genres error:', error.message);
     res.json({ genres: [], error: error.message });
   }
 });
