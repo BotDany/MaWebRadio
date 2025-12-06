@@ -236,6 +236,92 @@ input[type="url"] {
     background: #c0392b;
 }
 
+.discover-filters {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.discover-filters input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+}
+
+.discover-filters select {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    min-width: 150px;
+    font-size: 0.95em;
+}
+
+#discover-results {
+    margin-top: 20px;
+}
+
+.discover-radio-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.discover-radio-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.discover-radio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.discover-radio-name {
+    font-weight: 600;
+    font-size: 1.1em;
+    color: var(--primary-color);
+}
+
+.discover-radio-country {
+    background: #e8f4fc;
+    color: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+}
+
+.discover-radio-details {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.discover-radio-genre {
+    background: #f0f8ff;
+    color: #0066cc;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+}
+
+.discover-radio-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.discover-radio-actions button {
+    font-size: 0.9em;
+    padding: 6px 12px;
+}
+
 @media (max-width: 768px) {
     .add-radio {
         flex-direction: column;

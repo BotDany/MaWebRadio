@@ -144,6 +144,49 @@ app.get('/api/validate-stream/:url', async (req, res) => {
   }
 });
 
+// ---------- OPENRADIO API ----------
+app.get('/api/openradio/search', async (req, res) => {
+  const { query, country, genre, limit = 20 } = req.query;
+  
+  try {
+    let url = 'https://api.openradio.co/search?';
+    const params = [];
+    
+    if (query) params.push(`query=${encodeURIComponent(query)}`);
+    if (country) params.push(`country=${encodeURIComponent(country)}`);
+    if (genre) params.push(`genre=${encodeURIComponent(genre)}`);
+    params.push(`limit=${limit}`);
+    
+    url += params.join('&');
+    
+    const response = await axios.get(url, { timeout: 5000 });
+    res.json(response.data);
+  } catch (error) {
+    console.error('OpenRadio search error:', error.message);
+    res.json({ stations: [], error: error.message });
+  }
+});
+
+app.get('/api/openradio/countries', async (req, res) => {
+  try {
+    const response = await axios.get('https://api.openradio.co/countries', { timeout: 5000 });
+    res.json(response.data);
+  } catch (error) {
+    console.error('OpenRadio countries error:', error.message);
+    res.json({ countries: [], error: error.message });
+  }
+});
+
+app.get('/api/openradio/genres', async (req, res) => {
+  try {
+    const response = await axios.get('https://api.openradio.co/genres', { timeout: 5000 });
+    res.json(response.data);
+  } catch (error) {
+    console.error('OpenRadio genres error:', error.message);
+    res.json({ genres: [], error: error.message });
+  }
+});
+
 // ---------- METADONNÉES STATION (RadioBrowser) ----------
 
 app.get('/api/station-meta', async (req, res) => {
