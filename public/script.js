@@ -116,7 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRadioDisplay.textContent = 'Aucune lecture en cours';
             return;
         }
-        currentRadioDisplay.textContent = `${currentRadio.name} (${currentRadio.url})`;
+        // Ne garder que le nom avant la première parenthèse
+        const cleanName = currentRadio.name.split('(')[0].trim();
+        currentRadioDisplay.textContent = cleanName;
     }
 
     async function loadStationMeta(radio) {
