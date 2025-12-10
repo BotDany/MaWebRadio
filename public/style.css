@@ -122,10 +122,16 @@ h1 {
 }
 
 .now-playing-metadata {
-    font-size: 0.85rem;
-    color: #555;
-    margin-top: 4px;
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
     font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    min-height: 1.2em;
+    padding: 4px 0;
 }
 
 #current-radio {
@@ -166,7 +172,30 @@ button:disabled {
 .volume-control {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
+    margin-left: 15px;
+}
+
+.volume-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.volume-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.volume-control input[type="range"] {
+    width: 80px;
 }
 
 .radio-list {
