@@ -12,6 +12,8 @@ import urllib3
 import xml.etree.ElementTree as ET
 import argparse
 import sys
+import io
+import contextlib
 
 # Désactiver les avertissements SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -1070,7 +1072,14 @@ def main():
 def _cli_json_once(station_name: str, url: str) -> int:
     try:
         fetcher = RadioFetcher()
-        md = fetcher.get_metadata(station_name, url)
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            md = fetcher.get_metadata(station_name, url)
+
+        noisy = buf.getvalue()
+        if noisy:
+            sys.stderr.write(noisy)
         payload = {
             "station": md.station,
             "title": md.title,
