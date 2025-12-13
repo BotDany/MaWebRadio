@@ -249,6 +249,29 @@ def _fetch_nostalgie_onair_metadata(session: requests.Session, stream_url: str, 
     except Exception:
         return None
 
+def _fetch_flash80_streamapps_metadata(session: requests.Session) -> Optional[Tuple[str, str, str]]:
+    try:
+        r = session.get(
+            "https://api.streamapps.fr/manager.php?server=https://manager7.streamradio.fr:1970&radio=1&nowrap=true",
+            timeout=5,
+        )
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        if not isinstance(data, dict):
+            return None
+        md = data.get("metadata")
+        if not isinstance(md, dict):
+            return None
+        artist = _normalize_text(str(md.get("artist") or ""))
+        title = _normalize_text(str(md.get("title") or ""))
+        cover = _normalize_text(str(md.get("cover") or ""))
+        if not artist or not title:
+            return None
+        return title, artist, cover
+    except Exception:
+        return None
+
 @dataclass
 class RadioMetadata:
     station: str
@@ -534,46 +557,11 @@ class RadioFetcher:
                 artist=station_name
             )
 
-    def get_metadata(self, station_name: str, url: str) -> RadioMetadata:
-        # Vérification du cache
-        cache_key = f"{station_name}:{url}"
-        if cache_key in self.cache:
-            cached_data, timestamp = self.cache[cache_key]
-            if time.time() - timestamp < self.cache_timeout:
-                if station_name.lower() == "mega hits":
-                    if not cached_data.cover_url or "sapo.pt" in cached_data.cover_url:
-                        cached_data.cover_url = "https://megahits.fm/"
-                return cached_data
-
-        # Détection du type de flux
-        if 'bauermedia.pt/comercial' in url:
-            metadata = self._get_radiocomercial_metadata(url, station_name)
-        elif "nrjaudio" in url:
-            metadata = self._get_nrj_metadata(url, station_name)
-        elif "rtl.fr" in url:
-            metadata = self._get_rtl_metadata(url, station_name)
-        elif "streamradio.fr" in url or "streamradio.com" in url:
-            metadata = self._get_streamradio_metadata(url, station_name)
-        elif "streamtheworld.com" in url:
-            metadata = self._get_streamtheworld_metadata(url, station_name)
-        elif "infomaniak.ch" in url:
-            metadata = self._get_infomaniak_metadata(url, station_name)
-        else:
-            metadata = self._get_icy_metadata(url, station_name)
-
-        if station_name.lower() == "mega hits":
-            if not metadata.cover_url or "sapo.pt" in metadata.cover_url:
-                metadata.cover_url = "https://megahits.fm/"
-
-        # Mise en cache
-        self.cache[cache_key] = (metadata, time.time())
-        return metadata
-
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
         """Récupère les métadonnées ICY d'un flux radio standard"""
         try:
             response = self.session.get(url, stream=True, timeout=self.default_timeout)
-
+            
             # Vérifier les en-têtes ICY
             icy_name = _normalize_text(response.headers.get('icy-name', ''))
             icy_description = _normalize_text(response.headers.get('icy-description', ''))
@@ -619,54 +607,13 @@ class RadioFetcher:
                 except Exception:
                     pass
 
-            response.close()
-
-            # Fallback spécifique: Bide&Musique expose un endpoint now-playing
-            if (title == "En direct" or not title) and ("bide-et-musique.com" in url or "relay1.bide-et-musique.com" in url):
-                try:
-                    r = self.session.get("https://www.bide-et-musique.com/radio-info.php", timeout=self.api_timeout)
-                    if r.status_code == 200 and r.text:
-                        parsed = _parse_bide_radio_info(r.text)
-                        if parsed:
-                            title, artist = parsed
-                except Exception:
-                    pass
-
-            # Fallback spécifique: Bide&Musique (si ICY ne donne rien)
-            if (title == "En direct" or not title or title.startswith("<table")) and ("bide" in station_name.lower()):
-                try:
-                    r = self.session.get("https://www.bide-et-musique.com/radio-info.php", timeout=self.api_timeout)
-                    if r.status_code == 200 and r.text:
-                        parsed = _parse_bide_radio_info(r.text)
-                        if parsed:
-                            title, artist = parsed
-                except Exception:
-                    pass
-
-            # Fallback spécifique: 100% Radio (SSE)
-            if title == "En direct" and ("100radio-80.ice.infomaniak.ch" in url or station_name.lower() == "100% radio"):
-                try:
-                    headers = {
-                        "Accept": "application/json",
-                        "Referer": "https://www.centpourcent.com/",
-                        "User-Agent": "Mozilla/5.0",
-                    }
-                    r = self.session.get(
-                        "https://www.centpourcent.com/ws/metas?id=3301185310276687502",
-                        headers=headers,
-                        stream=True,
-                        timeout=(5, 5),
-                    )
-                    if r.status_code == 200:
-                        for raw_line in r.iter_lines(decode_unicode=True):
-                            if not raw_line:
-                                continue
-                            parsed = _parse_centpourcent_metas_sse(raw_line)
-                            if parsed:
-                                title, artist = parsed
-                            break
-                except Exception:
-                    pass
+            if (title == "En direct" or not title) and (
+                station_name.lower() == "flash 80 radio" or "manager7.streamradio.fr:1985" in url
+            ):
+                parsed = _fetch_flash80_streamapps_metadata(self.session)
+                if parsed:
+                    title, artist, cover_url = parsed
+                    icy_url = cover_url if cover_url else icy_url
 
             # Fallback spécifique: Mega Hits (XML UTF-16)
             if title == "En direct" and station_name.lower() == "mega hits":
