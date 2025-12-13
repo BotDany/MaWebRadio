@@ -10,6 +10,7 @@ const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const bcrypt = require('bcryptjs');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const { spawn } = require('child_process');
 
 dotenv.config();
 
@@ -119,6 +120,67 @@ app.delete('/api/radios/:id', requireAuth, async (req, res) => {
     console.error('Erreur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
+});
+
+// ---------- METADONNÉES NOW-PLAYING (Python) ----------
+
+app.get('/api/now-playing', async (req, res) => {
+  const name = req.query.name;
+  const url = req.query.url;
+
+  if (!name || !url) {
+    return res.status(400).json({ error: 'Paramètres requis: name, url' });
+  }
+
+  const scriptPath = path.join(__dirname, 'radio_metadata_fetcher_fixed.py');
+  const args = [
+    scriptPath,
+    '--json',
+    '--station',
+    String(name),
+    '--url',
+    String(url)
+  ];
+
+  const py = spawn('python', args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: process.env
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  const killTimer = setTimeout(() => {
+    try {
+      py.kill('SIGKILL');
+    } catch (e) {
+      // ignore
+    }
+  }, 12000);
+
+  py.stdout.on('data', chunk => {
+    stdout += chunk.toString('utf8');
+  });
+  py.stderr.on('data', chunk => {
+    stderr += chunk.toString('utf8');
+  });
+
+  py.on('close', code => {
+    clearTimeout(killTimer);
+
+    if (code !== 0) {
+      console.error('now-playing python error:', { code, stderr: stderr.slice(0, 2000) });
+      return res.status(500).json({ error: 'Erreur metadata (python)', details: stderr.slice(0, 500) });
+    }
+
+    try {
+      const payload = JSON.parse(stdout);
+      return res.json(payload);
+    } catch (e) {
+      console.error('now-playing json parse error:', e, stdout.slice(0, 2000));
+      return res.status(500).json({ error: 'Réponse metadata invalide', details: stdout.slice(0, 500) });
+    }
+  });
 });
 
 // ---------- VALIDATION DES URLS DE STREAMING ----------
