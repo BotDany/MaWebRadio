@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminRadiosSection = document.getElementById('admin-radios');
 
     let currentRadio = null;
+    let nowPlayingInterval = null;
 
     // ---------- UTILS ----------
 
@@ -130,83 +131,43 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRadioDisplay.textContent = cleanName;
     }
 
+    async function fetchNowPlayingFromApi() {
+        if (!currentRadio || !currentRadio.name || !currentRadio.url) return;
+        try {
+            const params = new URLSearchParams({
+                name: currentRadio.name,
+                url: currentRadio.url
+            });
+            const res = await fetch('/api/now-playing?' + params.toString());
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data) return;
+            updateMetadataFromApi(data);
+        } catch (e) {
+            // ignore
+        }
+    }
+
     function updateNowPlayingMetadata() {
         if (!currentRadio || !audioPlayer.src) return;
-        
-        // Pour les flux radio, on essaie de lire les métadonnées ICY
-        let metadataText = 'Aucune information disponible';
-        
-        // Vérifier si le navigateur supporte les métadonnées audio
-        if (audioPlayer.textTracks && audioPlayer.textTracks.length > 0) {
-            const track = audioPlayer.textTracks[0];
-            track.mode = 'hidden'; // Important pour activer le suivi des métadonnées
-            
-            // Mettre à jour quand les métadonnées changent
-            track.oncuechange = function() {
-                if (track.activeCues && track.activeCues.length > 0) {
-                    const cue = track.activeCues[0];
-                    if (cue && cue.text) {
-                        metadataText = cue.text;
-                        updateMetadataDisplay(metadataText);
-                    }
-                }
-            };
+        if (nowPlayingInterval) {
+            clearInterval(nowPlayingInterval);
+            nowPlayingInterval = null;
         }
-        
-        // Vérifier périodiquement les métadonnées pour les flux qui ne déclenchent pas d'événements
-        if (!window.metadataInterval) {
-            window.metadataInterval = setInterval(() => {
-                if (audioPlayer.readyState > 0) {
-                    const metadata = audioPlayer.metadata;
-                    if (metadata && metadata.title) {
-                        updateMetadataDisplay(metadata.title);
-                    } else if (audioPlayer.textTracks && audioPlayer.textTracks[0] && 
-                              audioPlayer.textTracks[0].activeCues && 
-                              audioPlayer.textTracks[0].activeCues[0]) {
-                        const cue = audioPlayer.textTracks[0].activeCues[0];
-                        if (cue && cue.text) {
-                            updateMetadataDisplay(cue.text);
-                        }
-                    }
-                }
-            }, 5000); // Vérifier toutes les 5 secondes
-        }
-        
-        updateMetadataDisplay(metadataText);
+        fetchNowPlayingFromApi();
+        nowPlayingInterval = setInterval(fetchNowPlayingFromApi, 25000);
     }
-    
-    function updateMetadataDisplay(metadataText) {
-        // Nettoyer le texte des métadonnées
-        let displayText = metadataText
-            .replace(/StreamTitle='(.*?)';/g, '$1') // Extraire le titre de la chanson
-            .replace(/^[^:]+:\s*/, '') // Enlever les préfixes comme "StreamTitle="
-            .trim();
-        
-        if (!displayText || displayText === ';' || displayText === 'undefined') {
-            displayText = 'Aucune information de lecture disponible';
-        } else {
-            // Mettre à jour les métadonnées de la session média si une chanson est détectée
-            if (currentRadio && 'mediaSession' in navigator) {
-                const metadata = {
-                    title: displayText,
-                    artist: currentRadio.name,
-                    album: 'En écoute',
-                    artwork: [
-                        { src: currentRadio.favicon || 'https://via.placeholder.com/512x512', sizes: '512x512', type: 'image/png' },
-                        { src: currentRadio.favicon || 'https://via.placeholder.com/192x192', sizes: '192x192', type: 'image/png' },
-                        { src: currentRadio.favicon || 'https://via.placeholder.com/96x96', sizes: '96x96', type: 'image/png' }
-                    ]
-                };
-                
-                try {
-                    navigator.mediaSession.metadata = new MediaMetadata(metadata);
-                } catch (e) {
-                    console.log('Erreur lors de la mise à jour des métadonnées média:', e);
-                }
-            }
-        }
-        
-        // Mettre à jour l'affichage
+
+    function updateMetadataFromApi(payload) {
+        const title = (payload.title || '').toString().trim();
+        const artist = (payload.artist || '').toString().trim();
+        const coverUrl = (payload.cover_url || '').toString().trim();
+
+        let displayText = '';
+        if (artist && title) displayText = artist + ' - ' + title;
+        else if (title) displayText = title;
+        else displayText = 'Aucune information de lecture disponible';
+
         let metadataElement = document.getElementById('now-playing-metadata');
         if (!metadataElement) {
             metadataElement = document.createElement('div');
@@ -215,10 +176,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const parent = currentRadioDisplay.parentNode;
             parent.insertBefore(metadataElement, currentRadioDisplay.nextSibling);
         }
-        
-        // Mettre à jour le texte uniquement s'il a changé
+
         if (metadataElement.textContent !== displayText) {
             metadataElement.textContent = displayText;
+        }
+
+        if (nowPlayingCover) {
+            if (coverUrl && coverUrl.startsWith('http')) {
+                nowPlayingCover.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = coverUrl;
+                img.alt = currentRadio ? currentRadio.name : 'cover';
+                nowPlayingCover.appendChild(img);
+            }
+        }
+
+        if (currentRadio && 'mediaSession' in navigator) {
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: title || displayText,
+                    artist: artist || (currentRadio ? currentRadio.name : ''),
+                    album: 'En écoute',
+                    artwork: coverUrl && coverUrl.startsWith('http') ? [
+                        { src: coverUrl, sizes: '512x512', type: 'image/jpeg' },
+                        { src: coverUrl, sizes: '192x192', type: 'image/jpeg' },
+                        { src: coverUrl, sizes: '96x96', type: 'image/jpeg' }
+                    ] : []
+                });
+            } catch (e) {
+                // ignore
+            }
         }
     }
 
@@ -266,12 +253,17 @@ document.addEventListener('DOMContentLoaded', () => {
         audioPlayer.pause();
         audioPlayer.currentTime = 0;
         audioPlayer.src = '';
+
         playBtn.textContent = '▶️';
         currentRadio = null;
         updateCurrentRadioDisplay();
         if (nowPlayingCover) nowPlayingCover.innerHTML = '';
         const metadataElement = document.getElementById('now-playing-metadata');
         if (metadataElement) metadataElement.remove();
+        if (nowPlayingInterval) {
+            clearInterval(nowPlayingInterval);
+            nowPlayingInterval = null;
+        }
         hidePlayer();
     }
 
