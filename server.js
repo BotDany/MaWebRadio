@@ -142,7 +142,9 @@ app.get('/api/now-playing', async (req, res) => {
     String(url)
   ];
 
-  const py = spawn('python', args, {
+  const pythonBin = process.env.PYTHON_BIN || '/app/venv/bin/python';
+
+  const py = spawn(pythonBin, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: process.env
   });
