@@ -16,8 +16,9 @@ RUN npm ci
 # Copy Python requirements
 COPY requirements.txt ./
 
-# Install Python dependencies
-RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
+# Install Python dependencies using virtualenv to avoid externally-managed-environment
+RUN python3 -m venv /app/venv
+RUN . /app/venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy the rest of the app
 COPY . .
