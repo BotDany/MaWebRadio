@@ -330,6 +330,38 @@ class RadioFetcher:
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
+    def get_metadata(self, station_name: str, url: str) -> RadioMetadata:
+        cache_key = f"{station_name}:{url}"
+        if cache_key in self.cache:
+            cached_data, timestamp = self.cache[cache_key]
+            if time.time() - timestamp < self.cache_timeout:
+                if station_name.lower() == "mega hits":
+                    if not cached_data.cover_url or "sapo.pt" in cached_data.cover_url:
+                        cached_data.cover_url = "https://megahits.fm/"
+                return cached_data
+
+        if 'bauermedia.pt/comercial' in url:
+            metadata = self._get_radiocomercial_metadata(url, station_name)
+        elif "nrjaudio" in url:
+            metadata = self._get_nrj_metadata(url, station_name)
+        elif "rtl.fr" in url:
+            metadata = self._get_rtl_metadata(url, station_name)
+        elif "streamradio.fr" in url or "streamradio.com" in url:
+            metadata = self._get_streamradio_metadata(url, station_name)
+        elif "streamtheworld.com" in url:
+            metadata = self._get_streamtheworld_metadata(url, station_name)
+        elif "infomaniak.ch" in url:
+            metadata = self._get_infomaniak_metadata(url, station_name)
+        else:
+            metadata = self._get_icy_metadata(url, station_name)
+
+        if station_name.lower() == "mega hits":
+            if not metadata.cover_url or "sapo.pt" in metadata.cover_url:
+                metadata.cover_url = "https://megahits.fm/"
+
+        self.cache[cache_key] = (metadata, time.time())
+        return metadata
+
     def _get_radiocomercial_metadata(self, url: str, station_name: str) -> RadioMetadata:
         """Récupère les métadonnées pour Radio Comercial avec extraction directe"""
         try:
