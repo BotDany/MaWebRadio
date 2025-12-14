@@ -613,69 +613,66 @@ def _fetch_100radio_api_metadata(session: requests.Session, station_name: str) -
         return None
 
 def _fetch_100radio_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
-    """Fallback pour 100% Radio en scrapant le site web"""
+    """Fallback pour 100% Radio en essayant les webradios avec métadonnées ICY"""
     try:
-        headers = get_anti_cloudflare_headers()
-        headers.update({
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        })
-        
-        r = session.get(
-            "https://www.100radio.fr/",
-            timeout=8,
-            headers=headers,
-        )
-        if r.status_code != 200:
-            return None
-
-        content = r.text
-        import re
-        
-        # Search for JSON data containing song info
-        json_matches = re.findall(r'{.*?"title".*?"artist".*?}', content)
-        
-        for match in json_matches:
-            try:
-                data = json.loads(match)
-                title = _normalize_text(str(data.get("title", "")))
-                artist = _normalize_text(str(data.get("artist", "")))
-                
-                if title and artist and len(title) > 2 and len(artist) > 2:
-                    # Filter out generic titles
-                    if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
-                        return RadioMetadata(
-                            station=station_name,
-                            title=title,
-                            artist=artist,
-                            cover_url=""
-                        )
-            except Exception:
-                continue
-        
-        # Try alternative patterns for 100% Radio
-        song_patterns = [
-            r'"currentSong":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
-            r'"song":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
-            r'"track":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
-            r'"nowPlaying":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+        # Essayer d'abord les webradios 100% qui pourraient avoir des métadonnées ICY
+        webradio_urls = [
+            "https://stream.centpourcent.com/10080-128.mp3",  # 100% Radio 80's
+            "https://stream.centpourcent.com/10090-128.mp3",  # 100% Radio 90's  
+            "https://stream.centpourcent.com/100hit-128.mp3", # 100% Radio Hit
+            "https://listen.centpourcent.com/100-80.aac",     # Alternative 80's
         ]
         
-        for pattern in song_patterns:
-            matches = re.findall(pattern, content)
-            for title, artist in matches:
-                title = _normalize_text(title)
-                artist = _normalize_text(artist)
-                if title and artist and len(title) > 2 and len(artist) > 2:
-                    if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
-                        return RadioMetadata(
-                            station=station_name,
-                            title=title,
-                            artist=artist,
-                            cover_url=""
-                        )
+        for webradio_url in webradio_urls:
+            try:
+                print(f"DEBUG: Trying 100% webradio: {webradio_url}")
+                response = session.get(webradio_url, stream=True, timeout=5)
+                
+                if response.status_code == 200 and 'icy-metaint' in response.headers:
+                    print(f"DEBUG: Found ICY metadata in {webradio_url}")
+                    meta_interval = int(response.headers['icy-metaint'])
+                    
+                    # Lire les métadonnées ICY
+                    audio_data = response.raw.read(meta_interval)
+                    meta_length_byte = response.raw.read(1)
+                    
+                    if meta_length_byte:
+                        meta_length = ord(meta_length_byte) * 16
+                        if meta_length > 0:
+                            metadata = response.raw.read(meta_length).rstrip(b'\x00').decode('utf-8', errors='ignore')
+                            response.close()
+                            
+                            if 'StreamTitle=' in metadata:
+                                stream_title = metadata.split('StreamTitle=')[1].split(';')[0].strip("'\"")
+                                
+                                if stream_title and len(stream_title) > 3:
+                                    if ' - ' in stream_title:
+                                        artist, title = stream_title.split(' - ', 1)
+                                        return RadioMetadata(
+                                            station=station_name,
+                                            title=title.strip(),
+                                            artist=artist.strip(),
+                                            cover_url=""
+                                        )
+                                    else:
+                                        return RadioMetadata(
+                                            station=station_name,
+                                            title=stream_title.strip(),
+                                            artist=station_name,
+                                            cover_url=""
+                                        )
+                    response.close()
+                    
+            except Exception as e:
+                print(f"DEBUG: Error with {webradio_url}: {e}")
+                continue
         
+        # Si aucune webradio ne fonctionne, retourner None pour utiliser le cache local
+        print(f"DEBUG: No working 100% webradio found, using local cache")
         return None
-    except Exception:
+        
+    except Exception as e:
+        print(f"DEBUG: Error in 100% Radio scraper: {e}")
         return None
 
 def _fetch_100radio_local_cache(station_name: str) -> Optional["RadioMetadata"]:
