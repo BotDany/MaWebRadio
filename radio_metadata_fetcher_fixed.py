@@ -567,6 +567,13 @@ class RadioFetcher:
                     except Exception:
                         pass
 
+                if (title == "En direct" or not title) and (
+                    station_name.lower() == "flash 80 radio" or "manager7.streamradio.fr" in url
+                ):
+                    parsed = _fetch_flash80_streamapps_metadata(self.session)
+                    if parsed:
+                        title, artist, cover_url = parsed
+
                 response.close()
                 return RadioMetadata(
                     station=_normalize_text(station),
@@ -577,6 +584,7 @@ class RadioFetcher:
                 
             response.close()
             return RadioMetadata(
+                station=station_name,
                 title="En direct",
                 artist=station_name
             )
