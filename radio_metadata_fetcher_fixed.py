@@ -31,17 +31,25 @@ def _normalize_text(value: str) -> str:
             return s
     return s
 
-def _parse_bide_radio_info(text: str) -> Optional[Tuple[str, str]]:
+def _parse_bide_radio_info(text: str) -> Optional[Tuple[str, str, str]]:
     if not isinstance(text, str):
         return None
     
     # Extract from openImage onclick: openImage('/path', 'Artist - Title', width, height)
-    onclick_match = re.search(r"openImage\([^,]+,\s*['\"]([^'\"]+)['\"]", text)
+    onclick_match = re.search(r"openImage\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]([^'\"]+)['\"]", text)
+    cover_url = ""
     if onclick_match:
-        title_artist = onclick_match.group(1)
+        img_path = onclick_match.group(1)
+        title_artist = onclick_match.group(2)
         # Replace + with space and normalize
         title_artist = title_artist.replace('+', ' ')
         title_artist = _normalize_text(title_artist)
+
+        img_path = _normalize_text(img_path)
+        if img_path and img_path.startswith('/'):
+            cover_url = f"https://www.bide-et-musique.com{img_path}"
+        elif img_path and img_path.startswith('http'):
+            cover_url = img_path
         
         # Split by " - " to separate artist and title
         if ' - ' in title_artist:
@@ -49,7 +57,7 @@ def _parse_bide_radio_info(text: str) -> Optional[Tuple[str, str]]:
             artist = _normalize_text(artist.strip())
             title = _normalize_text(title.strip())
             if title and artist:
-                return title, artist
+                return title, artist, cover_url
         else:
             # If no separator, treat as title and try to find artist elsewhere
             title = title_artist
@@ -61,7 +69,7 @@ def _parse_bide_radio_info(text: str) -> Optional[Tuple[str, str]]:
                     artist, alt_title = alt_text.split(' - ', 1)
                     artist = _normalize_text(artist.strip())
                     if artist:
-                        return title, artist
+                        return title, artist, cover_url
     
     # Try to extract from HTML format with specific classes
     title_match = re.search(r'<td[^>]*class="titre"[^>]*>(.*?)</td>', text, re.IGNORECASE | re.DOTALL)
@@ -72,13 +80,14 @@ def _parse_bide_radio_info(text: str) -> Optional[Tuple[str, str]]:
         if artist_match:
             artist = _normalize_text(artist_match.group(1))
             if title and artist:
-                return title, artist
+                return title, artist, ""
     
     # If HTML parsing fails, try the original Markdown parsing as fallback
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     if len(lines) >= 2:
         title_line = lines[0]
         artist_line = lines[1]
+
         
         # Extract from Markdown links
         m_title = re.search(r"\[(?P<title>[^\]]+)\]", title_line)
@@ -88,9 +97,34 @@ def _parse_bide_radio_info(text: str) -> Optional[Tuple[str, str]]:
         artist = _normalize_text(m_artist.group("artist")) if m_artist else None
         
         if title and artist:
-            return title, artist
+            return title, artist, ""
     
     return None
+
+def _fetch_bide_onair_metadata(session: requests.Session) -> Optional[Tuple[str, str, str]]:
+    try:
+        r = session.get(
+            "https://www.bide-et-musique.com/radio-info.php",
+            timeout=4,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+        )
+        if r.status_code != 200 or not r.text:
+            return None
+
+        parsed = _parse_bide_radio_info(r.text)
+        if not parsed:
+            return None
+
+        title, artist, cover_url = parsed
+        if not title or not artist:
+            return None
+
+        return title, artist, cover_url
+    except Exception:
+        return None
 
 def _parse_megahits_onair_xml(xml_bytes: bytes) -> Optional[Tuple[str, str]]:
     if not xml_bytes:
@@ -651,43 +685,12 @@ class RadioFetcher:
                 except Exception:
                     pass
 
-            if (title == "En direct" or not title) and (
-                station_name.lower() == "flash 80 radio" or "manager7.streamradio.fr:1985" in url
-            ):
-                parsed = _fetch_flash80_streamapps_metadata(self.session)
+            if (title == "En direct" or not title) and station_name.lower() == "bide et musique":
+                parsed = _fetch_bide_onair_metadata(self.session)
                 if parsed:
                     title, artist, cover_url = parsed
-                    icy_url = cover_url if cover_url else icy_url
-
-            # Fallback spécifique: Mega Hits (XML UTF-16)
-            if title == "En direct" and station_name.lower() == "mega hits":
-                try:
-                    r = self.session.get(
-                        "https://configsa01.blob.core.windows.net/megahits/megaOnAir.xml",
-                        timeout=self.api_timeout,
-                    )
-                    if r.status_code == 200 and r.content:
-                        parsed = _parse_megahits_onair_xml(r.content)
-                        if parsed:
-                            title, artist = parsed
-                except Exception:
-                    pass
-
-            # Fallback spécifique: RadioSurle (Supernana, Radio Gérard, etc.)
-            if (title == "SongTitle" or title == "En direct" or not title) and "radiosurle.net" in url:
-                try:
-                    # Extract station key from URL (e.g., "showsupernana" from https://radiosurle.net:8765/showsupernana)
-                    station_key = url.split("/")[-1].split("?")[0]
-                    r = self.session.get(
-                        f"https://radiosurle.net/current_station_metadata_ice.php?station={station_key}",
-                        timeout=self.api_timeout,
-                    )
-                    if r.status_code == 200 and r.text:
-                        parsed = _parse_radiosurle_metadata(r.text, station_key)
-                        if parsed:
-                            title, artist = parsed
-                except Exception:
-                    pass
+                    if cover_url:
+                        icy_url = cover_url
 
             title = _normalize_text(title)
             artist = _normalize_text(artist)
