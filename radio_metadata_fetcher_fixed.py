@@ -14,6 +14,7 @@ import argparse
 import sys
 import io
 import contextlib
+from urllib.parse import urlparse
 
 # Désactiver les avertissements SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -235,10 +236,30 @@ def _extract_nostalgie_onair_for_stream(data: object, stream_url: str) -> Option
     if not isinstance(data, list) or not stream_url:
         return None
 
+    def _canon(u: str) -> str:
+        if not isinstance(u, str) or not u:
+            return ""
+        try:
+            uu = u.strip()
+            if "://" not in uu:
+                uu = "http://" + uu
+            p = urlparse(uu)
+            host = (p.netloc or "").lower()
+            path = p.path or ""
+            return host + path
+        except Exception:
+            return u.strip()
+
+    stream_canon = _canon(stream_url)
+
     def _station_matches(station: dict) -> bool:
         for k in ("url_64k_aac", "url_128k_mp3", "url_hd_aac"):
             v = station.get(k)
-            if isinstance(v, str) and v and v == stream_url:
+            if not isinstance(v, str) or not v:
+                continue
+            if v == stream_url:
+                return True
+            if stream_canon and _canon(v) == stream_canon:
                 return True
         return False
 
