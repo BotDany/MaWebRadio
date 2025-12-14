@@ -1092,58 +1092,65 @@ class RadioFetcher:
 
         # POUR 100% RADIO : essayer les vraies métadonnées en priorité
         if "100%" in station_name:
-            print(f"DEBUG: Processing 100% Radio: {station_name}")
-            
-            # Essayer Infomaniak avec debugging détaillé
-            if "infomaniak.ch" in url:
-                print(f"DEBUG: Trying Infomaniak stream for 100% Radio")
-                metadata = self._get_infomaniak_metadata(url, station_name)
+            try:
+                print(f"DEBUG: Processing 100% Radio: {station_name}")
+                
+                # Essayer Infomaniak avec debugging détaillé
+                if "infomaniak.ch" in url:
+                    print(f"DEBUG: Trying Infomaniak stream for 100% Radio")
+                    metadata = self._get_infomaniak_metadata(url, station_name)
+                    if metadata and metadata.title != "En direct":
+                        print(f"DEBUG: Infomaniak returned real metadata: {metadata.title} - {metadata.artist}")
+                        self.cache[cache_key] = (metadata, time.time())
+                        return metadata
+                    else:
+                        print(f"DEBUG: Infomaniak returned 'En direct', trying real APIs")
+                        # Essayer les vrais endpoints avec IDs spécifiques en premier
+                        real_api_result = _fetch_100radio_real_api(self.session, station_name)
+                        if real_api_result:
+                            print(f"DEBUG: Real API returned: {real_api_result.title} - {real_api_result.artist}")
+                            self.cache[cache_key] = (real_api_result, time.time())
+                            return real_api_result
+                        
+                        # Essayer API Geolocation qui fonctionne
+                        geo_test = _fetch_100radio_api_geolocation(self.session, station_name)
+                        
+                        # Essayer GraphQL API
+                        graphql_result = _fetch_100radio_graphql_metadata(self.session, station_name)
+                        if graphql_result:
+                            print(f"DEBUG: GraphQL returned: {graphql_result.title} - {graphql_result.artist}")
+                            self.cache[cache_key] = (graphql_result, time.time())
+                            return graphql_result
+                        
+                        print(f"DEBUG: Using web scraper for 100% Radio")
+                        # Essayer scraper web directement
+                        fallback = _fetch_100radio_metadata(self.session, station_name)
+                        if fallback:
+                            print(f"DEBUG: Web scraper returned: {fallback.title} - {fallback.artist}")
+                            self.cache[cache_key] = (fallback, time.time())
+                            return fallback
+                        else:
+                            # DERNIER RECOURS: cache local
+                            print(f"DEBUG: Using local cache for 100% Radio: {station_name}")
+                            metadata = _fetch_100radio_local_cache(station_name)
+                            self.cache[cache_key] = (metadata, time.time())
+                            return metadata
+                
+                # Essayer les autres URLs
+                metadata = self._get_icy_metadata(url, station_name)
                 if metadata and metadata.title != "En direct":
-                    print(f"DEBUG: Infomaniak returned real metadata: {metadata.title} - {metadata.artist}")
+                    print(f"DEBUG: ICY metadata found: {metadata.title} - {metadata.artist}")
                     self.cache[cache_key] = (metadata, time.time())
                     return metadata
                 else:
-                    print(f"DEBUG: Infomaniak returned 'En direct', trying real APIs")
-                    # Essayer les vrais endpoints avec IDs spécifiques en premier
-                    real_api_result = _fetch_100radio_real_api(self.session, station_name)
-                    if real_api_result:
-                        print(f"DEBUG: Real API returned: {real_api_result.title} - {real_api_result.artist}")
-                        self.cache[cache_key] = (real_api_result, time.time())
-                        return real_api_result
-                    
-                    # Essayer API Geolocation qui fonctionne
-                    geo_test = _fetch_100radio_api_geolocation(self.session, station_name)
-                    
-                    # Essayer GraphQL API
-                    graphql_result = _fetch_100radio_graphql_metadata(self.session, station_name)
-                    if graphql_result:
-                        print(f"DEBUG: GraphQL returned: {graphql_result.title} - {graphql_result.artist}")
-                        self.cache[cache_key] = (graphql_result, time.time())
-                        return graphql_result
-                    
-                    print(f"DEBUG: Using web scraper for 100% Radio")
-                    # Essayer scraper web directement
-                    fallback = _fetch_100radio_metadata(self.session, station_name)
-                    if fallback:
-                        print(f"DEBUG: Web scraper returned: {fallback.title} - {fallback.artist}")
-                        self.cache[cache_key] = (fallback, time.time())
-                        return fallback
-                    else:
-                        # DERNIER RECOURS: cache local
-                        print(f"DEBUG: Using local cache for 100% Radio: {station_name}")
-                        metadata = _fetch_100radio_local_cache(station_name)
-                        self.cache[cache_key] = (metadata, time.time())
-                        return metadata
-            
-            # Essayer les autres URLs
-            metadata = self._get_icy_metadata(url, station_name)
-            if metadata and metadata.title != "En direct":
-                print(f"DEBUG: ICY metadata found: {metadata.title} - {metadata.artist}")
-                self.cache[cache_key] = (metadata, time.time())
-                return metadata
-            else:
-                print(f"DEBUG: All APIs failed for 100% Radio, using local cache directly")
-                # DERNIER RECOURS: cache local directement sans essayer les webradios
+                    print(f"DEBUG: All APIs failed for 100% Radio, using local cache directly")
+                    # DERNIER RECOURS: cache local directement sans essayer les webradios
+                    metadata = _fetch_100radio_local_cache(station_name)
+                    self.cache[cache_key] = (metadata, time.time())
+                    return metadata
+            except Exception as e:
+                print(f"DEBUG: Exception in 100% Radio processing: {e}")
+                # Fallback ultime en cas d'erreur
                 metadata = _fetch_100radio_local_cache(station_name)
                 self.cache[cache_key] = (metadata, time.time())
                 return metadata
