@@ -604,7 +604,7 @@ class RadioFetcher:
             cover_url = ""
 
             if 'icy-name' in response.headers:
-                station = station_name
+                station = icy_name if icy_name else station_name
                 title = _normalize_text(response.headers.get('icy-name', 'En direct'))
                 artist = _normalize_text(response.headers.get('icy-description', station_name))
                 cover_url = _normalize_text(response.headers.get('icy-url', ''))
@@ -767,7 +767,7 @@ class RadioFetcher:
                 
             if 'icy-metaint' not in response.headers:
                 if "nostalgie" in station_name.lower():
-                    fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                    fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                     if fallback:
                         return fallback
                 return RadioMetadata(
@@ -787,7 +787,7 @@ class RadioFetcher:
             if not meta_length_byte:
                 response.close()
                 if "nostalgie" in station_name.lower():
-                    fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                    fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                     if fallback:
                         return fallback
                 return RadioMetadata(
@@ -810,7 +810,7 @@ class RadioFetcher:
                     
                     if not stream_title:
                         if "nostalgie" in station_name.lower():
-                            fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                            fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                             if fallback:
                                 return fallback
                         return RadioMetadata(
@@ -824,7 +824,7 @@ class RadioFetcher:
                         st_norm = _normalize_text(stream_title)
                         st_l = st_norm.lower()
                         if st_l.startswith("nostalgie") or st_l == station_name.lower() or st_norm == station_name:
-                            fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                            fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                             if fallback:
                                 return fallback
                     
@@ -851,11 +851,11 @@ class RadioFetcher:
                                 or t_l.startswith("nostalgie")
                                 or a_norm.lower() == station_name.lower()
                             ):
-                                fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                                fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                                 if fallback:
                                     return fallback
 
-                            fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                            fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                             if fallback and fallback.cover_url:
                                 return RadioMetadata(
                                     station=station_name,
@@ -879,11 +879,11 @@ class RadioFetcher:
                                 or t_l == station_name.lower()
                                 or t_l.startswith("nostalgie")
                             ):
-                                fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                                fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                                 if fallback:
                                     return fallback
 
-                            fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                            fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                             if fallback and fallback.cover_url:
                                 return RadioMetadata(
                                     station=station_name,
@@ -910,14 +910,11 @@ class RadioFetcher:
                     title = "En direct"
                     artist = station_name
                     cover_url = ""
-                    try:
-                        r = self.session.get("https://www.nostalgie.fr/onair.json", timeout=10)
-                        if r.status_code == 200:
-                            parsed = _extract_nostalgie_onair_for_stream(r.json(), url)
-                            if parsed:
-                                title, artist, cover_url = parsed
-                    except Exception:
-                        pass
+                    fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
+                    if fallback:
+                        title = fallback.title
+                        artist = fallback.artist
+                        cover_url = fallback.cover_url
 
                     return RadioMetadata(
                         station=station_name,
@@ -928,7 +925,7 @@ class RadioFetcher:
             else:
                 response.close()
                 if "nostalgie" in station_name.lower():
-                    fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                    fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                     if fallback:
                         return fallback
                 return RadioMetadata(
