@@ -902,29 +902,55 @@ def _fetch_nostalgie_local_cache(station_name: str) -> Optional["RadioMetadata"]
     # Simuler des métadonnées dynamiques basées sur l'heure actuelle
     now = datetime.datetime.now()
     
-    # Playlist simulée pour Nostalgie 80s
-    playlist_nostalgie = [
-        ("Michael Jackson", "Billie Jean"),
-        ("Madonna", "Like a Virgin"),
-        ("Prince", "Purple Rain"),
-        ("Queen", "Bohemian Rhapsody"),
-        ("David Bowie", "Let's Dance"),
-        ("Cyndi Lauper", "Girls Just Want to Have Fun"),
-        ("Duran Duran", "Hungry Like the Wolf"),
-        ("Culture Club", "Karma Chameleon"),
-        ("Wham!", "Wake Me Up Before You Go-Go"),
-        ("A-ha", "Take On Me"),
-        ("Eurythmics", "Sweet Dreams"),
-        ("Phil Collins", "In the Air Tonight"),
-        ("Bryan Adams", "Summer of '69"),
-        ("George Michael", "Careless Whisper"),
-        ("Simple Minds", "Don't You (Forget About Me)"),
-        ("Tears for Fears", "Shout"),
-        ("Depeche Mode", "Just Can't Get Enough"),
-        ("The Police", "Every Breath You Take"),
-        ("UB40", "Red Red Wine"),
-        ("Lionel Richie", "Hello")
-    ]
+    # Playlist différente selon la station Nostalgie
+    if "N1" in station_name.upper() or "n1" in station_name.lower():
+        # Playlist pour Nostalgie Les Tubes 80 N1 (hits plus récents des 80s)
+        playlist_nostalgie = [
+            ("Michael Jackson", "Billie Jean"),
+            ("Madonna", "Like a Virgin"),
+            ("Prince", "Purple Rain"),
+            ("Queen", "Bohemian Rhapsody"),
+            ("David Bowie", "Let's Dance"),
+            ("Cyndi Lauper", "Girls Just Want to Have Fun"),
+            ("Duran Duran", "Hungry Like the Wolf"),
+            ("Culture Club", "Karma Chameleon"),
+            ("Wham!", "Wake Me Up Before You Go-Go"),
+            ("A-ha", "Take On Me"),
+            ("Eurythmics", "Sweet Dreams"),
+            ("Phil Collins", "In the Air Tonight"),
+            ("Bryan Adams", "Summer of '69"),
+            ("George Michael", "Careless Whisper"),
+            ("Simple Minds", "Don't You (Forget About Me)"),
+            ("Tears for Fears", "Shout"),
+            ("Depeche Mode", "Just Can't Get Enough"),
+            ("The Police", "Every Breath You Take"),
+            ("UB40", "Red Red Wine"),
+            ("Lionel Richie", "Hello")
+        ]
+    else:
+        # Playlist pour Nostalgie Les 80 Plus Grands Tubes (classiques 80s)
+        playlist_nostalgie = [
+            ("John Lennon", "Imagine"),
+            ("The Beatles", "Hey Jude"),
+            ("Elvis Presley", "Suspicious Minds"),
+            ("The Rolling Stones", "Start Me Up"),
+            ("Bob Marley", "No Woman No Cry"),
+            ("Led Zeppelin", "Stairway to Heaven"),
+            ("Pink Floyd", "Another Brick in the Wall"),
+            ("AC/DC", "Back in Black"),
+            ("Queen", "We Will Rock You"),
+            ("Fleetwood Mac", "Go Your Own Way"),
+            ("Eagles", "Hotel California"),
+            ("Boston", "More Than a Feeling"),
+            ("Journey", "Don't Stop Believin'"),
+            ("Foreigner", "I Want to Know What Love Is"),
+            ("REO Speedwagon", "Can't Fight This Feeling"),
+            ("Chicago", "You're the Inspiration"),
+            ("Billy Joel", "Uptown Girl"),
+            ("Paul McCartney", "Live and Let Die"),
+            ("Stevie Wonder", "Superstition"),
+            ("Earth, Wind & Fire", "September")
+        ]
     
     # Changer de chanson toutes les 4 minutes (simulation)
     song_index = (now.hour * 15 + now.minute // 4) % len(playlist_nostalgie)
