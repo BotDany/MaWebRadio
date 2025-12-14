@@ -520,17 +520,21 @@ class RadioFetcher:
     def _get_streamradio_metadata(self, url: str, station_name: str) -> RadioMetadata:
         """Récupère les métadonnées pour les flux StreamRadio (Flash 80)"""
         try:
-            # Récupération des métadonnées
             response = self.session.get(url, stream=True, timeout=self.default_timeout)
-            
-            # Vérification des en-têtes ICY
+
+            # Valeurs par défaut
+            station = station_name
+            title = "En direct"
+            artist = station_name
+            cover_url = ""
+
             if 'icy-name' in response.headers:
                 station = station_name
                 title = _normalize_text(response.headers.get('icy-name', 'En direct'))
                 artist = _normalize_text(response.headers.get('icy-description', station_name))
                 cover_url = _normalize_text(response.headers.get('icy-url', ''))
 
-                # Si possible, lire le StreamTitle ICY (souvent plus précis)
+                # Lire StreamTitle si disponible
                 if 'icy-metaint' in response.headers:
                     try:
                         meta_interval = int(response.headers['icy-metaint'])
@@ -562,33 +566,34 @@ class RadioFetcher:
                             else:
                                 title = stream_title
 
-                            if title and title != "En direct":
+                            # Stop dès qu'on a autre chose que le générique
+                            title_norm = _normalize_text(title)
+                            if title_norm and title_norm.lower() not in ("en direct", station_name.lower()):
                                 break
                     except Exception:
                         pass
 
-                if (title == "En direct" or not title) and (
+                # Fallback Flash 80 via StreamApps si titre générique
+                title_norm = _normalize_text(title)
+                if (
                     station_name.lower() == "flash 80 radio" or "manager7.streamradio.fr" in url
+                ) and (
+                    not title_norm
+                    or title_norm.lower() == "en direct"
+                    or title_norm.lower() == station_name.lower()
                 ):
                     parsed = _fetch_flash80_streamapps_metadata(self.session)
                     if parsed:
                         title, artist, cover_url = parsed
 
-                response.close()
-                return RadioMetadata(
-                    station=_normalize_text(station),
-                    title=_normalize_text(title),
-                    artist=_normalize_text(artist),
-                    cover_url=cover_url
-                )
-                
             response.close()
             return RadioMetadata(
-                station=station_name,
-                title="En direct",
-                artist=station_name
+                station=_normalize_text(station),
+                title=_normalize_text(title),
+                artist=_normalize_text(artist),
+                cover_url=_normalize_text(cover_url) if isinstance(cover_url, str) else "",
             )
-            
+
         except Exception as e:
             print(f"Erreur StreamRadio pour {station_name}: {str(e)[:100]}...")
             return RadioMetadata(
