@@ -560,6 +560,23 @@ def _fetch_100radio_graphql_metadata(session: requests.Session, station_name: st
         print(f"DEBUG: Error fetching 100% Radio GraphQL: {e}")
         return None
 
+def _fetch_100radio_api_geolocation(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
+    """Test API Geolocation de centpourcent.com qui fonctionne"""
+    try:
+        api_url = "https://www.centpourcent.com/api/Geolocation"
+        r = session.get(api_url, timeout=8)
+        if r.status_code == 200 and r.text:
+            print(f"DEBUG: 100% Radio Geolocation API response: {r.text}")
+            data = r.json()
+            if data and "body" in data:
+                location = data["body"]
+                print(f"DEBUG: Location data: {location}")
+                # Pas de métadonnées musicales ici, juste pour tester que l'API fonctionne
+        return None
+    except Exception as e:
+        print(f"DEBUG: Error with 100% Radio Geolocation API: {e}")
+        return None
+
 def _fetch_100radio_api_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
     """Fallback pour 100% Radio en utilisant l'API officielle centpourcent.com"""
     try:
@@ -907,7 +924,11 @@ class RadioFetcher:
                     self.cache[cache_key] = (metadata, time.time())
                     return metadata
                 else:
-                    print(f"DEBUG: Infomaniak returned 'En direct', using web scraper")
+                    print(f"DEBUG: Infomaniak returned 'En direct', trying API Geolocation")
+                    # Essayer API Geolocation qui fonctionne
+                    geo_test = _fetch_100radio_api_geolocation(self.session, station_name)
+                    
+                    print(f"DEBUG: Using web scraper for 100% Radio")
                     # Essayer scraper web directement (éviter les APIs qui causent des 500)
                     fallback = _fetch_100radio_metadata(self.session, station_name)
                     if fallback:
