@@ -940,13 +940,16 @@ class RadioFetcher:
             )
 
     def _get_nrj_metadata(self, url: str, station_name: str) -> RadioMetadata:
-        """Récupère les métadonnées pour les flux NRJ avec extraction directe"""
+        """Récupère les métadonnées pour les flux NRJ Audio (Nostalgie, Chérie, etc.)"""
         try:
             # Fallback Nostalgie via NRJ Audio wr_api (prioritaire)
             if "nostalgie" in station_name.lower():
                 fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                 if fallback:
                     return fallback
+                
+                # Si tous les fallbacks échouent, forcer ICY metadata
+                return self._get_icy_metadata(url, station_name)
             
             response = self.session.get(url, stream=True, timeout=10)
             
