@@ -365,6 +365,69 @@ def _fetch_nrjaudio_wr_api_metadata(session: requests.Session, radio_id: str, st
     except Exception:
         return None
 
+def _fetch_nostalgie_website_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
+    try:
+        r = session.get(
+            "https://www.nostalgie.fr/",
+            timeout=8,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "fr,en-US;q=0.7,en;q=0.3",
+            },
+        )
+        if r.status_code != 200:
+            return None
+
+        content = r.text
+        import re
+        
+        # Search for JSON data containing song info
+        json_matches = re.findall(r'{.*?"title".*?"artist".*?}', content)
+        
+        for match in json_matches:
+            try:
+                data = json.loads(match)
+                title = _normalize_text(str(data.get("title", "")))
+                artist = _normalize_text(str(data.get("artist", "")))
+                
+                if title and artist and len(title) > 2 and len(artist) > 2:
+                    # Filter out generic titles
+                    if title.lower() not in ["en direct", "nostalgie", station_name.lower()]:
+                        return RadioMetadata(
+                            station=station_name,
+                            title=title,
+                            artist=artist,
+                            cover_url=""
+                        )
+            except Exception:
+                continue
+        
+        # Try alternative pattern: look for "currentSong" or similar
+        song_patterns = [
+            r'"currentSong":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+            r'"song":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+            r'"track":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+        ]
+        
+        for pattern in song_patterns:
+            matches = re.findall(pattern, content)
+            for title, artist in matches:
+                title = _normalize_text(title)
+                artist = _normalize_text(artist)
+                if title and artist and len(title) > 2 and len(artist) > 2:
+                    if title.lower() not in ["en direct", "nostalgie", station_name.lower()]:
+                        return RadioMetadata(
+                            station=station_name,
+                            title=title,
+                            artist=artist,
+                            cover_url=""
+                        )
+        
+        return None
+    except Exception:
+        return None
+
 def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, station_name: str) -> Optional["RadioMetadata"]:
     def _canon(u: str) -> str:
         if not isinstance(u, str) or not u:
@@ -392,6 +455,11 @@ def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, statio
         md = _fetch_nrjaudio_wr_api_metadata(session, radio_id, station_name)
         if md:
             return md
+
+    # Fallback: scraper le site Nostalgie si API bloquée
+    fallback = _fetch_nostalgie_website_metadata(session, station_name)
+    if fallback:
+        return fallback
 
     return _fetch_nostalgie_onair_metadata(session, stream_url, station_name)
 
