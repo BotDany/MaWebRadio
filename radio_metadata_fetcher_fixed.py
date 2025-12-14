@@ -1142,15 +1142,9 @@ class RadioFetcher:
                 self.cache[cache_key] = (metadata, time.time())
                 return metadata
             else:
-                print(f"DEBUG: All methods failed for 100% Radio, using web scraper")
-                # DERNIER RECOURS: scraper web
-                fallback = _fetch_100radio_metadata(self.session, station_name)
-                if fallback:
-                    metadata = fallback
-                else:
-                    # VRAIMENT DERNIER RECOURS: cache local
-                    print(f"DEBUG: Using local cache for 100% Radio: {station_name}")
-                    metadata = _fetch_100radio_local_cache(station_name)
+                print(f"DEBUG: All APIs failed for 100% Radio, using local cache directly")
+                # DERNIER RECOURS: cache local directement sans essayer les webradios
+                metadata = _fetch_100radio_local_cache(station_name)
                 self.cache[cache_key] = (metadata, time.time())
                 return metadata
 
