@@ -458,33 +458,6 @@ def _fetch_nostalgie_website_metadata(session: requests.Session, station_name: s
         return None
     except Exception:
         return None
-
-def _fetch_nostalgie_proxy_fallback(session: requests.Session, radio_id: str, station_name: str) -> Optional["RadioMetadata"]:
-    try:
-        # Use CORS proxy to bypass Cloudflare
-        proxy_url = f"https://cors-anywhere.herokuapp.com/http://players.nrjaudio.fm/wr_api/live/de/?q=getMetaData&id={radio_id}"
-        r = session.get(
-            proxy_url,
-            timeout=8,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/xml, text/xml, */*",
-                "X-Requested-With": "XMLHttpRequest",
-            },
-        )
-        if r.status_code != 200 or not r.content:
-            return None
-
-        root = ET.fromstring(r.content)
-        item = root.find(".//Item")
-        if item is None:
-            return None
-
-def _fetch_100radio_graphql_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
-    """Fallback pour 100% Radio en utilisant le endpoint GraphQL"""
-    try:
-        # Essayer d'abord la query simple qui fonctionne
-        simple_query = '{"query":"query { Radio { id name } }"}'
         
         headers = {
             "Content-Type": "application/json",
