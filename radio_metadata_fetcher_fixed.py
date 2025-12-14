@@ -1019,7 +1019,13 @@ class RadioFetcher:
                     if "nostalgie" in station_name.lower():
                         st_norm = _normalize_text(stream_title)
                         st_l = st_norm.lower()
-                        if st_l.startswith("nostalgie") or st_l == station_name.lower() or st_norm == station_name:
+                        # Vérifier si c'est des chiffres (IDs NRJ) au lieu de texte
+                        if st_l.isdigit() or (st_l.replace(" ", "").replace("-", "").isdigit()):
+                            # Ce sont des IDs, utiliser fallback API
+                            fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
+                            if fallback:
+                                return fallback
+                        elif st_l.startswith("nostalgie") or st_l == station_name.lower() or st_norm == station_name:
                             fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                             if fallback:
                                 return fallback
