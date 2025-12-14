@@ -910,29 +910,19 @@ class RadioFetcher:
                     self.cache[cache_key] = (metadata, time.time())
                     return metadata
                 else:
-                    print(f"DEBUG: Infomaniak returned 'En direct', trying GraphQL API")
-                    # Essayer GraphQL en priorité
-                    graphql_fallback = _fetch_100radio_graphql_metadata(self.session, station_name)
-                    if graphql_fallback:
-                        print(f"DEBUG: GraphQL API returned: {graphql_fallback.title} - {graphql_fallback.artist}")
-                        self.cache[cache_key] = (graphql_fallback, time.time())
-                        return graphql_fallback
+                    print(f"DEBUG: Infomaniak returned 'En direct', using web scraper")
+                    # Essayer scraper web directement (éviter les APIs qui causent des 500)
+                    fallback = _fetch_100radio_metadata(self.session, station_name)
+                    if fallback:
+                        print(f"DEBUG: Web scraper returned: {fallback.title} - {fallback.artist}")
+                        self.cache[cache_key] = (fallback, time.time())
+                        return fallback
                     else:
-                        print(f"DEBUG: GraphQL API failed, trying REST API")
-                        # Essayer API REST officielle
-                        api_fallback = _fetch_100radio_api_metadata(self.session, station_name)
-                        if api_fallback:
-                            print(f"DEBUG: REST API returned: {api_fallback.title} - {api_fallback.artist}")
-                            self.cache[cache_key] = (api_fallback, time.time())
-                            return api_fallback
-                        else:
-                            print(f"DEBUG: REST API failed, trying web scraper")
-                            # Essayer scraper web
-                            fallback = _fetch_100radio_metadata(self.session, station_name)
-                            if fallback:
-                                print(f"DEBUG: Web scraper returned: {fallback.title} - {fallback.artist}")
-                                self.cache[cache_key] = (fallback, time.time())
-                                return fallback
+                        # DERNIER RECOURS: cache local
+                        print(f"DEBUG: Using local cache for 100% Radio: {station_name}")
+                        metadata = _fetch_100radio_local_cache(station_name)
+                        self.cache[cache_key] = (metadata, time.time())
+                        return metadata
             
             # Essayer les autres URLs
             metadata = self._get_icy_metadata(url, station_name)
