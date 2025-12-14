@@ -1046,7 +1046,14 @@ class RadioFetcher:
                             t_norm = _normalize_text(title.strip())
                             a_norm = _normalize_text(artist.strip())
                             t_l = t_norm.lower()
-                            if (
+                            a_l = a_norm.lower()
+                            # Vérifier si title ou artist sont des chiffres (IDs NRJ)
+                            if t_l.isdigit() or a_l.isdigit() or (t_l.replace(" ", "").replace("-", "").isdigit()) or (a_l.replace(" ", "").replace("-", "").isdigit()):
+                                # Ce sont des IDs, utiliser fallback API
+                                fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
+                                if fallback:
+                                    return fallback
+                            elif (
                                 (not t_norm)
                                 or t_l == "en direct"
                                 or t_l == station_name.lower()
@@ -1075,7 +1082,13 @@ class RadioFetcher:
                         if "nostalgie" in station_name.lower():
                             t_norm = _normalize_text(stream_title.strip())
                             t_l = t_norm.lower()
-                            if (
+                            # Vérifier si c'est des chiffres (IDs NRJ) au lieu de texte
+                            if t_l.isdigit() or (t_l.replace(" ", "").replace("-", "").isdigit()):
+                                # Ce sont des IDs, utiliser fallback API
+                                fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
+                                if fallback:
+                                    return fallback
+                            elif (
                                 (not t_norm)
                                 or t_l == "en direct"
                                 or t_l == station_name.lower()
