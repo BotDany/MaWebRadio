@@ -600,6 +600,69 @@ def _fetch_100radio_api_metadata(session: requests.Session, station_name: str) -
         print(f"DEBUG: Error in 100% Radio scraper: {e}")
         return None
 
+def _fetch_100radio_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
+    """Fallback pour 100% Radio en essayant les webradios avec métadonnées ICY"""
+    try:
+        # Essayer d'abord les webradios 100% qui pourraient avoir des métadonnées ICY
+        webradio_urls = [
+            "https://stream.centpourcent.com/10080-128.mp3",  # 100% Radio 80's
+            "https://stream.centpourcent.com/10090-128.mp3",  # 100% Radio 90's  
+            "https://stream.centpourcent.com/100hit-128.mp3", # 100% Radio Hit
+            "https://listen.centpourcent.com/100-80.aac",     # Alternative 80's
+        ]
+        
+        for webradio_url in webradio_urls:
+            try:
+                print(f"DEBUG: Trying 100% webradio: {webradio_url}")
+                response = session.get(webradio_url, stream=True, timeout=5)
+                
+                if response.status_code == 200 and 'icy-metaint' in response.headers:
+                    print(f"DEBUG: Found ICY metadata in {webradio_url}")
+                    meta_interval = int(response.headers['icy-metaint'])
+                    
+                    # Lire les métadonnées ICY
+                    audio_data = response.raw.read(meta_interval)
+                    meta_length_byte = response.raw.read(1)
+                    
+                    if meta_length_byte:
+                        meta_length = ord(meta_length_byte) * 16
+                        if meta_length > 0:
+                            metadata = response.raw.read(meta_length).rstrip(b'\x00').decode('utf-8', errors='ignore')
+                            response.close()
+                            
+                            if 'StreamTitle=' in metadata:
+                                stream_title = metadata.split('StreamTitle=')[1].split(';')[0].strip("'\"")
+                                
+                                if stream_title and len(stream_title) > 3:
+                                    if ' - ' in stream_title:
+                                        artist, title = stream_title.split(' - ', 1)
+                                        return RadioMetadata(
+                                            station=station_name,
+                                            title=title.strip(),
+                                            artist=artist.strip(),
+                                            cover_url=""
+                                        )
+                                    else:
+                                        return RadioMetadata(
+                                            station=station_name,
+                                            title=stream_title.strip(),
+                                            artist=station_name,
+                                            cover_url=""
+                                        )
+                    response.close()
+                    
+            except Exception as e:
+                print(f"DEBUG: Error with {webradio_url}: {e}")
+                continue
+        
+        # Si aucune webradio ne fonctionne, retourner None pour utiliser le cache local
+        print(f"DEBUG: No working 100% webradio found, using local cache")
+        return None
+        
+    except Exception as e:
+        print(f"DEBUG: Error in 100% Radio scraper: {e}")
+        return None
+
 def _fetch_100radio_local_cache(station_name: str) -> Optional["RadioMetadata"]:
     """Fallback local cache pour 100% Radio quand tous les APIs sont bloqués"""
     import datetime
