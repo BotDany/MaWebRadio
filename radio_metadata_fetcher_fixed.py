@@ -324,6 +324,76 @@ def _fetch_nostalgie_onair_metadata(session: requests.Session, stream_url: str, 
     except Exception:
         return None
 
+def _fetch_nrjaudio_wr_api_metadata(session: requests.Session, radio_id: str, station_name: str) -> Optional["RadioMetadata"]:
+    try:
+        r = session.get(
+            f"http://players.nrjaudio.fm/wr_api/live/de/?q=getMetaData&id={radio_id}",
+            timeout=8,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/xml, text/xml, */*",
+                "Referer": "https://players.nrjaudio.fm/",
+            },
+        )
+        if r.status_code != 200 or not r.content:
+            return None
+
+        root = ET.fromstring(r.content)
+        item = root.find(".//Item")
+        if item is None:
+            return None
+
+        artist_el = item.find("artist")
+        song_el = item.find("song")
+        artist = _normalize_text(artist_el.text) if (artist_el is not None and artist_el.text) else ""
+        title = _normalize_text(song_el.text) if (song_el is not None and song_el.text) else ""
+
+        cover_url = ""
+        img = item.find(".//image_600")
+        if img is not None and img.text:
+            cover_url = _normalize_text(img.text)
+
+        if not title or not artist:
+            return None
+
+        return RadioMetadata(
+            station=station_name,
+            title=title,
+            artist=artist,
+            cover_url=cover_url,
+        )
+    except Exception:
+        return None
+
+def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, station_name: str) -> Optional["RadioMetadata"]:
+    def _canon(u: str) -> str:
+        if not isinstance(u, str) or not u:
+            return ""
+        try:
+            uu = u.strip()
+            if "://" not in uu:
+                uu = "http://" + uu
+            p = urlparse(uu)
+            host = (p.netloc or "").lower()
+            path = p.path or ""
+            return host + path
+        except Exception:
+            return u.strip()
+
+    stream_canon = _canon(stream_url)
+    mapping = {
+        "streaming.nrjaudio.fm/ouwg8usk6j4d": "1640",
+        "streaming.nrjaudio.fm/oug7oerb92oc": "1640",
+    }
+
+    radio_id = mapping.get(stream_canon)
+    if radio_id:
+        md = _fetch_nrjaudio_wr_api_metadata(session, radio_id, station_name)
+        if md:
+            return md
+
+    return _fetch_nostalgie_onair_metadata(session, stream_url, station_name)
+
 def _fetch_flash80_streamapps_metadata(session: requests.Session) -> Optional[Tuple[str, str, str]]:
     try:
         r = session.get(
@@ -604,7 +674,7 @@ class RadioFetcher:
             cover_url = ""
 
             if 'icy-name' in response.headers:
-                station = icy_name if icy_name else station_name
+                station = station_name
                 title = _normalize_text(response.headers.get('icy-name', 'En direct'))
                 artist = _normalize_text(response.headers.get('icy-description', station_name))
                 cover_url = _normalize_text(response.headers.get('icy-url', ''))
