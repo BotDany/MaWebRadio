@@ -521,7 +521,7 @@ class RadioFetcher:
         """Récupère les métadonnées pour les flux StreamRadio (Flash 80)"""
         try:
             response = self.session.get(url, stream=True, timeout=self.default_timeout)
-
+            
             # Valeurs par défaut
             station = station_name
             title = "En direct"
@@ -573,18 +573,17 @@ class RadioFetcher:
                     except Exception:
                         pass
 
-                # Fallback Flash 80 via StreamApps si titre générique
-                title_norm = _normalize_text(title)
-                if (
-                    station_name.lower() == "flash 80 radio" or "manager7.streamradio.fr" in url
-                ) and (
-                    not title_norm
-                    or title_norm.lower() == "en direct"
-                    or title_norm.lower() == station_name.lower()
-                ):
-                    parsed = _fetch_flash80_streamapps_metadata(self.session)
-                    if parsed:
-                        title, artist, cover_url = parsed
+            title_norm = _normalize_text(title)
+            if (
+                station_name.lower() == "flash 80 radio" or "manager7.streamradio.fr" in url
+            ) and (
+                not title_norm
+                or title_norm.lower() == "en direct"
+                or title_norm.lower() == station_name.lower()
+            ):
+                parsed = _fetch_flash80_streamapps_metadata(self.session)
+                if parsed:
+                    title, artist, cover_url = parsed
 
             response.close()
             return RadioMetadata(
