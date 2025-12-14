@@ -428,6 +428,49 @@ def _fetch_nostalgie_website_metadata(session: requests.Session, station_name: s
     except Exception:
         return None
 
+def _fetch_nostalgie_proxy_fallback(session: requests.Session, radio_id: str, station_name: str) -> Optional["RadioMetadata"]:
+    try:
+        # Use CORS proxy to bypass Cloudflare
+        proxy_url = f"https://cors-anywhere.herokuapp.com/http://players.nrjaudio.fm/wr_api/live/de/?q=getMetaData&id={radio_id}"
+        r = session.get(
+            proxy_url,
+            timeout=8,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/xml, text/xml, */*",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        )
+        if r.status_code != 200 or not r.content:
+            return None
+
+        root = ET.fromstring(r.content)
+        item = root.find(".//Item")
+        if item is None:
+            return None
+
+        artist_el = item.find("artist")
+        song_el = item.find("song")
+        artist = _normalize_text(artist_el.text) if (artist_el is not None and artist_el.text) else ""
+        title = _normalize_text(song_el.text) if (song_el is not None and song_el.text) else ""
+
+        cover_url = ""
+        img = item.find(".//image_600")
+        if img is not None and img.text:
+            cover_url = _normalize_text(img.text)
+
+        if not title or not artist:
+            return None
+
+        return RadioMetadata(
+            station=station_name,
+            title=title,
+            artist=artist,
+            cover_url=cover_url,
+        )
+    except Exception:
+        return None
+
 def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, station_name: str) -> Optional["RadioMetadata"]:
     def _canon(u: str) -> str:
         if not isinstance(u, str) or not u:
@@ -455,6 +498,11 @@ def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, statio
         md = _fetch_nrjaudio_wr_api_metadata(session, radio_id, station_name)
         if md:
             return md
+
+        # Fallback: try proxy if direct API is blocked
+        proxy_md = _fetch_nostalgie_proxy_fallback(session, radio_id, station_name)
+        if proxy_md:
+            return proxy_md
 
     # Fallback: scraper le site Nostalgie si API bloquée
     fallback = _fetch_nostalgie_website_metadata(session, station_name)
