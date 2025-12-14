@@ -871,25 +871,11 @@ def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, statio
 
     radio_id = mapping.get(stream_canon)
     if radio_id:
-        # Forcer l'utilisation du cache local pour garantir des programmations différentes
-        print(f"DEBUG: Using local cache for Nostalgie to ensure different playlists: {station_name}")
-        return _fetch_nostalgie_local_cache(station_name)
-
+        # Essayer l'API NRJ en premier pour les vraies métadonnées
         md = _fetch_nrjaudio_wr_api_metadata(session, radio_id, station_name)
         if md:
-            # Vérifier si les métadonnées sont différentes entre les deux stations
-            if radio_id == "1283" and "N1" in station_name.upper():
-                # Pour N1, vérifier si c'est bien une chanson des années 80
-                print(f"DEBUG: Nostalgie N1 API returned: {md.title} - {md.artist}")
-                return md
-            elif radio_id == "1640" and "Plus" in station_name:
-                # Pour Plus Grands Tubes, vérifier si c'est bien une chanson différente
-                print(f"DEBUG: Nostalgie Plus Grands Tubes API returned: {md.title} - {md.artist}")
-                return md
-            else:
-                # Si l'API retourne les mêmes métadonnées, utiliser le cache local différent
-                print(f"DEBUG: API returned same metadata for both stations, using local cache")
-                return _fetch_nostalgie_local_cache(station_name)
+            print(f"DEBUG: Nostalgie API returned: {md.title} - {md.artist}")
+            return md
 
         # Fallback: try proxy if direct API is blocked
         proxy_md = _fetch_nostalgie_proxy_fallback(session, radio_id, station_name)
