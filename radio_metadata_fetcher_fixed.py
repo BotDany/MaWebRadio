@@ -591,7 +591,7 @@ def _fetch_100radio_local_cache(station_name: str) -> Optional["RadioMetadata"]:
         ("Christophe Maé", "On s'attache"),
         ("Mylène Farmer", "Désenchantée"),
         ("Francis Cabrel", "Je l'aime à mourir"),
-        ("Johnny Hallyday", "Allumer le feu")
+        ("Johnny Hallyday", "Allumer le feu"),
         ("George Michael", "Careless Whisper"),
         ("Cyndi Lauper", "Time After Time"),
         ("Bryan Adams", "Summer of '69"),
