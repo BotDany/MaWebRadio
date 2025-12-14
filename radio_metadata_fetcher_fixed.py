@@ -633,6 +633,24 @@ class RadioFetcher:
                         cached_data.cover_url = "https://megahits.fm/"
                 return cached_data
 
+        # POUR NOSTALGIE : utiliser SEULEMENT les fallbacks API, bypasser ICY
+        if "nostalgie" in station_name.lower():
+            print(f"DEBUG: Using API-only fallback for Nostalgie: {station_name}")
+            fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
+            if fallback:
+                self.cache[cache_key] = (fallback, time.time())
+                return fallback
+            else:
+                # Si tous les fallbacks échouent, retourner "En direct"
+                fallback_metadata = RadioMetadata(
+                    station=station_name,
+                    title="En direct",
+                    artist=station_name,
+                    cover_url=""
+                )
+                self.cache[cache_key] = (fallback_metadata, time.time())
+                return fallback_metadata
+
         metadata = None
         if 'bauermedia.pt/comercial' in url:
             metadata = self._get_radiocomercial_metadata(url, station_name)
@@ -648,17 +666,6 @@ class RadioFetcher:
             metadata = self._get_infomaniak_metadata(url, station_name)
         else:
             metadata = self._get_icy_metadata(url, station_name)
-
-        # DÉTECTION SPÉCIALE POUR NOSTALGIE SUR RAILWAY
-        if "nostalgie" in station_name.lower() and metadata:
-            # Si les métadonnées contiennent des chiffres, utiliser fallback API
-            if (metadata.title.isdigit() or metadata.artist.isdigit() or 
-                metadata.title.replace(" ", "").replace("-", "").isdigit() or 
-                metadata.artist.replace(" ", "").replace("-", "").isdigit()):
-                print(f"DEBUG: Nostalgie numeric IDs detected on Railway: {metadata.title} - {metadata.artist}")
-                fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
-                if fallback:
-                    metadata = fallback
 
         if station_name.lower() == "mega hits":
             if not metadata.cover_url or "sapo.pt" in metadata.cover_url:
