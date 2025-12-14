@@ -502,6 +502,116 @@ def _fetch_nostalgie_proxy_fallback(session: requests.Session, radio_id: str, st
     except Exception:
         return None
 
+def _fetch_100radio_graphql_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
+    """Fallback pour 100% Radio en utilisant le endpoint GraphQL"""
+    try:
+        # Requête GraphQL pour obtenir les métadonnées actuelles
+        graphql_query = """
+        query {
+            currentSong {
+                title
+                artist
+                album
+                coverUrl
+            }
+        }
+        """
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        
+        payload = {
+            "query": graphql_query
+        }
+        
+        r = session.post(
+            "https://www.centpourcent.com/graphql",
+            json=payload,
+            headers=headers,
+            timeout=8
+        )
+        
+        if r.status_code == 200 and r.text:
+            print(f"DEBUG: 100% Radio GraphQL response: {r.text[:200]}...")
+            
+            try:
+                data = r.json()
+                if "data" in data and "currentSong" in data["data"]:
+                    song_data = data["data"]["currentSong"]
+                    if song_data:
+                        title = _normalize_text(str(song_data.get("title", "")))
+                        artist = _normalize_text(str(song_data.get("artist", "")))
+                        
+                        if title and artist and len(title) > 2 and len(artist) > 2:
+                            if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
+                                return RadioMetadata(
+                                    station=station_name,
+                                    title=title,
+                                    artist=artist,
+                                    cover_url=song_data.get("coverUrl", "")
+                                )
+            except Exception as e:
+                print(f"DEBUG: Error parsing 100% Radio GraphQL JSON: {e}")
+        
+        return None
+    except Exception as e:
+        print(f"DEBUG: Error fetching 100% Radio GraphQL: {e}")
+        return None
+
+def _fetch_100radio_api_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
+    """Fallback pour 100% Radio en utilisant l'API officielle centpourcent.com"""
+    try:
+        # Essayer l'API officielle
+        api_url = "https://www.centpourcent.com/ws/metas"
+        r = session.get(api_url, timeout=8)
+        if r.status_code == 200 and r.text:
+            print(f"DEBUG: 100% Radio API response: {r.text[:200]}...")
+            
+            # Parser la réponse JSON
+            try:
+                data = r.json()
+                if isinstance(data, dict):
+                    title = _normalize_text(str(data.get("title", "")))
+                    artist = _normalize_text(str(data.get("artist", "")))
+                    
+                    if title and artist and len(title) > 2 and len(artist) > 2:
+                        if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
+                            return RadioMetadata(
+                                station=station_name,
+                                title=title,
+                                artist=artist,
+                                cover_url=""
+                            )
+            except Exception as e:
+                print(f"DEBUG: Error parsing 100% Radio API JSON: {e}")
+                
+                # Essayer de parser comme texte si JSON échoue
+                content = r.text
+                if "title" in content.lower() and "artist" in content.lower():
+                    import re
+                    title_match = re.search(r'title["\']?\s*[:=]\s*["\']([^"\']+)["\']', content, re.IGNORECASE)
+                    artist_match = re.search(r'artist["\']?\s*[:=]\s*["\']([^"\']+)["\']', content, re.IGNORECASE)
+                    
+                    if title_match and artist_match:
+                        title = _normalize_text(title_match.group(1))
+                        artist = _normalize_text(artist_match.group(1))
+                        
+                        if title and artist and len(title) > 2 and len(artist) > 2:
+                            if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
+                                return RadioMetadata(
+                                    station=station_name,
+                                    title=title,
+                                    artist=artist,
+                                    cover_url=""
+                                )
+        
+        return None
+    except Exception as e:
+        print(f"DEBUG: Error fetching 100% Radio API: {e}")
+        return None
+
 def _fetch_100radio_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
     """Fallback pour 100% Radio en scrapant le site web"""
     try:
@@ -787,16 +897,61 @@ class RadioFetcher:
         else:
             metadata = self._get_icy_metadata(url, station_name)
 
-        # POUR 100% RADIO : si ICY retourne "En direct", essayer les fallbacks
-        if "100%" in station_name and metadata and metadata.title == "En direct":
-            print(f"DEBUG: Using fallback for 100% Radio: {station_name}")
-            fallback = _fetch_100radio_metadata(self.session, station_name)
-            if fallback:
-                metadata = fallback
+        # POUR 100% RADIO : essayer les vraies métadonnées en priorité
+        if "100%" in station_name:
+            print(f"DEBUG: Processing 100% Radio: {station_name}")
+            
+            # Essayer Infomaniak avec debugging détaillé
+            if "infomaniak.ch" in url:
+                print(f"DEBUG: Trying Infomaniak stream for 100% Radio")
+                metadata = self._get_infomaniak_metadata(url, station_name)
+                if metadata and metadata.title != "En direct":
+                    print(f"DEBUG: Infomaniak returned real metadata: {metadata.title} - {metadata.artist}")
+                    self.cache[cache_key] = (metadata, time.time())
+                    return metadata
+                else:
+                    print(f"DEBUG: Infomaniak returned 'En direct', trying GraphQL API")
+                    # Essayer GraphQL en priorité
+                    graphql_fallback = _fetch_100radio_graphql_metadata(self.session, station_name)
+                    if graphql_fallback:
+                        print(f"DEBUG: GraphQL API returned: {graphql_fallback.title} - {graphql_fallback.artist}")
+                        self.cache[cache_key] = (graphql_fallback, time.time())
+                        return graphql_fallback
+                    else:
+                        print(f"DEBUG: GraphQL API failed, trying REST API")
+                        # Essayer API REST officielle
+                        api_fallback = _fetch_100radio_api_metadata(self.session, station_name)
+                        if api_fallback:
+                            print(f"DEBUG: REST API returned: {api_fallback.title} - {api_fallback.artist}")
+                            self.cache[cache_key] = (api_fallback, time.time())
+                            return api_fallback
+                        else:
+                            print(f"DEBUG: REST API failed, trying web scraper")
+                            # Essayer scraper web
+                            fallback = _fetch_100radio_metadata(self.session, station_name)
+                            if fallback:
+                                print(f"DEBUG: Web scraper returned: {fallback.title} - {fallback.artist}")
+                                self.cache[cache_key] = (fallback, time.time())
+                                return fallback
+            
+            # Essayer les autres URLs
+            metadata = self._get_icy_metadata(url, station_name)
+            if metadata and metadata.title != "En direct":
+                print(f"DEBUG: ICY metadata found: {metadata.title} - {metadata.artist}")
+                self.cache[cache_key] = (metadata, time.time())
+                return metadata
             else:
-                # DERNIER RECOURS: cache local
-                print(f"DEBUG: Using local cache for 100% Radio: {station_name}")
-                metadata = _fetch_100radio_local_cache(station_name)
+                print(f"DEBUG: All methods failed for 100% Radio, using web scraper")
+                # DERNIER RECOURS: scraper web
+                fallback = _fetch_100radio_metadata(self.session, station_name)
+                if fallback:
+                    metadata = fallback
+                else:
+                    # VRAIMENT DERNIER RECOURS: cache local
+                    print(f"DEBUG: Using local cache for 100% Radio: {station_name}")
+                    metadata = _fetch_100radio_local_cache(station_name)
+                self.cache[cache_key] = (metadata, time.time())
+                return metadata
 
         if station_name.lower() == "mega hits":
             if not metadata.cover_url or "sapo.pt" in metadata.cover_url:
@@ -1527,6 +1682,7 @@ def main():
     # Liste des radios avec leurs URLs
     radios = [
         ("100% Radio", "https://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3"),
+        ("100% Radio", "https://streams.lesindesradios.fr/play/radios/centpourcent/sz9KS9uVGI/any/60/pt37e.H6CHKapOnXJgO7mX1kQBX5ZQ3YPUGClOV19B1qD5%2F2M%3D?format=hd"),
         ("Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3"),
         ("Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"),
         ("Chante France- 80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
