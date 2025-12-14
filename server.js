@@ -185,6 +185,33 @@ app.get('/api/now-playing', async (req, res) => {
   });
 });
 
+app.get('/api/debug/nostalgie-onair', async (req, res) => {
+  try {
+    const r = await axios.get('https://www.nostalgie.fr/onair.json', {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json, text/plain, */*',
+        'Referer': 'https://www.nostalgie.fr/'
+      },
+      responseType: 'text',
+      validateStatus: () => true
+    });
+
+    const text = typeof r.data === 'string' ? r.data : JSON.stringify(r.data);
+    return res.json({
+      status: r.status,
+      contentType: r.headers ? (r.headers['content-type'] || null) : null,
+      head: text.slice(0, 300)
+    });
+  } catch (e) {
+    return res.status(500).json({
+      error: String(e && e.message ? e.message : e),
+      code: e && e.code ? e.code : null
+    });
+  }
+});
+
 // ---------- VALIDATION DES URLS DE STREAMING ----------
 // Utilise GET en mode stream (HEAD est souvent refusé par les serveurs de radio)
 
