@@ -1,5 +1,6 @@
 import ssl
 import time
+import random
 from typing import Optional, Dict, Tuple
 import requests
 from urllib3.util.retry import Retry
@@ -18,6 +19,32 @@ from urllib.parse import urlparse
 
 # Désactiver les avertissements SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# User-Agents pour contourner Cloudflare
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/121.0"
+]
+
+def get_anti_cloudflare_headers() -> Dict[str, str]:
+    """Génère des headers pour contourner Cloudflare"""
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0"
+    }
 
 def _normalize_text(value: str) -> str:
     if not isinstance(value, str):
@@ -326,14 +353,17 @@ def _fetch_nostalgie_onair_metadata(session: requests.Session, stream_url: str, 
 
 def _fetch_nrjaudio_wr_api_metadata(session: requests.Session, radio_id: str, station_name: str) -> Optional["RadioMetadata"]:
     try:
+        # Utiliser headers anti-Cloudflare
+        headers = get_anti_cloudflare_headers()
+        headers.update({
+            "Accept": "application/xml, text/xml, */*",
+            "Referer": "https://players.nrjaudio.fm/",
+        })
+        
         r = session.get(
             f"http://players.nrjaudio.fm/wr_api/live/de/?q=getMetaData&id={radio_id}",
             timeout=8,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/xml, text/xml, */*",
-                "Referer": "https://players.nrjaudio.fm/",
-            },
+            headers=headers,
         )
         if r.status_code != 200 or not r.content:
             return None
@@ -367,14 +397,15 @@ def _fetch_nrjaudio_wr_api_metadata(session: requests.Session, radio_id: str, st
 
 def _fetch_nostalgie_website_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
     try:
+        headers = get_anti_cloudflare_headers()
+        headers.update({
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        })
+        
         r = session.get(
             "https://www.nostalgie.fr/",
             timeout=8,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "fr,en-US;q=0.7,en;q=0.3",
-            },
+            headers=headers,
         )
         if r.status_code != 200:
             return None
@@ -905,8 +936,29 @@ class RadioFetcher:
                                 title = t_title.strip()
                             if t_artist.strip():
                                 artist = t_artist.strip()
+                            
+                            # Détection IDs numériques pour Nostalgie
+                            if "nostalgie" in station_name.lower():
+                                t_l = title.lower()
+                                a_l = artist.lower()
+                                if t_l.isdigit() or a_l.isdigit() or (t_l.replace(" ", "").replace("-", "").isdigit()) or (a_l.replace(" ", "").replace("-", "").isdigit()):
+                                    # Ce sont des IDs, utiliser fallback API
+                                    fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
+                                    if fallback:
+                                        response.close()
+                                        return fallback
                         else:
                             title = stream_title
+                            
+                            # Détection IDs numériques pour Nostalgie
+                            if "nostalgie" in station_name.lower():
+                                t_l = title.lower()
+                                if t_l.isdigit() or (t_l.replace(" ", "").replace("-", "").isdigit()):
+                                    # Ce sont des IDs, utiliser fallback API
+                                    fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
+                                    if fallback:
+                                        response.close()
+                                        return fallback
 
                         if title and title != "En direct":
                             break
@@ -942,13 +994,13 @@ class RadioFetcher:
     def _get_nrj_metadata(self, url: str, station_name: str) -> RadioMetadata:
         """Récupère les métadonnées pour les flux NRJ Audio (Nostalgie, Chérie, etc.)"""
         try:
-            # Fallback Nostalgie via NRJ Audio wr_api (prioritaire)
+            # Pour Nostalgie : forcer fallback API NRJ en priorité absolue
             if "nostalgie" in station_name.lower():
                 fallback = _fetch_nostalgie_fallback(self.session, url, station_name)
                 if fallback:
                     return fallback
                 
-                # Si tous les fallbacks échouent, forcer ICY metadata
+                # Si fallback échoue, essayer ICY mais avec détection d'IDs numériques
                 return self._get_icy_metadata(url, station_name)
             
             response = self.session.get(url, stream=True, timeout=10)
