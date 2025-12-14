@@ -799,6 +799,29 @@ class RadioFetcher:
                     # Essayer de séparer l'artiste et le titre
                     if ' - ' in stream_title:
                         artist, title = stream_title.split(' - ', 1)
+                        if "nostalgie" in station_name.lower():
+                            t_norm = _normalize_text(title.strip())
+                            a_norm = _normalize_text(artist.strip())
+                            t_l = t_norm.lower()
+                            if (
+                                (not t_norm)
+                                or t_l == "en direct"
+                                or t_l == station_name.lower()
+                                or t_l.startswith("nostalgie")
+                                or a_norm.lower() == station_name.lower()
+                            ):
+                                fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                                if fallback:
+                                    return fallback
+
+                            fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                            if fallback and fallback.cover_url:
+                                return RadioMetadata(
+                                    station=station_name,
+                                    title=t_norm,
+                                    artist=a_norm if a_norm else station_name,
+                                    cover_url=fallback.cover_url,
+                                )
                         return RadioMetadata(
                             station=station_name,
                             title=title.strip(),
@@ -806,6 +829,27 @@ class RadioFetcher:
                             cover_url=""
                         )
                     else:
+                        if "nostalgie" in station_name.lower():
+                            t_norm = _normalize_text(stream_title.strip())
+                            t_l = t_norm.lower()
+                            if (
+                                (not t_norm)
+                                or t_l == "en direct"
+                                or t_l == station_name.lower()
+                                or t_l.startswith("nostalgie")
+                            ):
+                                fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                                if fallback:
+                                    return fallback
+
+                            fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                            if fallback and fallback.cover_url:
+                                return RadioMetadata(
+                                    station=station_name,
+                                    title=t_norm,
+                                    artist=station_name,
+                                    cover_url=fallback.cover_url,
+                                )
                         return RadioMetadata(
                             station=station_name,
                             title=stream_title.strip(),
