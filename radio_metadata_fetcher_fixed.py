@@ -384,6 +384,7 @@ def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, statio
     mapping = {
         "streaming.nrjaudio.fm/ouwg8usk6j4d": "1640",
         "streaming.nrjaudio.fm/oug7oerb92oc": "1640",
+        "streaming.nrjaudio.fm/ouo6im7nfibk": "1283",
     }
 
     radio_id = mapping.get(stream_canon)
