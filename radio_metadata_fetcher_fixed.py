@@ -288,12 +288,32 @@ def _extract_nostalgie_onair_for_stream(data: object, stream_url: str) -> Option
 
 def _fetch_nostalgie_onair_metadata(session: requests.Session, stream_url: str, station_name: str) -> Optional["RadioMetadata"]:
     try:
-        r = session.get("https://www.nostalgie.fr/onair.json", timeout=10)
+        r = session.get(
+            "https://www.nostalgie.fr/onair.json",
+            timeout=10,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json, text/plain, */*",
+                "Referer": "https://www.nostalgie.fr/",
+            },
+        )
         if r.status_code != 200:
             return None
-        parsed = _extract_nostalgie_onair_for_stream(r.json(), stream_url)
+
+        ct = str(r.headers.get("content-type") or "").lower()
+        body_head = (r.text or "")[:50].lstrip() if isinstance(r.text, str) else ""
+        if ("json" not in ct) and body_head.startswith("<"):
+            return None
+
+        try:
+            data = r.json()
+        except Exception:
+            return None
+
+        parsed = _extract_nostalgie_onair_for_stream(data, stream_url)
         if not parsed:
             return None
+
         title, artist, cover_url = parsed
         return RadioMetadata(
             station=station_name,
