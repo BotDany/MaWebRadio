@@ -766,10 +766,8 @@ def _fetch_100radio_local_cache(station_name: str) -> Optional["RadioMetadata"]:
     # Simuler des métadonnées dynamiques basées sur l'heure actuelle
     now = datetime.datetime.now()
     
-    # Playlist simulée pour 100% Radio (variété française et internationale)
+    # Playlist simulée pour 100% Radio (variété française et internationale des années 2000-2020)
     playlist_100radio = [
-        ("Patrick Bruel", "J'te l'dis quand même"),
-        ("Calogero", "En apesanteur"),
         ("Indila", "Dernière danse"),
         ("Stromae", "Alors on danse"),
         ("Maître Gims", "J'me tire"),
@@ -780,17 +778,27 @@ def _fetch_100radio_local_cache(station_name: str) -> Optional["RadioMetadata"]:
         ("Amir", "J'ai cherché"),
         ("Zaz", "Je veux"),
         ("Christophe Maé", "On s'attache"),
-        ("Mylène Farmer", "Désenchantée"),
-        ("Francis Cabrel", "Je l'aime à mourir"),
-        ("Johnny Hallyday", "Allumer le feu"),
-        ("George Michael", "Careless Whisper"),
-        ("Cyndi Lauper", "Time After Time"),
-        ("Bryan Adams", "Summer of '69"),
-        ("Phil Collins", "In the Air Tonight"),
-        ("Duran Duran", "Hungry Like the Wolf"),
-        ("Culture Club", "Karma Chameleon"),
-        ("Eurythmics", "Sweet Dreams"),
-        ("A-ha", "Take On Me")
+        ("Patrick Bruel", "J'te l'dis quand même"),
+        ("Calogero", "En apesanteur"),
+        ("Mika", "Grace Kelly"),
+        ("Soprano", "À la folie"),
+        ("Black M", "Surmoulé"),
+        ("Rihanna", "Diamonds"),
+        ("Adele", "Hello"),
+        ("Ed Sheeran", "Shape of You"),
+        ("Coldplay", "Viva la Vida"),
+        ("Maroon 5", "Sugar"),
+        ("Daft Punk", "Get Lucky"),
+        ("Pharrell Williams", "Happy"),
+        ("Bruno Mars", "Uptown Funk"),
+        ("Justin Timberlake", "Can't Stop the Feeling"),
+        ("Lady Gaga", "Bad Romance"),
+        ("Katy Perry", "Firework"),
+        ("Taylor Swift", "Shake It Off"),
+        ("One Direction", "What Makes You Beautiful"),
+        ("The Weeknd", "Blinding Lights"),
+        ("Billie Eilish", "Bad Guy"),
+        ("Dua Lipa", "Don't Start Now")
     ]
     
     # Changer de chanson toutes les 4 minutes (simulation)
