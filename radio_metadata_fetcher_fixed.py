@@ -560,57 +560,6 @@ def _fetch_100radio_graphql_metadata(session: requests.Session, station_name: st
         print(f"DEBUG: Error fetching 100% Radio GraphQL: {e}")
         return None
 
-def _fetch_100radio_api_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
-    """Fallback pour 100% Radio en utilisant l'API officielle centpourcent.com"""
-    try:
-        # Essayer l'API officielle
-        api_url = "https://www.centpourcent.com/ws/metas"
-        r = session.get(api_url, timeout=8)
-        if r.status_code == 200 and r.text:
-            print(f"DEBUG: 100% Radio API response: {r.text[:200]}...")
-            
-            # Parser la réponse JSON
-            try:
-                data = r.json()
-                if isinstance(data, dict):
-                    title = _normalize_text(str(data.get("title", "")))
-                    artist = _normalize_text(str(data.get("artist", "")))
-                    
-                    if title and artist and len(title) > 2 and len(artist) > 2:
-                        if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
-                            return RadioMetadata(
-                                station=station_name,
-                                title=title,
-                                artist=artist,
-                                cover_url=""
-                            )
-            except Exception as e:
-                print(f"DEBUG: Error parsing 100% Radio API JSON: {e}")
-                
-                # Essayer de parser comme texte si JSON échoue
-                content = r.text
-                if "title" in content.lower() and "artist" in content.lower():
-                    import re
-                    title_match = re.search(r'title["\']?\s*[:=]\s*["\']([^"\']+)["\']', content, re.IGNORECASE)
-                    artist_match = re.search(r'artist["\']?\s*[:=]\s*["\']([^"\']+)["\']', content, re.IGNORECASE)
-                    
-                    if title_match and artist_match:
-                        title = _normalize_text(title_match.group(1))
-                        artist = _normalize_text(artist_match.group(1))
-                        
-                        if title and artist and len(title) > 2 and len(artist) > 2:
-                            if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
-                                return RadioMetadata(
-                                    station=station_name,
-                                    title=title,
-                                    artist=artist,
-                                    cover_url=""
-                                )
-        
-        return None
-    except Exception as e:
-        print(f"DEBUG: Error fetching 100% Radio API: {e}")
-        return None
 
 def _fetch_100radio_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
     """Fallback pour 100% Radio en essayant les webradios avec métadonnées ICY"""
@@ -740,6 +689,91 @@ def _fetch_100radio_graphql_metadata(session: requests.Session, station_name: st
         return None
     except Exception as e:
         print(f"DEBUG: Error fetching 100% Radio GraphQL: {e}")
+        return None
+
+def _fetch_100radio_real_api(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
+    """Récupère les vraies métadonnées de 100% Radio via les endpoints avec IDs spécifiques"""
+    try:
+        # Essayer les vrais endpoints avec les IDs spécifiques
+        api_urls = [
+            "https://www.centpourcent.com/ws/metas?id=2174544699860189189",
+            "https://www.centpourcent.com/ws/metas?id=3301185310276687502",
+            "https://www.centpourcent.com/ws/metas"  # Fallback sans ID
+        ]
+        
+        for api_url in api_urls:
+            try:
+                print(f"DEBUG: Trying 100% Radio real API: {api_url}")
+                r = session.get(api_url, timeout=8)
+                if r.status_code == 200 and r.text:
+                    print(f"DEBUG: 100% Radio API response: {r.text[:200]}...")
+                    
+                    # Parser la réponse JSON
+                    try:
+                        data = r.json()
+                        if isinstance(data, dict):
+                            # Extraire les métadonnées selon le format de réponse
+                            if "title" in data and "artist" in data:
+                                title = _normalize_text(str(data.get("title", "")))
+                                artist = _normalize_text(str(data.get("artist", "")))
+                            elif "current" in data and isinstance(data["current"], dict):
+                                current = data["current"]
+                                title = _normalize_text(str(current.get("title", "")))
+                                artist = _normalize_text(str(current.get("artist", "")))
+                            elif "song" in data and isinstance(data["song"], dict):
+                                song = data["song"]
+                                title = _normalize_text(str(song.get("title", "")))
+                                artist = _normalize_text(str(song.get("artist", "")))
+                            else:
+                                # Chercher d'autres formats possibles
+                                title = ""
+                                artist = ""
+                                for key, value in data.items():
+                                    if isinstance(value, str) and len(value) > 2:
+                                        if "title" in key.lower() or not title:
+                                            title = _normalize_text(value)
+                                        elif "artist" in key.lower() or not artist:
+                                            artist = _normalize_text(value)
+                            
+                            if title and artist and len(title) > 2 and len(artist) > 2:
+                                if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
+                                    print(f"SUCCESS: 100% Radio real metadata: {title} - {artist}")
+                                    return RadioMetadata(
+                                        station=station_name,
+                                        title=title,
+                                        artist=artist,
+                                        cover_url=""
+                                    )
+                    except Exception as e:
+                        print(f"DEBUG: Error parsing 100% Radio API JSON: {e}")
+                        
+                        # Essayer de parser comme texte si JSON échoue
+                        content = r.text
+                        if "title" in content.lower() and "artist" in content.lower():
+                            import re
+                            title_match = re.search(r'title["\']?\s*[:=]\s*["\']([^"\']+)["\']', content, re.IGNORECASE)
+                            artist_match = re.search(r'artist["\']?\s*[:=]\s*["\']([^"\']+)["\']', content, re.IGNORECASE)
+                            
+                            if title_match and artist_match:
+                                title = _normalize_text(title_match.group(1))
+                                artist = _normalize_text(artist_match.group(1))
+                                
+                                if title and artist and len(title) > 2 and len(artist) > 2:
+                                    if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
+                                        print(f"SUCCESS: 100% Radio real metadata (regex): {title} - {artist}")
+                                        return RadioMetadata(
+                                            station=station_name,
+                                            title=title,
+                                            artist=artist,
+                                            cover_url=""
+                                        )
+            except Exception as e:
+                print(f"DEBUG: Error with {api_url}: {e}")
+                continue
+        
+        return None
+    except Exception as e:
+        print(f"DEBUG: Error fetching 100% Radio real API: {e}")
         return None
 
 def _fetch_100radio_api_geolocation(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
@@ -1041,7 +1075,14 @@ class RadioFetcher:
                     self.cache[cache_key] = (metadata, time.time())
                     return metadata
                 else:
-                    print(f"DEBUG: Infomaniak returned 'En direct', trying APIs")
+                    print(f"DEBUG: Infomaniak returned 'En direct', trying real APIs")
+                    # Essayer les vrais endpoints avec IDs spécifiques en premier
+                    real_api_result = _fetch_100radio_real_api(self.session, station_name)
+                    if real_api_result:
+                        print(f"DEBUG: Real API returned: {real_api_result.title} - {real_api_result.artist}")
+                        self.cache[cache_key] = (real_api_result, time.time())
+                        return real_api_result
+                    
                     # Essayer API Geolocation qui fonctionne
                     geo_test = _fetch_100radio_api_geolocation(self.session, station_name)
                     
