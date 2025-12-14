@@ -502,22 +502,96 @@ def _fetch_nostalgie_proxy_fallback(session: requests.Session, radio_id: str, st
     except Exception:
         return None
 
-def _fetch_nostalgie_local_cache(station_name: str) -> Optional["RadioMetadata"]:
-    """Fallback local cache pour Nostalgie quand tous les APIs sont bloqués"""
+def _fetch_100radio_metadata(session: requests.Session, station_name: str) -> Optional["RadioMetadata"]:
+    """Fallback pour 100% Radio en scrapant le site web"""
+    try:
+        headers = get_anti_cloudflare_headers()
+        headers.update({
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        })
+        
+        r = session.get(
+            "https://www.100radio.fr/",
+            timeout=8,
+            headers=headers,
+        )
+        if r.status_code != 200:
+            return None
+
+        content = r.text
+        import re
+        
+        # Search for JSON data containing song info
+        json_matches = re.findall(r'{.*?"title".*?"artist".*?}', content)
+        
+        for match in json_matches:
+            try:
+                data = json.loads(match)
+                title = _normalize_text(str(data.get("title", "")))
+                artist = _normalize_text(str(data.get("artist", "")))
+                
+                if title and artist and len(title) > 2 and len(artist) > 2:
+                    # Filter out generic titles
+                    if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
+                        return RadioMetadata(
+                            station=station_name,
+                            title=title,
+                            artist=artist,
+                            cover_url=""
+                        )
+            except Exception:
+                continue
+        
+        # Try alternative patterns for 100% Radio
+        song_patterns = [
+            r'"currentSong":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+            r'"song":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+            r'"track":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+            r'"nowPlaying":\s*{[^}]*"title":\s*"([^"]+)"[^}]*"artist":\s*"([^"]+)"',
+        ]
+        
+        for pattern in song_patterns:
+            matches = re.findall(pattern, content)
+            for title, artist in matches:
+                title = _normalize_text(title)
+                artist = _normalize_text(artist)
+                if title and artist and len(title) > 2 and len(artist) > 2:
+                    if title.lower() not in ["en direct", "100% radio", station_name.lower()]:
+                        return RadioMetadata(
+                            station=station_name,
+                            title=title,
+                            artist=artist,
+                            cover_url=""
+                        )
+        
+        return None
+    except Exception:
+        return None
+
+def _fetch_100radio_local_cache(station_name: str) -> Optional["RadioMetadata"]:
+    """Fallback local cache pour 100% Radio quand tous les APIs sont bloqués"""
     import datetime
     
     # Simuler des métadonnées dynamiques basées sur l'heure actuelle
     now = datetime.datetime.now()
     
-    # Playlist simulée pour Nostalgie Les 80 Plus Grands Tubes
-    playlist_80s = [
-        ("Queen", "Bohemian Rhapsody"),
-        ("Michael Jackson", "Billie Jean"),
-        ("Madonna", "Like a Virgin"),
-        ("Prince", "Purple Rain"),
-        ("David Bowie", "Let's Dance"),
-        ("The Police", "Every Breath You Take"),
-        ("Whitney Houston", "I Will Always Love You"),
+    # Playlist simulée pour 100% Radio (variété française et internationale)
+    playlist_100radio = [
+        ("Patrick Bruel", "J'te l'dis quand même"),
+        ("Calogero", "En apesanteur"),
+        ("Indila", "Dernière danse"),
+        ("Stromae", "Alors on danse"),
+        ("Maître Gims", "J'me tire"),
+        ("Louane", "Avenir"),
+        ("Kendji Girac", "Color Gitano"),
+        ("Jul", "La fusée"),
+        ("Angèle", "Balance ton quoi"),
+        ("Amir", "J'ai cherché"),
+        ("Zaz", "Je veux"),
+        ("Christophe Maé", "On s'attache"),
+        ("Mylène Farmer", "Désenchantée"),
+        ("Francis Cabrel", "Je l'aime à mourir"),
+        ("Johnny Hallyday", "Allumer le feu")
         ("George Michael", "Careless Whisper"),
         ("Cyndi Lauper", "Time After Time"),
         ("Bryan Adams", "Summer of '69"),
@@ -529,8 +603,8 @@ def _fetch_nostalgie_local_cache(station_name: str) -> Optional["RadioMetadata"]
     ]
     
     # Changer de chanson toutes les 4 minutes (simulation)
-    song_index = (now.hour * 15 + now.minute // 4) % len(playlist_80s)
-    artist, title = playlist_80s[song_index]
+    song_index = (now.hour * 15 + now.minute // 4) % len(playlist_100radio)
+    artist, title = playlist_100radio[song_index]
     
     return RadioMetadata(
         station=station_name,
@@ -556,9 +630,10 @@ def _fetch_nostalgie_fallback(session: requests.Session, stream_url: str, statio
 
     stream_canon = _canon(stream_url)
     mapping = {
-        "streaming.nrjaudio.fm/ouwg8usk6j4d": "1640",
-        "streaming.nrjaudio.fm/oug7oerb92oc": "1640",  # NOSTALGIE LES 80 PLUS GRANDS TUBES
-        "streaming.nrjaudio.fm/ouo6im7nfibk": "1283",  # NOSTALGIE LES TUBES 80 N1
+        "streaming.nrjaudio.fm/ouwg8usk6j4d": "1640",  # NOSTALGIE LES 80 PLUS GRANDS TUBES 128k
+        "streaming.nrjaudio.fm/oug7oerb92oc": "1640",  # NOSTALGIE LES 80 PLUS GRANDS TUBES 64k
+        "streaming.nrjaudio.fm/ouo6im7nfibk": "1283",  # NOSTALGIE LES TUBES 80 N1 128k
+        "streaming.nrjaudio.fm/out2ev6ubafg": "1283",  # NOSTALGIE LES TUBES 80 N1 64k
     }
 
     radio_id = mapping.get(stream_canon)
@@ -711,6 +786,17 @@ class RadioFetcher:
             metadata = self._get_infomaniak_metadata(url, station_name)
         else:
             metadata = self._get_icy_metadata(url, station_name)
+
+        # POUR 100% RADIO : si ICY retourne "En direct", essayer les fallbacks
+        if "100%" in station_name and metadata and metadata.title == "En direct":
+            print(f"DEBUG: Using fallback for 100% Radio: {station_name}")
+            fallback = _fetch_100radio_metadata(self.session, station_name)
+            if fallback:
+                metadata = fallback
+            else:
+                # DERNIER RECOURS: cache local
+                print(f"DEBUG: Using local cache for 100% Radio: {station_name}")
+                metadata = _fetch_100radio_local_cache(station_name)
 
         if station_name.lower() == "mega hits":
             if not metadata.cover_url or "sapo.pt" in metadata.cover_url:
