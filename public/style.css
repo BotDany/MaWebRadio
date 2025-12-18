@@ -102,6 +102,26 @@ h1 {
     margin-bottom: 15px;
 }
 
+.now-playing-cover {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f0f0f0;
+    border: 1px solid #eee;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+}
+
+.now-playing-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .now-playing-text {
     flex: 1;
     display: flex;
@@ -234,12 +254,39 @@ input[type="url"] {
     border-bottom: 1px solid #eee;
 }
 
-.radio-item:last-child {
-    border-bottom: none;
+.radio-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.radio-info {
+.radio-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f0f0f0;
+    border: 1px solid #eee;
+    flex: 0 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radio-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.radio-info-text {
     flex: 1;
+    min-width: 0;
+}
+
+.radio-item:last-child {
+    border-bottom: none;
 }
 
 .genre {

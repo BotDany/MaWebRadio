@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentRadio = null;
     let nowPlayingInterval = null;
+    const stationMetaCache = new Map();
 
     // ---------- UTILS ----------
 
@@ -182,10 +183,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (nowPlayingCover) {
-            if (coverUrl && coverUrl.startsWith('http')) {
+            const fallback = currentRadio ? (currentRadio.favicon || '') : '';
+            const finalCover = (coverUrl && coverUrl.startsWith('http')) ? coverUrl : (fallback || '');
+
+            if (finalCover) {
                 nowPlayingCover.innerHTML = '';
                 const img = document.createElement('img');
-                img.src = coverUrl;
+                img.src = finalCover;
                 img.alt = currentRadio ? currentRadio.name : 'cover';
                 nowPlayingCover.appendChild(img);
             }
@@ -212,14 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadStationMeta(radio) {
         if (!nowPlayingCover) return;
         try {
-            const res = await fetch('/api/station-meta?url=' + encodeURIComponent(radio.url));
-            const data = await res.json();
+            const meta = await getStationMeta(radio.url);
+            if (meta && meta.found && meta.favicon) {
+                radio.favicon = meta.favicon;
+            }
 
             nowPlayingCover.innerHTML = '';
-
-            if (data.found && data.favicon) {
+            if (radio.favicon) {
                 const img = document.createElement('img');
-                img.src = data.favicon;
+                img.src = radio.favicon;
                 img.alt = radio.name;
                 nowPlayingCover.appendChild(img);
             }
@@ -229,9 +234,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function getStationMeta(url) {
+        const u = (url || '').toString();
+        if (!u) return null;
+        if (stationMetaCache.has(u)) return stationMetaCache.get(u);
+
+        try {
+            const res = await fetch('/api/station-meta?url=' + encodeURIComponent(u));
+            if (!res.ok) {
+                stationMetaCache.set(u, null);
+                return null;
+            }
+            const data = await res.json();
+            stationMetaCache.set(u, data);
+            return data;
+        } catch (e) {
+            stationMetaCache.set(u, null);
+            return null;
+        }
+    }
+
     function playRadio(radio) {
         currentRadio = radio;
         audioPlayer.src = radio.url;
+
         audioPlayer.play()
             .then(() => {
                 playBtn.disabled = false;
@@ -242,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadStationMeta(radio);
                 updateNowPlayingMetadata();
             })
+
             .catch(err => {
                 console.error(err);
                 alert('Impossible de lire cette station (flux indisponible ou bloqué).');
@@ -293,20 +320,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Volume
     audioPlayer.volume = 0.5;
     volumeControl.value = 50;
-    
+
     // Mise à jour du volume quand le slider est déplacé
     volumeControl.addEventListener('input', e => {
         const v = parseInt(e.target.value, 10) || 0;
         audioPlayer.volume = v / 100;
     });
-    
+
     // Bouton pour baisser le volume
     document.getElementById('volume-down').addEventListener('click', () => {
         let newVolume = Math.max(0, audioPlayer.volume - 0.1); // Diminue de 10%
         audioPlayer.volume = newVolume;
         volumeControl.value = Math.round(newVolume * 100);
     });
-    
+
     // Bouton pour augmenter le volume
     document.getElementById('volume-up').addEventListener('click', () => {
         let newVolume = Math.min(1, audioPlayer.volume + 0.1); // Augmente de 10%
@@ -344,15 +371,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
             li.innerHTML = `
                 <div class="radio-info">
-                    <strong>${radio.name}</strong>
-                    ${radio.genre ? `<span class="genre">${radio.genre}</span>` : ''}
-                    <div><small>${radio.url}</small></div>
+                    <div class="radio-logo"></div>
+                    <div class="radio-info-text">
+                        <strong>${radio.name}</strong>
+                        ${radio.genre ? `<span class="genre">${radio.genre}</span>` : ''}
+                        <div><small>${radio.url}</small></div>
+                    </div>
                 </div>
                 <div class="radio-actions">
                     <button class="play-radio">▶️</button>
                     <button class="delete-btn">🗑️</button>
                 </div>
             `;
+
+            const logoContainer = li.querySelector('.radio-logo');
+            if (logoContainer) {
+                getStationMeta(radio.url).then(meta => {
+                    if (!meta || !meta.found || !meta.favicon) return;
+                    logoContainer.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = meta.favicon;
+                    img.alt = radio.name;
+                    logoContainer.appendChild(img);
+                }).catch(() => {
+                    // ignore
+                });
+            }
 
             li.querySelector('.play-radio').addEventListener('click', () => {
                 playRadio(radio);
