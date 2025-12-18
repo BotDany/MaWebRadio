@@ -1199,6 +1199,7 @@ class RadioFetcher:
         if station_name.strip().lower() == "mega hits":
             resolved = _resolve_streamtheworld_redirect(self.session, url)
             md = _get_icy_metadata_with_max_blocks(self.session, resolved, station_name, max_blocks=18)
+            md.source = "icy"
             self.cache[cache_key] = (md, now)
             return md
 
