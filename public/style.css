@@ -154,6 +154,30 @@ h1 {
     padding: 4px 0;
 }
 
+.now-playing-metadata.is-scrolling {
+    text-overflow: clip;
+}
+
+.now-playing-metadata .marquee {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+}
+
+.now-playing-metadata.is-scrolling .marquee {
+    padding-left: 100%;
+    animation: nowPlayingMarquee var(--marquee-duration, 12s) linear infinite;
+}
+
+@keyframes nowPlayingMarquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
 #current-radio {
     margin: 15px 0;
     font-size: 1.1em;

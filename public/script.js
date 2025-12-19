@@ -178,8 +178,59 @@ document.addEventListener('DOMContentLoaded', () => {
             parent.insertBefore(metadataElement, currentRadioDisplay.nextSibling);
         }
 
-        if (metadataElement.textContent !== displayText) {
-            metadataElement.textContent = displayText;
+        function ensureMarqueeSpan(el) {
+            let span = el.querySelector('.marquee');
+            if (!span) {
+                el.textContent = '';
+                span = document.createElement('span');
+                span.className = 'marquee';
+                el.appendChild(span);
+            }
+            return span;
+        }
+
+        function applyMarqueeIfNeeded(el) {
+            const span = ensureMarqueeSpan(el);
+
+            // Reset class before measure
+            el.classList.remove('is-scrolling');
+            el.style.removeProperty('--marquee-duration');
+
+            // Force layout measurement
+            const containerWidth = el.clientWidth;
+            const textWidth = span.scrollWidth;
+
+            if (!containerWidth || !textWidth) {
+                return;
+            }
+
+            const shouldScroll = textWidth > containerWidth + 10;
+            if (!shouldScroll) {
+                return;
+            }
+
+            // Duration based on pixels to travel (tuned for readability)
+            const distance = textWidth + containerWidth;
+            const pxPerSecond = 55;
+            const duration = Math.max(8, Math.min(30, distance / pxPerSecond));
+            el.style.setProperty('--marquee-duration', duration.toFixed(2) + 's');
+
+            // Restart animation
+            el.classList.add('is-scrolling');
+            span.style.animation = 'none';
+            // eslint-disable-next-line no-unused-expressions
+            span.offsetHeight;
+            span.style.animation = '';
+        }
+
+        const marqueeSpan = ensureMarqueeSpan(metadataElement);
+        if (marqueeSpan.textContent !== displayText) {
+            marqueeSpan.textContent = displayText;
+            // Apply after DOM update
+            requestAnimationFrame(() => applyMarqueeIfNeeded(metadataElement));
+        } else {
+            // If same text, still ensure scroll state is correct (resize etc.)
+            requestAnimationFrame(() => applyMarqueeIfNeeded(metadataElement));
         }
 
         if (nowPlayingCover) {
