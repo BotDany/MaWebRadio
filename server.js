@@ -48,6 +48,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+app.get('/favicon.ico', (req, res) => {
+  return res.status(204).end();
+});
+
 // Proxy pour les flux audio HTTP (évite mixed content)
 app.use('/proxy-stream', createProxyMiddleware({
   target: 'http://',
