@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentRadio = null;
     let nowPlayingInterval = null;
-    const stationMetaCache = new Map();
 
     // ---------- UTILS ----------
 
@@ -234,8 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (nowPlayingCover) {
-            const fallback = currentRadio ? (currentRadio.favicon || '') : '';
-            const finalCover = (coverUrl && coverUrl.startsWith('http')) ? coverUrl : (fallback || '');
+            const finalCover = (coverUrl && coverUrl.startsWith('http')) ? coverUrl : '';
 
             if (finalCover) {
                 nowPlayingCover.innerHTML = '';
@@ -264,47 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function loadStationMeta(radio) {
-        if (!nowPlayingCover) return;
-        try {
-            const meta = await getStationMeta(radio.url);
-            if (meta && meta.found && meta.favicon) {
-                radio.favicon = meta.favicon;
-            }
-
-            nowPlayingCover.innerHTML = '';
-            if (radio.favicon) {
-                const img = document.createElement('img');
-                img.src = radio.favicon;
-                img.alt = radio.name;
-                nowPlayingCover.appendChild(img);
-            }
-        } catch (err) {
-            console.error('Erreur station-meta:', err);
-            nowPlayingCover.innerHTML = '';
-        }
-    }
-
-    async function getStationMeta(url) {
-        const u = (url || '').toString();
-        if (!u) return null;
-        if (stationMetaCache.has(u)) return stationMetaCache.get(u);
-
-        try {
-            const res = await fetch('/api/station-meta?url=' + encodeURIComponent(u));
-            if (!res.ok) {
-                stationMetaCache.set(u, null);
-                return null;
-            }
-            const data = await res.json();
-            stationMetaCache.set(u, data);
-            return data;
-        } catch (e) {
-            stationMetaCache.set(u, null);
-            return null;
-        }
-    }
-
     function playRadio(radio) {
         currentRadio = radio;
         audioPlayer.src = radio.url;
@@ -316,7 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 playBtn.textContent = '⏸️';
                 updateCurrentRadioDisplay();
                 showPlayer();
-                loadStationMeta(radio);
                 updateNowPlayingMetadata();
             })
 
@@ -437,16 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const logoContainer = li.querySelector('.radio-logo');
             if (logoContainer) {
-                getStationMeta(radio.url).then(meta => {
-                    if (!meta || !meta.found || !meta.favicon) return;
-                    logoContainer.innerHTML = '';
-                    const img = document.createElement('img');
-                    img.src = meta.favicon;
-                    img.alt = radio.name;
-                    logoContainer.appendChild(img);
-                }).catch(() => {
-                    // ignore
-                });
+                logoContainer.innerHTML = '';
             }
 
             li.querySelector('.play-radio').addEventListener('click', () => {
@@ -510,162 +457,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erreur lors de l’enregistrement de la radio.');
         }
     });
-
-    // ---------- OPENRADIO DISCOVER ----------
-    
-    // Variables pour la découverte OpenRadio
-    const searchQuery = document.getElementById('search-query');
-    const countryFilter = document.getElementById('country-filter');
-    const genreFilter = document.getElementById('genre-filter');
-    const searchRadiosBtn = document.getElementById('search-radios');
-    const discoverResults = document.getElementById('discover-results');
-
-    // Charger les filtres
-    async function loadDiscoverFilters() {
-        try {
-            // Charger les pays
-            const countriesRes = await fetch('/api/openradio/countries');
-            const countriesData = await countriesRes.json();
-            if (countriesData.countries) {
-                countriesData.countries.forEach(country => {
-                    const option = document.createElement('option');
-                    option.value = country.code;
-                    option.textContent = country.name;
-                    countryFilter.appendChild(option);
-                });
-            }
-
-            // Charger les genres
-            const genresRes = await fetch('/api/openradio/genres');
-            const genresData = await genresRes.json();
-            if (genresData.genres) {
-                genresData.genres.forEach(genre => {
-                    const option = document.createElement('option');
-                    option.value = genre;
-                    option.textContent = genre;
-                    genreFilter.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('Erreur chargement filtres:', error);
-        }
-    }
-
-    // Rechercher des radios
-    async function searchRadios() {
-        const query = searchQuery.value.trim();
-        const country = countryFilter.value;
-        const genre = genreFilter.value;
-
-        if (!query && !country && !genre) {
-            alert('Veuillez entrer une recherche ou sélectionner un filtre');
-            return;
-        }
-
-        try {
-            const params = new URLSearchParams();
-            if (query) params.append('query', query);
-            if (country) params.append('country', country);
-            if (genre) params.append('genre', genre);
-            params.append('limit', '20');
-
-            const response = await fetch(`/api/openradio/search?${params}`);
-            const data = await response.json();
-            renderDiscoverResults(data.stations || []);
-        } catch (error) {
-            console.error('Erreur recherche radios:', error);
-            discoverResults.innerHTML = '<p>Erreur lors de la recherche</p>';
-        }
-    }
-
-    // Afficher les résultats
-    function renderDiscoverResults(stations) {
-        discoverResults.innerHTML = '';
-
-        if (!stations || stations.length === 0) {
-            discoverResults.innerHTML = '<p>Aucune radio trouvée</p>';
-            return;
-        }
-
-        stations.forEach(station => {
-            const div = document.createElement('div');
-            div.className = 'discover-radio-item';
-
-            div.innerHTML = `
-                <div class="discover-radio-header">
-                    <span class="discover-radio-name">${station.name}</span>
-                    <span class="discover-radio-country">${station.country}</span>
-                </div>
-                <div class="discover-radio-details">
-                    <span class="discover-radio-genre">${station.genre || 'Non spécifié'}</span>
-                </div>
-                <div class="discover-radio-actions">
-                    <button class="play-radio-btn" data-name="${station.name}" data-url="${station.url}">
-                        Écouter
-                    </button>
-                    <button class="add-radio-btn" data-name="${station.name}" data-url="${station.url}" data-genre="${station.genre || ''}">
-                        Ajouter
-                    </button>
-                </div>
-            `;
-
-            discoverResults.appendChild(div);
-        });
-
-        // Ajouter les écouteurs d'événements
-        document.querySelectorAll('.play-radio-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const radio = {
-                    name: e.target.getAttribute('data-name'),
-                    url: e.target.getAttribute('data-url')
-                };
-                playRadio(radio);
-            });
-        });
-
-        document.querySelectorAll('.add-radio-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const radio = {
-                    name: e.target.getAttribute('data-name'),
-                    url: e.target.getAttribute('data-url'),
-                    genre: e.target.getAttribute('data-genre')
-                };
-                
-                try {
-                    const response = await fetch('/api/radios', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(radio)
-                    });
-
-                    if (response.ok) {
-                        alert('Radio ajoutée avec succès !');
-                        loadRadios(); // Recharger la liste des radios
-                    } else {
-                        throw new Error('Erreur lors de l\'ajout');
-                    }
-                } catch (error) {
-                    console.error('Erreur:', error);
-                    alert('Erreur lors de l\'ajout de la radio');
-                }
-            });
-        });
-    }
-
-    // Initialisation OpenRadio
-    if (searchRadiosBtn) {
-        searchRadiosBtn.addEventListener('click', searchRadios);
-        loadDiscoverFilters();
-        
-        // Permettre la recherche avec Entrée
-        searchQuery.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchRadios();
-            }
-        });
-    }
 
     // ---------- INIT ----------
 
