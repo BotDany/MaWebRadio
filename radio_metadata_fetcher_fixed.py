@@ -1229,28 +1229,39 @@ class RadioFetcher:
         )
 
         if is_flash80:
-            mgr_base = "https://manager7.streamradio.fr:1970"
+            # Some Streamradio setups behave differently depending on scheme/port.
+            # Be defensive and try a small set of candidate bases.
+            candidates = []
             try:
-                # If the saved stream URL uses a different port (e.g. :1985), try the manager API on that same host/port first.
                 parsed = urllib.parse.urlparse(_normalize_text(url))
-                if parsed.scheme and parsed.hostname and parsed.port:
-                    mgr_base = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+                if parsed.hostname and parsed.port:
+                    scheme = parsed.scheme or "https"
+                    candidates.append(f"{scheme}://{parsed.hostname}:{parsed.port}")
+                    # If HTTPS on this port fails (common), try HTTP too.
+                    if scheme.lower() == "https":
+                        candidates.append(f"http://{parsed.hostname}:{parsed.port}")
+                    elif scheme.lower() == "http":
+                        candidates.append(f"https://{parsed.hostname}:{parsed.port}")
             except Exception:
-                mgr_base = "https://manager7.streamradio.fr:1970"
+                pass
 
-            md_mgr = _fetch_streamapps_manager_nowplaying(self.session, station_name, mgr_base, "1")
-            if md_mgr:
-                md_mgr.source = "streamradio_manager"
-                self.cache[cache_key] = (md_mgr, now)
-                return md_mgr
+            # Known manager base (works even when stream is on another port).
+            candidates.append("https://manager7.streamradio.fr:1970")
+            candidates.append("http://manager7.streamradio.fr:1970")
+            candidates.append("http://manager7.streamradio.fr:1985")
 
-            # Fallback: some setups expose the manager API on :1970 even if the audio stream is on a different port.
-            if mgr_base != "https://manager7.streamradio.fr:1970":
-                md_mgr2 = _fetch_streamapps_manager_nowplaying(self.session, station_name, "https://manager7.streamradio.fr:1970", "1")
-                if md_mgr2:
-                    md_mgr2.source = "streamradio_manager"
-                    self.cache[cache_key] = (md_mgr2, now)
-                    return md_mgr2
+            seen = set()
+            for base in candidates:
+                b = _normalize_text(base)
+                if not b or b in seen:
+                    continue
+                seen.add(b)
+
+                md_mgr = _fetch_streamapps_manager_nowplaying(self.session, station_name, b, "1")
+                if md_mgr:
+                    md_mgr.source = "streamradio_manager"
+                    self.cache[cache_key] = (md_mgr, now)
+                    return md_mgr
 
             md_fast = RadioMetadata(station=station_name, title="En direct", artist=station_name, cover_url="")
             md_fast.source = "fallback"
