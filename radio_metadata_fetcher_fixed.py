@@ -1156,7 +1156,18 @@ class RadioFetcher:
         except Exception:
             pass
 
-        if station_name.strip().lower() == "100% radio 80":
+        st_norm = station_name.strip().lower()
+        u_norm = _normalize_text(url).lower()
+
+        is_100radio80 = (
+            "100% radio 80" in st_norm
+            or "100 radio 80" in st_norm
+            or "100radio80" in st_norm
+            or "100radio80" in u_norm
+            or "100radio-80" in u_norm
+        )
+
+        if is_100radio80:
             md = _fetch_100radio_ws_metas(self.session, station_name)
             if md:
                 md.source = "100radio_ws"
@@ -1205,7 +1216,19 @@ class RadioFetcher:
             self.cache[cache_key] = (md, now)
             return md
 
-        if station_name.strip().lower() == "flash 80 radio":
+        is_flash80 = (
+            "flash 80" in st_norm
+            or (
+                "streamradio.fr" in u_norm
+                and (
+                    ":1985" in u_norm
+                    or ":1970" in u_norm
+                    or "/stream" in u_norm
+                )
+            )
+        )
+
+        if is_flash80:
             md_mgr = _fetch_streamapps_manager_nowplaying(self.session, station_name, "https://manager7.streamradio.fr:1970", "1")
             if md_mgr:
                 md_mgr.source = "streamradio_manager"
