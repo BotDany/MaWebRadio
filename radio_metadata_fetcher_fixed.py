@@ -1159,11 +1159,13 @@ class RadioFetcher:
         if station_name.strip().lower() == "100% radio 80":
             md = _fetch_100radio_ws_metas(self.session, station_name)
             if md:
+                md.source = "100radio_ws"
                 self.cache[cache_key] = (md, now)
                 return md
 
             md = _fetch_infomaniak_icecast_status(self.session, url, station_name)
             if md:
+                md.source = "icecast_status"
                 self.cache[cache_key] = (md, now)
                 return md
 
@@ -1206,10 +1208,12 @@ class RadioFetcher:
         if station_name.strip().lower() == "flash 80 radio":
             md_mgr = _fetch_streamapps_manager_nowplaying(self.session, station_name, "https://manager7.streamradio.fr:1970", "1")
             if md_mgr:
+                md_mgr.source = "streamradio_manager"
                 self.cache[cache_key] = (md_mgr, now)
                 return md_mgr
 
             md_fast = RadioMetadata(station=station_name, title="En direct", artist=station_name, cover_url="")
+            md_fast.source = "fallback"
             self.cache[cache_key] = (md_fast, now)
             return md_fast
 
