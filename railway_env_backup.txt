@@ -27,7 +27,7 @@ MYTUNER_CREDS_FILE=
 # --- SERVICE POSTGRESQL ---
 # DATABASE_URL (publique, pour pg_dump depuis ton PC)
 # Exemple: postgresql://postgres:PASSWORD@HOST:PORT/railway?sslmode=require
-DATABASE_URL_PUBLIC=postgresql://postgres:sRijPltHVMWZfHCXVETaDbitppDnPTGf@shortline.proxy.rlwy.net:28974/railway
+DATABASE_URL_PUBLIC=postgresql://postgres:dgchmFTgdCyxrcClbqcIGWrrFUVpBsQN@crossover.proxy.rlwy.net:31764/railway
 
 # --- Notes ---
 # - Ne partage jamais ce fichier (contient des secrets).
