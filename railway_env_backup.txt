@@ -1,0 +1,36 @@
+# Railway Backup — Variables d’environnement
+# Copie/colle depuis Railway → service App → Variables
+# et depuis Railway → service PostgreSQL → Connect/Credentials
+
+# --- SERVICE APP ---
+# DATABASE_URL (interne, pour Railway seulement)
+DATABASE_URL=postgresql://postgres:sRijPltHVMWZfHCXVETaDbitppDnPTGf@postgres.railway.internal:5432/railway
+
+# SESSION_SECRET (généré par Railway, garde-le secret)
+SESSION_SECRET=ee20d33e1a314e961e1f2237d7409f31db9a33d6b27da1ca9e4832c53f7304543dc60bd106beb413bd657fe0ec76329579f189327fe9e489af223e0270f0dd98
+
+# PYTHON_BIN (si défini, ex: python3)
+PYTHON_BIN=
+
+# NODE_ENV (typiquement: production)
+NODE_ENV=development
+
+# Variables MyTuner (si tu en utilises)
+MYTUNER_AUTH=
+MYTUNER_TIME=
+MYTUNER_APP=
+MYTUNER_RADIO_ID=
+MYTUNER_ORIGIN=
+MYTUNER_REFERER=
+MYTUNER_CREDS_FILE=
+
+# --- SERVICE POSTGRESQL ---
+# DATABASE_URL (publique, pour pg_dump depuis ton PC)
+# Exemple: postgresql://postgres:PASSWORD@HOST:PORT/railway?sslmode=require
+DATABASE_URL_PUBLIC=postgresql://postgres:sRijPltHVMWZfHCXVETaDbitppDnPTGf@shortline.proxy.rlwy.net:28974/railway
+
+# --- Notes ---
+# - Ne partage jamais ce fichier (contient des secrets).
+# - Pour restaurer sur une nouvelle instance Railway, recrée ces variables.
+# - Pour pg_dump depuis ton PC, utilise DATABASE_URL_PUBLIC.
+# - Pour restore: pg_restore "NOUVELLE_DATABASE_URL" -c -d "NOUVELLE_DATABASE_URL" railway_backup.dump
