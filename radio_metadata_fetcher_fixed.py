@@ -1229,11 +1229,28 @@ class RadioFetcher:
         )
 
         if is_flash80:
-            md_mgr = _fetch_streamapps_manager_nowplaying(self.session, station_name, "https://manager7.streamradio.fr:1970", "1")
+            mgr_base = "https://manager7.streamradio.fr:1970"
+            try:
+                # If the saved stream URL uses a different port (e.g. :1985), try the manager API on that same host/port first.
+                parsed = urllib.parse.urlparse(_normalize_text(url))
+                if parsed.scheme and parsed.hostname and parsed.port:
+                    mgr_base = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+            except Exception:
+                mgr_base = "https://manager7.streamradio.fr:1970"
+
+            md_mgr = _fetch_streamapps_manager_nowplaying(self.session, station_name, mgr_base, "1")
             if md_mgr:
                 md_mgr.source = "streamradio_manager"
                 self.cache[cache_key] = (md_mgr, now)
                 return md_mgr
+
+            # Fallback: some setups expose the manager API on :1970 even if the audio stream is on a different port.
+            if mgr_base != "https://manager7.streamradio.fr:1970":
+                md_mgr2 = _fetch_streamapps_manager_nowplaying(self.session, station_name, "https://manager7.streamradio.fr:1970", "1")
+                if md_mgr2:
+                    md_mgr2.source = "streamradio_manager"
+                    self.cache[cache_key] = (md_mgr2, now)
+                    return md_mgr2
 
             md_fast = RadioMetadata(station=station_name, title="En direct", artist=station_name, cover_url="")
             md_fast.source = "fallback"
