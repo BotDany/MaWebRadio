@@ -33,7 +33,7 @@ app.use(
         "default-src": ["'self'"],
         "script-src": ["'self'"],
         "style-src": ["'self'", "'unsafe-inline'"],
-        "img-src": ["'self'", "data:"],
+        "img-src": ["'self'", "data:", "https:", "http:"],
         "connect-src": ["'self'"],
         // Autoriser les flux audio (mp3, etc.) depuis HTTPS ET HTTP
         "media-src": ["'self'", "https:", "http:", "data:"],
