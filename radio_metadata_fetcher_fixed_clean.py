@@ -18,6 +18,13 @@ import urllib3
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+# Import BeautifulSoup pour parser le HTML de Bide Et Musique
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    print("BeautifulSoup non installé. Pour Bide Et Musique: pip install beautifulsoup4")
+    BeautifulSoup = None
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -26,11 +33,11 @@ RADIOS = [
     ("Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3"),
     ("Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"),
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
-    ("Flash 80 Radio", "http://manager7.streamradio.fr:1985/stream"),
+    ("Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream"),
     ("Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"),
     ("Générikds", "https://www.radioking.com/play/generikids"),
     ("Made In 80", "https://listen.radioking.com/radio/260719/stream/305509"),
-    ("Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC.aac"),
+    ("Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC?csegid=2&dist=rmultimedia_apps&gdpr=1&bundle-id=pt.megahits.ios"),
     ("Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d"),
     ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
     ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
@@ -40,6 +47,27 @@ RADIOS = [
     ("Supernana", "https://radiosurle.net:8765/showsupernana"),
     ("Top 80 Radio", "https://securestreams6.autopo.st:2321/"),
 ]
+
+# Dictionnaire des logos par défaut pour chaque radio
+RADIO_LOGOS = {
+    "100% Radio 80": "https://www.centpourcent.com/img/logo-100radio80.png",
+    "Bide Et Musique": "https://www.bide-et-musique.com/wp-content/uploads/2021/05/logo-bm-2021.png",
+    "Chansons Oubliées Où Presque": "https://www.radio.net/images/broadcasts/4b/6b/14164/1/c300.png",
+    "Chante France-80s": "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.jpg",
+    "Flash 80 Radio": "https://www.flash80.com/images/logo/2024/logo-flash80-2024.png",
+    "Génération Dorothée": "https://generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png",
+    "Générikds": "https://www.radioking.com/api/v2/radio/play/logo/1b8d4f5f-9e5f-4f3d-8e5f-1b8d4f5f9e5f/300/300",
+    "Made In 80": "https://i.ibb.co/4pD4X0x/madein80.png",
+    "Mega Hits": "https://megahits.sapo.pt/wp-content/uploads/2020/06/logo-megahits.png",
+    "Nostalgie-Les 80 Plus Grand Tubes": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
+    "Nostalgie-Les Tubes 80 N1": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
+    "Radio Comercial": "https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png",
+    "Radio Gérard": "https://radiosurle.net:8765/radiogerard/cover.jpg",
+    "RTL": "https://www.rtl.fr/favicon-192x192.png",
+    "Superloustic": "https://i.ibb.co/4pD4X0x/superloustic.png",
+    "Supernana": "https://i.ibb.co/4pD4X0x/supernana.png",
+    "Top 80 Radio": "https://i.ibb.co/4pD4X0x/top80radio.png"
+}
 
 
 def _normalize_text(value: str) -> str:
@@ -62,6 +90,7 @@ class RadioMetadata:
     title: str
     artist: str
     cover_url: str = ""
+    host: str = ""  # Ajout du champ pour l'animateur
 
 
 class CustomHttpAdapter(requests.adapters.HTTPAdapter):
@@ -226,7 +255,7 @@ def _fetch_nrjaudio_wr_api3_tracklist_metadata(session: requests.Session, radio_
         cover_url = _normalize_text(str(current.get("artwork_image") or ""))
         if not title or not artist:
             return None
-        return RadioMetadata(station=station_name, title=title, artist=artist, cover_url=cover_url)
+        return RadioMetadata(station=station_name, title=title, artist=artist, cover_url=cover_url, host="")
     except Exception:
         return None
 
@@ -324,7 +353,7 @@ def _fetch_infomaniak_icecast_status(session: requests.Session, stream_url: str,
                 parsed = _parse_icecast_title(str(title_field))
                 if parsed:
                     title, artist = parsed
-                    return RadioMetadata(station=station_name, title=title, artist=artist, cover_url="")
+                    return RadioMetadata(station=station_name, title=title, artist=artist, cover_url="", host="")
 
             # 7.html (Shoutcast-like) : often "<body>Artist - Title,StreamName</body>"
             if url.endswith("/7.html") and isinstance(r.text, str):
@@ -335,7 +364,7 @@ def _fetch_infomaniak_icecast_status(session: requests.Session, stream_url: str,
                 parsed = _parse_icecast_title(raw)
                 if parsed:
                     title, artist = parsed
-                    return RadioMetadata(station=station_name, title=title, artist=artist, cover_url="")
+                    return RadioMetadata(station=station_name, title=title, artist=artist, cover_url="", host="")
 
         return None
     except Exception:
@@ -377,7 +406,7 @@ def _fetch_100radio_ws_metas(session: requests.Session, station_name: str) -> Op
                         if not parsed:
                             continue
                         title, artist, cover_url = parsed
-                        return RadioMetadata(station=station_name, title=title, artist=artist, cover_url=cover_url)
+                        return RadioMetadata(station=station_name, title=title, artist=artist, cover_url=cover_url, host="")
                 except Exception:
                     pass
                 finally:
@@ -401,7 +430,7 @@ def _fetch_100radio_ws_metas(session: requests.Session, station_name: str) -> Op
                 continue
 
             title, artist, cover_url = parsed
-            return RadioMetadata(station=station_name, title=title, artist=artist, cover_url=cover_url)
+            return RadioMetadata(station=station_name, title=title, artist=artist, cover_url=cover_url, host="")
 
         return None
     except Exception:
@@ -467,13 +496,15 @@ class RadioFetcher:
                             station=station_name,
                             title=metadata['song'],
                             artist=metadata['artist'],
-                            cover_url=self._get_album_cover(metadata['artist'], metadata['song'])
+                            cover_url=self._get_album_cover(metadata['artist'], metadata['song']),
+                            host=""  # Pas d'animateur pour les chansons
                         )
                     elif metadata.get('host'):
                         return RadioMetadata(
                             station=station_name,
                             title=metadata.get('show', 'En direct'),
                             artist=metadata['host'],
+                            host=metadata['host'],  # Ajout du nom de l'animateur
                             cover_url="https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png"
                         )
                         
@@ -523,6 +554,119 @@ class RadioFetcher:
             pass
         return ""
 
+    def _get_bide_musique_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Extrait les métadonnées depuis le site de Bide Et Musique"""
+        if not BeautifulSoup:
+            return None
+            
+        try:
+            url = "https://www.bide-et-musique.com/player2/radio-info.php"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Referer': 'https://www.bide-et-musique.com/player2/bideplayertest.html'
+            }
+            
+            response = self.session.get(url, headers=headers, timeout=10, verify=False)
+            response.raise_for_status()
+            
+            # Parser le HTML
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Extraire le titre de la chanson
+            title_element = soup.find('p', class_='titre-song')
+            title = ""
+            if title_element:
+                title_link = title_element.find('a')
+                if title_link:
+                    title = _normalize_text(title_link.get_text(strip=True))
+            
+            # Extraire l'artiste
+            artist_element = soup.find('p', class_='titre-song2')
+            artist = ""
+            if artist_element:
+                artist_link = artist_element.find('a')
+                if artist_link:
+                    artist = _normalize_text(artist_link.get_text(strip=True))
+            
+            # Extraire l'émission/programme (utilisé comme animateur)
+            program_element = soup.find('td', id='requete')
+            program = ""
+            if program_element:
+                program_link = program_element.find('a')
+                if program_link:
+                    program = _normalize_text(program_link.get_text(strip=True))
+            
+            # Extraire la pochette
+            pochette_element = soup.find('td', id='pochette')
+            cover_url = ""
+            if pochette_element:
+                img_element = pochette_element.find('img')
+                if img_element:
+                    pochette_src = img_element.get('src', '')
+                    if pochette_src:
+                        # Convertir l'URL relative en URL absolue
+                        if pochette_src.startswith('/'):
+                            cover_url = f"https://www.bide-et-musique.com{pochette_src}"
+                        else:
+                            cover_url = pochette_src
+            
+            # Si on a un titre et un artiste, retourner les métadonnées
+            if title and artist:
+                return RadioMetadata(
+                    station=station_name,
+                    title=title,
+                    artist=artist,
+                    cover_url=cover_url,
+                    host=program  # Le programme est utilisé comme animateur
+                )
+            
+        except Exception as e:
+            print(f"Erreur extraction Bide Et Musique: {e}")
+            
+        return None
+
+    def _get_rtl_api_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Extrait les métadonnées depuis l'API RTL"""
+        try:
+            url = "https://www.rtl.fr/ws/live/live"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+                'Connection': 'keep-alive',
+                'Referer': 'https://www.rtl.fr/'
+            }
+            
+            response = self.session.get(url, headers=headers, timeout=10, verify=False)
+            response.raise_for_status()
+            
+            # Parser le JSON
+            data = response.json()
+            
+            # Extraire les métadonnées
+            title = data.get('title', '')
+            hosts = data.get('hosts', '')
+            cover_url = data.get('cover', '')
+            
+            # Si on a un titre et un animateur, retourner les métadonnées
+            if title and hosts:
+                return RadioMetadata(
+                    station=station_name,
+                    title=title,
+                    artist=hosts,  # L'animateur est traité comme artiste
+                    cover_url=cover_url,
+                    host=hosts
+                )
+            
+        except Exception as e:
+            print(f"Erreur extraction RTL API: {e}")
+            
+        return None
+
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
         try:
             headers = {
@@ -530,9 +674,18 @@ class RadioFetcher:
                 "Accept": "*/*",
             }
 
-            # Certains flux Infomaniak renvoient/formatent mieux les métadonnées ICY
-            # quand on imite le client officiel.
-            if "ice.infomaniak.ch" in (url or ""):
+            # Gérer spécifiquement les flux StreamTheWorld (comme Mega Hits)
+            if "streamtheworld.com" in url:
+                headers.update({
+                    "User-Agent": "AppleCoreMedia/1.0.0.22F76 (iPhone; U; CPU OS 18_5 like Mac OS X; fr_fr)",
+                    "X-Playback-Session-Id": "2129DA7C-E1B9-43E0-8B20-0C733A266859",
+                    "icy-metadata": "1",
+                    "Accept": "*/*",
+                    "Accept-Language": "fr-FR,fr;q=0.9",
+                    "Accept-Encoding": "identity",
+                    "Connection": "keep-alive"
+                })
+            elif "ice.infomaniak.ch" in (url or ""):
                 headers.update({
                     "User-Agent": "AIM",
                     "Referer": "apli",
@@ -554,7 +707,12 @@ class RadioFetcher:
 
             if "icy-metaint" in r.headers:
                 meta_int = int(r.headers["icy-metaint"])
-                for _ in range(6):
+                metadata_found = False
+                
+                # Augmenter le nombre de tentatives pour les flux StreamTheWorld
+                max_attempts = 12 if "streamtheworld.com" in url else 6
+                
+                for attempt in range(max_attempts):
                     r.raw.read(meta_int)
                     meta_len_b = r.raw.read(1)
                     if not meta_len_b:
@@ -583,12 +741,23 @@ class RadioFetcher:
                         else:
                             title = stream_title
                     if title and title.lower() != "en direct":
+                        metadata_found = True
                         break
+                
+                # Si aucune métadonnée n'est trouvée pour Mega Hits, utiliser un message plus informatif
+                if not metadata_found and "streamtheworld.com" in url:
+                    title = "Écoutez Mega Hits"
+                    artist = "La meilleure musique des années 80, 90 et actuelles"
 
             r.close()
-            return RadioMetadata(station=station_name, title=title or "En direct", artist=artist or station_name, cover_url=cover_url)
+            
+            # Appliquer le logo par défaut si aucune pochette n'est trouvée
+            if not cover_url and station_name in RADIO_LOGOS:
+                cover_url = RADIO_LOGOS[station_name]
+            
+            return RadioMetadata(station=station_name, title=title or "En direct", artist=artist or station_name, cover_url=cover_url, host="")
         except Exception:
-            return RadioMetadata(station=station_name, title="En direct", artist=station_name, cover_url="")
+            return RadioMetadata(station=station_name, title="En direct", artist=station_name, cover_url="", host="")
 
     def get_metadata(self, station_name: str, url: str) -> RadioMetadata:
         cache_key = f"{station_name}:{url}"
@@ -599,22 +768,21 @@ class RadioFetcher:
 
         md: Optional[RadioMetadata] = None
 
-        # Spécial: Radio Comercial - essayer d'abord le parsing HLS
-        if "radio comercial" in station_name.lower() or "comercial" in station_name.lower():
-            # Si c'est une URL HLS, essayer de parser le contenu
-            if ".m3u8" in url:
-                try:
-                    response = self.session.get(url, timeout=10)
-                    if response.status_code == 200:
-                        hls_content = response.text
-                        md = self._parse_hls_metadata(hls_content, station_name)
-                        if md:
-                            self.cache[cache_key] = (md, now)
-                            return md
-                except Exception:
-                    pass
+        # Spécial: Bide Et Musique - essayer d'abord le parsing web
+        if "bide" in station_name.lower():
+            md = self._get_bide_musique_metadata(station_name)
+            if md:
+                self.cache[cache_key] = (md, now)
+                return md
+
+        # Spécial: RTL - essayer d'abord l'API
+        if "rtl" in station_name.lower():
+            md = self._get_rtl_api_metadata(station_name)
+            if md:
+                self.cache[cache_key] = (md, now)
+                return md
             
-            # Sinon, essayer avec le flux ICY standard qui contient déjà les métadonnées XML
+            # Sinon, essayer avec le flux ICY standard
             md = self._get_icy_metadata(url, station_name)
             self.cache[cache_key] = (md, now)
             return md
@@ -643,6 +811,29 @@ class RadioFetcher:
                     return md
 
         md = self._get_icy_metadata(url, station_name)
+        
+        # Pour les chansons, essayer de trouver une pochette d'album si pas déjà fait
+        if md.title and md.artist and md.title.lower() != "en direct":
+            # Si pas de pochette ou si c'est juste le logo par défaut
+            if not md.cover_url or md.cover_url == RADIO_LOGOS.get(station_name, ""):
+                album_cover = self._get_album_cover(md.artist, md.title)
+                if album_cover:
+                    md = RadioMetadata(
+                        station=md.station,
+                        title=md.title,
+                        artist=md.artist,
+                        cover_url=album_cover
+                    )
+        
+        # Pour toutes les radios, s'assurer qu'on a au moins le logo par défaut
+        if not md.cover_url and station_name in RADIO_LOGOS:
+            md = RadioMetadata(
+                station=md.station,
+                title=md.title,
+                artist=md.artist,
+                cover_url=RADIO_LOGOS[station_name]
+            )
+        
         self.cache[cache_key] = (md, now)
         return md
 
