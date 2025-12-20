@@ -149,6 +149,8 @@ app.get('/api/now-playing', async (req, res) => {
   ];
 
   const pythonBin = process.env.PYTHON_BIN || '/app/venv/bin/python';
+  console.log('[DEBUG] pythonBin:', pythonBin);
+  console.log('[DEBUG] args:', args);
 
   const py = spawn(pythonBin, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
