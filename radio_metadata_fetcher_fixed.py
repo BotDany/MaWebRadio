@@ -381,7 +381,7 @@ class CustomHttpAdapter(requests.adapters.HTTPAdapter):
             ssl_context=self.ssl_context
         )
 
-def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str]]:
+def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
     """Récupère les métadonnées de M80 via l'API myTuner"""
     try:
         import time
@@ -397,7 +397,8 @@ def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str]]:
         # Timestamp actuel
         timestamp = str(int(time.time()))
         
-        # Générer la signature HMAC
+        # Construire la signature HMAC correcte
+        # Format: app_codename:api_key:timestamp
         message = f"{app_codename}:{api_key}:{timestamp}"
         signature = hmac.new(
             api_secret.encode('utf-8'),
@@ -413,7 +414,7 @@ def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str]]:
             'time': timestamp
         }
         
-        # En-têtes
+        # En-têtes avec le bon format d'autorisation
         headers = {
             'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
             'Accept': '*/*',
@@ -424,13 +425,17 @@ def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str]]:
         
         if response.status_code == 200:
             data = response.json()
-            if 'metadata' in data and data['metadata']:
-                metadata = data['metadata'][0]  # Prendre la première radio
-                if 'song' in metadata and 'artist' in metadata:
-                    title = metadata['song'].strip()
-                    artist = metadata['artist'].strip()
-                    if title and artist and title != "No Info":
-                        return title, artist
+            if data.get('error_code') == 0 and 'radios_metadata' in data:
+                radios = data['radios_metadata']
+                if radios and len(radios) > 0:
+                    metadata = radios[0]
+                    if not metadata.get('no_metadata_available', True):
+                        title = metadata.get('track_name', '').strip()
+                        artist = metadata.get('artist_name', '').strip()
+                        cover_url = metadata.get('artwork_url_large', '').strip()
+                        
+                        if title and artist and title != "No Info":
+                            return title, artist, cover_url
         
         return None
         
@@ -632,9 +637,21 @@ class RadioFetcher:
             )
 
     def _get_m80_metadata(self, url: str, station_name: str) -> RadioMetadata:
-        """Récupère les métadonnées pour M80 via flux ICY standard"""
+        """Récupère les métadonnées pour M80 via API myTuner"""
         try:
-            # M80 utilise maintenant un flux MP3 standard avec métadonnées ICY
+            # Essayer d'abord l'API myTuner pour les vraies métadonnées
+            mytuner_data = _fetch_m80_mytuner_metadata()
+            if mytuner_data:
+                title, artist, cover_url = mytuner_data
+                
+                return RadioMetadata(
+                    station=station_name,
+                    title=title,
+                    artist=artist,
+                    cover_url=cover_url
+                )
+            
+            # Fallback: essayer le flux ICY standard
             return self._get_icy_metadata(url, station_name)
                 
         except Exception as e:
