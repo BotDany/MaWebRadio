@@ -694,9 +694,9 @@ class RadioFetcher:
                     if is_still_generic:
                         webradio_id = None
                         if "tubes 80 n1" in station_l:
-                            webradio_id = 1640
-                        elif "80 plus grand" in station_l or "80 plus grands" in station_l:
                             webradio_id = 1283
+                        elif "80 plus grand" in station_l or "80 plus grands" in station_l:
+                            webradio_id = 1640
 
                         if webradio_id is not None:
                             api_meta = _fetch_nostalgie_wr_api3_tracklist(self.session, webradio_id, station_name)
