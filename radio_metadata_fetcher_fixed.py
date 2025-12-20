@@ -1064,7 +1064,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                    cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                 )
                 
             if 'icy-metaint' not in response.headers:
@@ -1079,7 +1079,7 @@ class RadioFetcher:
                                 station=station_name,
                                 title=t,
                                 artist=a,
-                                cover_url="https://www.rtl.fr/svg/rtl-logo.svg",
+                                cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128",
                             )
                 except Exception:
                     pass
@@ -1087,7 +1087,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                    cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                 )
                 
             meta_interval = int(response.headers['icy-metaint'])
@@ -1103,7 +1103,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                    cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                 )
                 
             meta_length = ord(meta_length_byte) * 16
@@ -1129,7 +1129,7 @@ class RadioFetcher:
                                         station=station_name,
                                         title=t,
                                         artist=a,
-                                        cover_url="https://www.rtl.fr/svg/rtl-logo.svg",
+                                        cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128",
                                     )
                         except Exception:
                             pass
@@ -1137,7 +1137,7 @@ class RadioFetcher:
                             station=station_name,
                             title="En direct",
                             artist=station_name,
-                            cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                            cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                         )
                     
                     # Essayer de séparer l'artiste et le titre
@@ -1147,21 +1147,21 @@ class RadioFetcher:
                             station=station_name,
                             title=title.strip(),
                             artist=artist.strip(),
-                            cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                            cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                         )
                     else:
                         return RadioMetadata(
                             station=station_name,
                             title=stream_title.strip(),
                             artist=station_name,
-                            cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                            cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                         )
                 else:
                     return RadioMetadata(
                         station=station_name,
                         title="En direct",
                         artist=station_name,
-                        cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                        cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                     )
             else:
                 response.close()
@@ -1169,7 +1169,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                    cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
                 )
                 
         except Exception as e:
@@ -1178,7 +1178,7 @@ class RadioFetcher:
                 station=station_name,
                 title="En direct",
                 artist=station_name,
-                cover_url="https://www.rtl.fr/svg/rtl-logo.svg"
+                cover_url=f"https://www.google.com/s2/favicons?domain=rtl.fr&sz=128"
             )
 
     def _get_infomaniak_metadata(self, url: str, station_name: str) -> RadioMetadata:
