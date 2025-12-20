@@ -129,9 +129,11 @@ app.delete('/api/radios/:id', requireAuth, async (req, res) => {
 // ---------- METADONNÉES NOW-PLAYING (Python) ----------
 
 app.get('/api/now-playing', async (req, res) => {
+  console.log('[DEBUG] /api/now-playing query:', req.query);
   const name = req.query.name;
   const url = req.query.url;
 
+  console.log('[DEBUG] name:', name, 'url:', url);
   if (!name || !url) {
     return res.status(400).json({ error: 'Paramètres requis: name, url' });
   }
