@@ -381,6 +381,63 @@ class CustomHttpAdapter(requests.adapters.HTTPAdapter):
             ssl_context=self.ssl_context
         )
 
+def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str]]:
+    """Récupère les métadonnées de M80 via l'API myTuner"""
+    try:
+        import time
+        import hashlib
+        import hmac
+        
+        # Configuration myTuner
+        app_codename = "itunerfree"
+        api_key = "d856b98d-c05f-42b1-a0d9-1292ba80772d"
+        api_secret = "BMcvdrUKG03tgAf76j58zm9igAvhQr4G8PjyHGhzgGM"
+        radio_id = "413031"
+        
+        # Timestamp actuel
+        timestamp = str(int(time.time()))
+        
+        # Générer la signature HMAC
+        message = f"{app_codename}:{api_key}:{timestamp}"
+        signature = hmac.new(
+            api_secret.encode('utf-8'),
+            message.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Construire l'URL de l'API
+        url = f"https://metadata-api.mytuner.mobi/api/v1/metadata-api/apps/metadata"
+        params = {
+            'app_codename': app_codename,
+            'radio_ids': radio_id,
+            'time': timestamp
+        }
+        
+        # En-têtes
+        headers = {
+            'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
+            'Accept': '*/*',
+            'Authorization': f'HMAC {app_codename}:{api_key}:{signature}'
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'metadata' in data and data['metadata']:
+                metadata = data['metadata'][0]  # Prendre la première radio
+                if 'song' in metadata and 'artist' in metadata:
+                    title = metadata['song'].strip()
+                    artist = metadata['artist'].strip()
+                    if title and artist and title != "No Info":
+                        return title, artist
+        
+        return None
+        
+    except Exception as e:
+        print(f"Erreur API myTuner M80: {e}")
+        return None
+
 class RadioFetcher:
     def __init__(self):
         # Configuration SSL personnalisée
@@ -575,47 +632,10 @@ class RadioFetcher:
             )
 
     def _get_m80_metadata(self, url: str, station_name: str) -> RadioMetadata:
-        """Récupère les métadonnées pour M80 (flux HLS Bauer Media)"""
+        """Récupère les métadonnées pour M80 via flux ICY standard"""
         try:
-            # M80 utilise un flux HLS qui ne fournit pas de métadonnées ICY standard
-            # On tente d'abord de récupérer le flux audio direct depuis le playlist
-            response = self.session.get(url, timeout=10)
-            
-            if response.status_code != 200:
-                return RadioMetadata(
-                    station=station_name,
-                    title="Écoutez M80",
-                    artist="A melhor música dos anos 80, 90 e mais",
-                    cover_url=f"https://www.google.com/s2/favicons?domain=m80.pt&sz=128"
-                )
-            
-            # Parser le playlist M3U8 pour trouver le flux audio
-            playlist_content = response.text
-            if '.aac' in playlist_content:
-                # Extraire l'URL du flux audio
-                import re
-                audio_url_match = re.search(r'(https://[^\s]+\.aac)', playlist_content)
-                if audio_url_match:
-                    audio_url = audio_url_match.group(1)
-                    
-                    # Tenter de récupérer les métadonnées ICY du flux audio
-                    try:
-                        audio_response = self.session.get(audio_url, stream=True, timeout=5)
-                        if 'icy-metaint' in audio_response.headers:
-                            # Utiliser la fonction ICY standard
-                            audio_response.close()
-                            return self._get_icy_metadata(audio_url, station_name)
-                        audio_response.close()
-                    except Exception:
-                        pass
-            
-            # Fallback: pas de métadonnées disponibles pour M80
-            return RadioMetadata(
-                station=station_name,
-                title="Écoutez M80",
-                artist="A melhor música dos anos 80, 90 e mais",
-                cover_url=f"https://www.google.com/s2/favicons?domain=m80.pt&sz=128"
-            )
+            # M80 utilise maintenant un flux MP3 standard avec métadonnées ICY
+            return self._get_icy_metadata(url, station_name)
                 
         except Exception as e:
             print(f"Erreur dans _get_m80_metadata pour {url}: {e}")
@@ -1315,7 +1335,7 @@ def main():
         ("Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d"),
         ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
         ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
-        ("M80", "https://stream-hls.bauermedia.pt/m80.aac/playlist.m3u8?source=bauerptApp"),
+        ("M80", "https://stream-icy.bauermedia.pt/m80.mp3"),
         ("Radio Gérard", "https://radiosurle.net:8765/radiogerard"),
         ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
         ("Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"),
