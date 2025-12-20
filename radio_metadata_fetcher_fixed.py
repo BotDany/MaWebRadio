@@ -547,6 +547,29 @@ class RadioFetcher:
             metadata = self._get_radiocomercial_metadata(url, station_name)
         elif "nrjaudio" in url:
             metadata = self._get_nrj_metadata(url, station_name)
+
+            # Fallback renforcé : Nostalgie renvoie souvent un StreamTitle générique.
+            # On tente onair.json si les métadonnées ne sont pas exploitables.
+            try:
+                if "nostalgie" in station_name.lower():
+                    title_l = (metadata.title or "").strip().lower()
+                    artist_l = (metadata.artist or "").strip().lower()
+                    station_l = station_name.strip().lower()
+
+                    is_generic = (
+                        title_l in ["", "en direct"]
+                        or title_l == station_l
+                        or title_l.startswith("nostalgie")
+                        or artist_l in ["", station_l]
+                        or artist_l.startswith("nostalgie")
+                    )
+
+                    if is_generic:
+                        fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
+                        if fallback:
+                            metadata = fallback
+            except Exception:
+                pass
         elif "rtl.fr" in url:
             metadata = self._get_rtl_metadata(url, station_name)
         elif "streamradio.fr" in url or "streamradio.com" in url:
