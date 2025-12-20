@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const radioNameInput = document.getElementById('radio-name');
     const radioUrlInput = document.getElementById('radio-url');
     const radioGenreInput = document.getElementById('radio-genre');
+    const radioLogoUrlInput = document.getElementById('radio-logo-url');
     const currentRadioDisplay = document.getElementById('current-radio');
     const nowPlayingCover = document.getElementById('now-playing-cover');
 
@@ -454,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = radioNameInput.value.trim();
         const url = radioUrlInput.value.trim();
         const genre = radioGenreInput.value.trim();
+        const logo_url = radioLogoUrlInput.value.trim();
 
         if (!name || !url) {
             alert('Nom et URL sont obligatoires.');
@@ -475,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/radios', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, url, genre })
+                body: JSON.stringify({ name, url, genre, logo_url })
             });
 
             if (!res.ok) throw new Error('Erreur API');
@@ -483,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
             radioNameInput.value = '';
             radioUrlInput.value = '';
             radioGenreInput.value = '';
+            radioLogoUrlInput.value = '';
 
             await loadRadios();
         } catch (err) {

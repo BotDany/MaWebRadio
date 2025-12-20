@@ -102,11 +102,26 @@ app.get('/api/radios', async (req, res) => {
 });
 
 app.post('/api/radios', requireAuth, async (req, res) => {
-  const { name, url, description, genre } = req.body;
+  const { name, url, description, genre, logo_url } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO radios (name, url, description, genre) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, url, description, genre]
+      'INSERT INTO radios (name, url, description, genre, logo_url) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, url, description, genre, logo_url]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+app.put('/api/radios/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { name, url, description, genre, logo_url } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE radios SET name = $1, url = $2, description = $3, genre = $4, logo_url = $5 WHERE id = $6 RETURNING *',
+      [name, url, description, genre, logo_url, id]
     );
     res.json(result.rows[0]);
   } catch (error) {
@@ -304,9 +319,15 @@ async function initDB() {
         url VARCHAR(500) NOT NULL UNIQUE,
         description TEXT,
         genre VARCHAR(100),
+        logo_url VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         is_active BOOLEAN DEFAULT true
       )
+    `);
+
+    // Ajouter la colonne logo_url si elle n'existe pas
+    await pool.query(`
+      ALTER TABLE radios ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
     `);
 
     // Table admins
