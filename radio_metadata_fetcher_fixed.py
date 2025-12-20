@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
 import xml.etree.ElementTree as ET
 import argparse
+from urllib.parse import urlparse
 
 # Désactiver les avertissements SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -851,24 +852,44 @@ class RadioFetcher:
                             title, artist = parsed
                 except Exception:
                     pass
-
             title = _normalize_text(title)
             artist = _normalize_text(artist)
             station = _normalize_text(station)
+
+            # Déterminer l'URL de la cover
+            if icy_url and icy_url.startswith('http'):
+                cover_url = icy_url
+            elif url.startswith('http'):
+                try:
+                    hostname = urlparse(url).hostname
+                    cover_url = f"https://www.google.com/s2/favicons?domain={hostname}&sz=128"
+                except:
+                    cover_url = ""
+            else:
+                cover_url = ""
 
             return RadioMetadata(
                 station=station,
                 title=title,
                 artist=artist,
-                cover_url=icy_url if icy_url.startswith('http') else '',
+                cover_url=cover_url
             )
 
         except Exception as e:
             print(f"Erreur dans _get_icy_metadata pour {url}: {e}")
+            if url.startswith('http'):
+                try:
+                    hostname = urlparse(url).hostname
+                    cover_url = f"https://www.google.com/s2/favicons?domain={hostname}&sz=128"
+                except:
+                    cover_url = ""
+            else:
+                cover_url = ""
             return RadioMetadata(
                 station=station_name,
                 title="En direct",
                 artist=station_name,
+                cover_url=cover_url
             )
 
     def _get_nrj_metadata(self, url: str, station_name: str) -> RadioMetadata:
@@ -881,7 +902,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url=""
+                    cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                 )
                 
             if 'icy-metaint' not in response.headers:
@@ -893,7 +914,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url=""
+                    cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                 )
                 
             meta_interval = int(response.headers['icy-metaint'])
@@ -913,7 +934,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url=""
+                    cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                 )
                 
             meta_length = ord(meta_length_byte) * 16
@@ -936,7 +957,7 @@ class RadioFetcher:
                             station=station_name,
                             title="En direct",
                             artist=station_name,
-                            cover_url=""
+                            cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                         )
 
                     if "nostalgie" in station_name.lower():
@@ -953,7 +974,7 @@ class RadioFetcher:
                             station=station_name,
                             title="Publicité",
                             artist=station_name,
-                            cover_url=""
+                            cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                         )
                     
                     # Essayer de séparer l'artiste et le titre
@@ -963,14 +984,14 @@ class RadioFetcher:
                             station=station_name,
                             title=title.strip(),
                             artist=artist.strip(),
-                            cover_url=""
+                            cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                         )
                     else:
                         return RadioMetadata(
                             station=station_name,
                             title=stream_title.strip(),
                             artist=station_name,
-                            cover_url=""
+                            cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                         )
                 else:
                     # Pas de StreamTitle, vérifier si c'est une publicité
@@ -979,12 +1000,12 @@ class RadioFetcher:
                             station=station_name,
                             title="Publicité",
                             artist=station_name,
-                            cover_url=""
+                            cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                         )
 
                     title = "En direct"
                     artist = station_name
-                    cover_url = ""
+                    cover_url = f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                     try:
                         r = self.session.get("https://www.nostalgie.fr/onair.json", timeout=10)
                         if r.status_code == 200:
@@ -1010,7 +1031,7 @@ class RadioFetcher:
                     station=station_name,
                     title="En direct",
                     artist=station_name,
-                    cover_url=""
+                    cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
                 )
                 
         except Exception as e:
@@ -1019,7 +1040,7 @@ class RadioFetcher:
                 station=station_name,
                 title="En direct",
                 artist=station_name,
-                cover_url=""
+                cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
             )
 
     def _get_rtl_metadata(self, url: str, station_name: str) -> RadioMetadata:
@@ -1160,7 +1181,7 @@ class RadioFetcher:
                 station=station_name,
                 title="En direct",
                 artist=station_name,
-                cover_url=""
+                cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
             )
 
     def _get_streamtheworld_metadata(self, url: str, station_name: str) -> RadioMetadata:
@@ -1174,7 +1195,7 @@ class RadioFetcher:
                 station=station_name,
                 title="En direct",
                 artist=station_name,
-                cover_url=""
+                cover_url=f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
             )
 
 def display_metadata(metadata: RadioMetadata) -> str:
