@@ -246,6 +246,74 @@ def _fetch_nostalgie_onair_metadata(session: requests.Session, stream_url: str, 
     except Exception:
         return None
 
+def _nrjaudio_first_str(obj: object, keys: Tuple[str, ...]) -> str:
+    if not isinstance(obj, dict):
+        return ""
+    for k in keys:
+        v = obj.get(k)
+        if isinstance(v, str) and v.strip():
+            return _normalize_text(v)
+    return ""
+
+def _fetch_nostalgie_wr_api3_tracklist(session: requests.Session, webradio_id: int, station_name: str) -> Optional["RadioMetadata"]:
+    try:
+        base_url = f"https://players.nrjaudio.fm/wr_api3/v1/webradios/{int(webradio_id)}/tracklist"
+        headers = {
+            "accept": "application/json",
+            "x-app-id": "fr_nosta_ios",
+            "x-device-category": "mobile",
+            "user-agent": "NostalgieApp/9490 CFNetwork/3826.500.131 Darwin/24.5.0",
+        }
+
+        params_candidates = [
+            {"timeshift_slot": 1},
+            {"timeshift_slot": 1, "current_track_id": "0-0"},
+        ]
+
+        for params in params_candidates:
+            r = session.get(base_url, headers=headers, params=params, timeout=8)
+            if r.status_code != 200:
+                continue
+
+            data = r.json()
+
+            tracks = None
+            if isinstance(data, dict):
+                for k in ("tracklist", "tracks", "items", "data"):
+                    v = data.get(k)
+                    if isinstance(v, list) and v:
+                        tracks = v
+                        break
+
+            if not isinstance(tracks, list) or not tracks:
+                continue
+
+            first = tracks[0]
+            if not isinstance(first, dict):
+                continue
+
+            if isinstance(first.get("track"), dict):
+                first = first.get("track")
+
+            title = _nrjaudio_first_str(first, ("title", "name", "track_title"))
+            artist = _nrjaudio_first_str(first, ("artist", "performer", "track_artist"))
+
+            cover_url = _nrjaudio_first_str(first, ("img_url", "cover_url", "cover", "image"))
+            if not cover_url and isinstance(first.get("pictures"), dict):
+                cover_url = _nrjaudio_first_str(first.get("pictures"), ("xl", "l", "m", "s", "url"))
+
+            if title and artist:
+                return RadioMetadata(
+                    station=station_name,
+                    title=title,
+                    artist=artist,
+                    cover_url=cover_url,
+                )
+
+        return None
+    except Exception:
+        return None
+
 @dataclass
 class RadioMetadata:
     station: str
@@ -568,6 +636,29 @@ class RadioFetcher:
                         fallback = _fetch_nostalgie_onair_metadata(self.session, url, station_name)
                         if fallback:
                             metadata = fallback
+
+                    # Si c'est encore générique après onair.json, on tente l'API iOS (wr_api3)
+                    title_l = (metadata.title or "").strip().lower()
+                    artist_l = (metadata.artist or "").strip().lower()
+                    is_still_generic = (
+                        title_l in ["", "en direct"]
+                        or title_l == station_l
+                        or title_l.startswith("nostalgie")
+                        or artist_l in ["", station_l]
+                        or artist_l.startswith("nostalgie")
+                    )
+
+                    if is_still_generic:
+                        webradio_id = None
+                        if "tubes 80 n1" in station_l:
+                            webradio_id = 1640
+                        elif "80 plus grand" in station_l or "80 plus grands" in station_l:
+                            webradio_id = 1283
+
+                        if webradio_id is not None:
+                            api_meta = _fetch_nostalgie_wr_api3_tracklist(self.session, webradio_id, station_name)
+                            if api_meta:
+                                metadata = api_meta
             except Exception:
                 pass
         elif "rtl.fr" in url:
