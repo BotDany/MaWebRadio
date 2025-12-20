@@ -418,6 +418,7 @@ def _fetch_radiocomercial_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
         headers = {
             'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
             'Accept': '*/*',
+            'Accept-Language': 'fr-PT;q=1, pt-PT;q=0.9, en-PT;q=0.8',
             'Authorization': f'HMAC {app_codename}:{api_key}:{signature}'
         }
         
@@ -480,6 +481,7 @@ def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
         headers = {
             'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
             'Accept': '*/*',
+            'Accept-Language': 'fr-PT;q=1, pt-PT;q=0.9, en-PT;q=0.8',
             'Authorization': f'HMAC {app_codename}:{api_key}:{signature}'
         }
         
