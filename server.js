@@ -367,5 +367,15 @@ async function initDB() {
 
 app.listen(PORT, async () => {
   await initDB();
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
+  let dbHost = '';
+  try {
+    const u = new URL(process.env.DATABASE_URL || '');
+    dbHost = u.host;
+  } catch (e) {
+    dbHost = '';
+  }
+
+  console.log('Serveur démarré');
+  console.log('PORT:', PORT);
+  if (dbHost) console.log('DB host:', dbHost);
 });
