@@ -1261,6 +1261,7 @@ def main():
         ("Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d"),
         ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
         ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
+        ("M80", "https://stream-hls.bauermedia.pt/m80.aac/playlist.m3u8?source=bauerptApp"),
         ("Radio Gérard", "https://radiosurle.net:8765/radiogerard"),
         ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
         ("Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"),
