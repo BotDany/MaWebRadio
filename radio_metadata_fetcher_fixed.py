@@ -381,6 +381,68 @@ class CustomHttpAdapter(requests.adapters.HTTPAdapter):
             ssl_context=self.ssl_context
         )
 
+def _fetch_radiocomercial_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
+    """Récupère les métadonnées de Radio Comercial via l'API myTuner"""
+    try:
+        import time
+        import hashlib
+        import hmac
+        
+        # Configuration myTuner
+        app_codename = "itunerfree"
+        api_key = "d856b98d-c05f-42b1-a0d9-1292ba80772d"
+        api_secret = "BMcvdrUKG03tgAf76j58zm9igAvhQr4G8PjyHGhzgGM"
+        radio_id = "413031"  # Radio Comercial
+        
+        # Timestamp actuel
+        timestamp = str(int(time.time()))
+        
+        # Construire la signature HMAC correcte
+        # Format: app_codename:api_key:timestamp
+        message = f"{app_codename}:{api_key}:{timestamp}"
+        signature = hmac.new(
+            api_secret.encode('utf-8'),
+            message.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Construire l'URL de l'API
+        url = f"https://metadata-api.mytuner.mobi/api/v1/metadata-api/apps/metadata"
+        params = {
+            'app_codename': app_codename,
+            'radio_ids': radio_id,
+            'time': timestamp
+        }
+        
+        # En-têtes avec le bon format d'autorisation
+        headers = {
+            'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
+            'Accept': '*/*',
+            'Authorization': f'HMAC {app_codename}:{api_key}:{signature}'
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('error_code') == 0 and 'radios_metadata' in data:
+                radios = data['radios_metadata']
+                if radios and len(radios) > 0:
+                    metadata = radios[0]
+                    if not metadata.get('no_metadata_available', True):
+                        title = metadata.get('track_name', '').strip()
+                        artist = metadata.get('artist_name', '').strip()
+                        cover_url = metadata.get('artwork_url_large', '').strip()
+                        
+                        if title and artist and title != "No Info":
+                            return title, artist, cover_url
+        
+        return None
+        
+    except Exception as e:
+        print(f"Erreur API myTuner Radio Comercial: {e}")
+        return None
+
 def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
     """Récupère les métadonnées de M80 via l'API myTuner"""
     try:
@@ -482,8 +544,21 @@ class RadioFetcher:
         self.session.mount("https://", adapter)
 
     def _get_radiocomercial_metadata(self, url: str, station_name: str) -> RadioMetadata:
-        """Récupère les métadonnées pour Radio Comercial avec extraction directe"""
+        """Récupère les métadonnées pour Radio Comercial via API myTuner"""
         try:
+            # Essayer d'abord l'API myTuner pour les vraies métadonnées
+            mytuner_data = _fetch_radiocomercial_mytuner_metadata()
+            if mytuner_data:
+                title, artist, cover_url = mytuner_data
+                
+                return RadioMetadata(
+                    station=station_name,
+                    title=title,
+                    artist=artist,
+                    cover_url=cover_url
+                )
+            
+            # Fallback: essayer le flux ICY standard
             response = self.session.get(url, stream=True, timeout=10)
             
             if response.status_code != 200:
