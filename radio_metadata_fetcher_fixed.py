@@ -392,7 +392,7 @@ def _fetch_radiocomercial_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
         app_codename = "itunerfree"
         api_key = "d856b98d-c05f-42b1-a0d9-1292ba80772d"
         api_secret = "BMcvdrUKG03tgAf76j58zm9igAvhQr4G8PjyHGhzgGM"
-        radio_id = "464230"  # Radio Comercial Portugal
+        radio_id = "413031"  # Radio Comercial Portugal (ID qui fonctionne)
         
         # Timestamp actuel
         timestamp = str(int(time.time()))
@@ -414,12 +414,14 @@ def _fetch_radiocomercial_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
             'time': timestamp
         }
         
-        # En-têtes avec le bon format d'autorisation
+        # En-têtes exacts comme dans la requête qui fonctionne
         headers = {
-            'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
             'Accept': '*/*',
+            'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
             'Accept-Language': 'fr-PT;q=1, pt-PT;q=0.9, en-PT;q=0.8',
-            'Authorization': f'HMAC {app_codename}:{api_key}:{signature}'
+            'Authorization': f'HMAC {app_codename}:{api_key}:{signature}',
+            'Accept-Encoding': 'gzip',
+            'Connection': 'keep-alive'
         }
         
         response = requests.get(url, params=params, headers=headers, timeout=5)
@@ -477,12 +479,14 @@ def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
             'time': timestamp
         }
         
-        # En-têtes avec le bon format d'autorisation
+        # En-têtes exacts comme dans la requête qui fonctionne
         headers = {
-            'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
             'Accept': '*/*',
+            'User-Agent': 'myTuneriOS Free/10.0.3 (iPhone; iOS 18.5; Scale/3.00)',
             'Accept-Language': 'fr-PT;q=1, pt-PT;q=0.9, en-PT;q=0.8',
-            'Authorization': f'HMAC {app_codename}:{api_key}:{signature}'
+            'Authorization': f'HMAC {app_codename}:{api_key}:{signature}',
+            'Accept-Encoding': 'gzip',
+            'Connection': 'keep-alive'
         }
         
         response = requests.get(url, params=params, headers=headers, timeout=5)
