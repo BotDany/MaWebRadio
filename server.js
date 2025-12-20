@@ -129,11 +129,9 @@ app.delete('/api/radios/:id', requireAuth, async (req, res) => {
 // ---------- METADONNÉES NOW-PLAYING (Python) ----------
 
 app.get('/api/now-playing', async (req, res) => {
-  console.log('[DEBUG] /api/now-playing query:', req.query);
   const name = req.query.name;
   const url = req.query.url;
 
-  console.log('[DEBUG] name:', name, 'url:', url);
   if (!name || !url) {
     return res.status(400).json({ error: 'Paramètres requis: name, url' });
   }
@@ -149,8 +147,6 @@ app.get('/api/now-playing', async (req, res) => {
   ];
 
   const pythonBin = process.env.PYTHON_BIN || '/app/venv/bin/python';
-  console.log('[DEBUG] pythonBin:', pythonBin);
-  console.log('[DEBUG] args:', args);
 
   const py = spawn(pythonBin, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
