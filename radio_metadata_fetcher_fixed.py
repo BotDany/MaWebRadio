@@ -260,6 +260,7 @@ def _fetch_nostalgie_wr_api3_tracklist(session: requests.Session, webradio_id: i
         base_url = f"https://players.nrjaudio.fm/wr_api3/v1/webradios/{int(webradio_id)}/tracklist"
         headers = {
             "accept": "application/json",
+            "accept-language": "fr-FR,fr;q=0.9",
             "x-app-id": "fr_nosta_ios",
             "x-device-category": "mobile",
             "user-agent": "NostalgieApp/9490 CFNetwork/3826.500.131 Darwin/24.5.0",
@@ -270,12 +271,48 @@ def _fetch_nostalgie_wr_api3_tracklist(session: requests.Session, webradio_id: i
             {"timeshift_slot": 1, "current_track_id": "0-0"},
         ]
 
+        def _parse_track_obj(obj: object) -> Optional["RadioMetadata"]:
+            if not isinstance(obj, dict):
+                return None
+
+            # Normaliser les enveloppes courantes
+            for wrap_key in ("track", "current_track", "current", "song"):
+                if isinstance(obj.get(wrap_key), dict):
+                    obj = obj.get(wrap_key)
+                    break
+
+            title = _nrjaudio_first_str(obj, ("title", "name", "track_title"))
+            artist = _nrjaudio_first_str(obj, ("artist", "performer", "track_artist"))
+
+            # Certains JSON ont une structure { artist: { name: ... } }
+            if not artist and isinstance(obj.get("artist"), dict):
+                artist = _nrjaudio_first_str(obj.get("artist"), ("name", "title"))
+
+            cover_url = _nrjaudio_first_str(obj, ("img_url", "cover_url", "cover", "image"))
+            if not cover_url and isinstance(obj.get("pictures"), dict):
+                cover_url = _nrjaudio_first_str(obj.get("pictures"), ("xl", "l", "m", "s", "url"))
+
+            if title and artist:
+                return RadioMetadata(
+                    station=station_name,
+                    title=title,
+                    artist=artist,
+                    cover_url=cover_url,
+                )
+            return None
+
         for params in params_candidates:
             r = session.get(base_url, headers=headers, params=params, timeout=8)
             if r.status_code != 200:
                 continue
 
             data = r.json()
+
+            # Cas fréquent: le track courant est directement dans un objet
+            if isinstance(data, dict):
+                direct = _parse_track_obj(data)
+                if direct:
+                    return direct
 
             tracks = None
             if isinstance(data, dict):
@@ -289,26 +326,9 @@ def _fetch_nostalgie_wr_api3_tracklist(session: requests.Session, webradio_id: i
                 continue
 
             first = tracks[0]
-            if not isinstance(first, dict):
-                continue
-
-            if isinstance(first.get("track"), dict):
-                first = first.get("track")
-
-            title = _nrjaudio_first_str(first, ("title", "name", "track_title"))
-            artist = _nrjaudio_first_str(first, ("artist", "performer", "track_artist"))
-
-            cover_url = _nrjaudio_first_str(first, ("img_url", "cover_url", "cover", "image"))
-            if not cover_url and isinstance(first.get("pictures"), dict):
-                cover_url = _nrjaudio_first_str(first.get("pictures"), ("xl", "l", "m", "s", "url"))
-
-            if title and artist:
-                return RadioMetadata(
-                    station=station_name,
-                    title=title,
-                    artist=artist,
-                    cover_url=cover_url,
-                )
+            parsed = _parse_track_obj(first)
+            if parsed:
+                return parsed
 
         return None
     except Exception:
