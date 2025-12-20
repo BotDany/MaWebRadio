@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import io
 import json
+import re
 import ssl
 import sys
 import time
@@ -142,23 +143,56 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
     except Exception:
         return None
 
-    artist_el = root.find(".//DB_DALET_ARTIST_NAME")
-    title_el = root.find(".//DB_DALET_TITLE_NAME")
-    img_el = root.find(".//DB_ALBUM_IMAGE")
-
-    artist = _normalize_text(artist_el.text) if (artist_el is not None and artist_el.text) else ""
-    title = _normalize_text(title_el.text) if (title_el is not None and title_el.text) else ""
-
+    # Extraire les informations de la table (musique)
+    table = root.find(".//Table")
+    song = ""
+    artist = ""
+    
+    if table is not None:
+        song_el = table.find(".//DB_SONG_NAME")
+        title_el = table.find(".//DB_DALET_TITLE_NAME")
+        artist_el = table.find(".//DB_DALET_ARTIST_NAME")
+        
+        # Priorité: DB_SONG_NAME > DB_DALET_TITLE_NAME
+        if song_el is not None and song_el.text:
+            song = _normalize_text(song_el.text)
+        elif title_el is not None and title_el.text:
+            song = _normalize_text(title_el.text)
+            
+        if artist_el is not None and artist_el.text:
+            artist = _normalize_text(artist_el.text)
+    
+    # Si pas de musique, extraire les infos de l'animateur
+    if not song or not artist:
+        animador = root.find(".//AnimadorInfo")
+        if animador is not None:
+            host_el = animador.find(".//TITLE")
+            show_el = animador.find(".//SHOW_NAME")
+            
+            if host_el is not None and host_el.text:
+                artist = _normalize_text(host_el.text)
+            if show_el is not None and show_el.text:
+                song = _normalize_text(show_el.text)
+            else:
+                song = "En direct"
+    
     cover_url = ""
-    if img_el is not None and img_el.text:
-        img = _normalize_text(img_el.text)
-        if img:
-            # URL exacte inconnue; on laisse vide plutôt que d'inventer un host.
+    # Essayer de récupérer l'image de l'animateur
+    animador = root.find(".//AnimadorInfo")
+    if animador is not None:
+        img_el = animador.find(".//IMAGE")
+        if img_el is not None and img_el.text:
+            img = _normalize_text(img_el.text)
+            if img and not img.startswith("http"):
+                img = f"https://radiocomercial.pt{img}"
             cover_url = img
-
-    if not artist or not title:
-        return None
-    return title, artist, cover_url
+    
+    if not artist:
+        artist = "Radio Comercial"
+    if not song:
+        song = "En direct"
+    
+    return song, artist, cover_url
 
 
 def _fetch_nrjaudio_wr_api3_tracklist_metadata(session: requests.Session, radio_id: str, station_name: str) -> Optional[RadioMetadata]:
@@ -398,6 +432,97 @@ class RadioFetcher:
         self.cache = {}
         self.cache_timeout_s = 10
 
+    def _parse_hls_metadata(self, content: str, station_name: str) -> Optional[RadioMetadata]:
+        """Parse les métadonnées XML depuis un flux HLS"""
+        try:
+            # Chercher les métadonnées XML dans les segments EXTINF
+            xml_pattern = r'#EXTINF:.*?(<\?xml.*?</RadioInfo>)'
+            xml_matches = re.findall(xml_pattern, content, re.DOTALL)
+            
+            if xml_matches:
+                # Prendre le premier XML trouvé
+                xml_content = xml_matches[0]
+                
+                # Parser le XML
+                try:
+                    root = ET.fromstring(xml_content)
+                    metadata = {}
+                    
+                    # Extraire les informations de la table
+                    table = root.find('.//Table')
+                    if table is not None:
+                        metadata['song'] = table.findtext('.//DB_SONG_NAME', '').strip()
+                        metadata['artist'] = table.findtext('.//DB_DALET_ARTIST_NAME', '').strip()
+                        metadata['album'] = table.findtext('.//DB_ALBUM_NAME', '').strip()
+                    
+                    # Extraire les informations de l'animateur
+                    animador = root.find('.//AnimadorInfo')
+                    if animador is not None:
+                        metadata['host'] = animador.findtext('.//TITLE', '').strip()
+                        metadata['show'] = animador.findtext('.//SHOW_NAME', '').strip()
+                    
+                    # Créer l'objet RadioMetadata
+                    if metadata.get('song') and metadata.get('artist'):
+                        return RadioMetadata(
+                            station=station_name,
+                            title=metadata['song'],
+                            artist=metadata['artist'],
+                            cover_url=self._get_album_cover(metadata['artist'], metadata['song'])
+                        )
+                    elif metadata.get('host'):
+                        return RadioMetadata(
+                            station=station_name,
+                            title=metadata.get('show', 'En direct'),
+                            artist=metadata['host'],
+                            cover_url="https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png"
+                        )
+                        
+                except ET.ParseError as e:
+                    print(f"Erreur parsing XML HLS: {e}")
+                    # Fallback: extraire avec des regex
+                    try:
+                        song_match = re.search(r'<DB_SONG_NAME>(.*?)</DB_SONG_NAME>', xml_content)
+                        artist_match = re.search(r'<DB_DALET_ARTIST_NAME>(.*?)</DB_DALET_ARTIST_NAME>', xml_content)
+                        host_match = re.search(r'<TITLE>(.*?)</TITLE>', xml_content)
+                        
+                        if song_match and artist_match:
+                            return RadioMetadata(
+                                station=station_name,
+                                title=song_match.group(1).strip(),
+                                artist=artist_match.group(1).strip(),
+                                cover_url=self._get_album_cover(artist_match.group(1).strip(), song_match.group(1).strip())
+                            )
+                        elif host_match:
+                            return RadioMetadata(
+                                station=station_name,
+                                title="En direct",
+                                artist=host_match.group(1).strip(),
+                                cover_url="https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png"
+                            )
+                    except Exception:
+                        pass
+                        
+            return None
+            
+        except Exception as e:
+            print(f"Erreur parsing HLS: {e}")
+            return None
+
+    def _get_album_cover(self, artist: str, title: str) -> str:
+        """Récupère la pochette d'album via iTunes API"""
+        try:
+            import urllib.parse
+            query = urllib.parse.quote_plus(f"{artist} {title}")
+            url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"
+            response = self.session.get(url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('results'):
+                    return data['results'][0].get('artworkUrl100', '').replace('100x100', '600x600')
+        except Exception:
+            pass
+        return ""
+
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
         try:
             headers = {
@@ -473,6 +598,26 @@ class RadioFetcher:
             return hit[0]
 
         md: Optional[RadioMetadata] = None
+
+        # Spécial: Radio Comercial - essayer d'abord le parsing HLS
+        if "radio comercial" in station_name.lower() or "comercial" in station_name.lower():
+            # Si c'est une URL HLS, essayer de parser le contenu
+            if ".m3u8" in url:
+                try:
+                    response = self.session.get(url, timeout=10)
+                    if response.status_code == 200:
+                        hls_content = response.text
+                        md = self._parse_hls_metadata(hls_content, station_name)
+                        if md:
+                            self.cache[cache_key] = (md, now)
+                            return md
+                except Exception:
+                    pass
+            
+            # Sinon, essayer avec le flux ICY standard qui contient déjà les métadonnées XML
+            md = self._get_icy_metadata(url, station_name)
+            self.cache[cache_key] = (md, now)
+            return md
 
         if station_name.strip().lower() == "100% radio 80":
             md = _fetch_100radio_ws_metas(self.session, station_name)
