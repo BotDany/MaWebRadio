@@ -6,10 +6,11 @@ from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 import re
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
 import xml.etree.ElementTree as ET
+import argparse
 
 # Désactiver les avertissements SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -1027,7 +1028,37 @@ def display_metadata(metadata: RadioMetadata) -> str:
            f" {metadata.cover_url if metadata.cover_url else 'Aucune image'}"
 
 def main():
-    # Liste des radios avec leurs URLs
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--json', action='store_true')
+    parser.add_argument('--station')
+    parser.add_argument('--url')
+    args, _unknown = parser.parse_known_args()
+
+    fetcher = RadioFetcher()
+
+    # Mode "single station" (utilisé par l'API Node)
+    if args.json and args.station and args.url:
+        try:
+            metadata = fetcher.get_metadata(args.station, args.url)
+            payload = asdict(metadata)
+            # Normaliser quelques champs pour le frontend
+            if payload.get('cover_url') is None:
+                payload['cover_url'] = ''
+            print(json.dumps(payload, ensure_ascii=False))
+            return
+        except Exception as e:
+            # Toujours renvoyer du JSON en mode --json
+            err_payload = {
+                'station': args.station,
+                'title': 'En direct',
+                'artist': args.station,
+                'cover_url': '',
+                'error': str(e)[:200]
+            }
+            print(json.dumps(err_payload, ensure_ascii=False))
+            return
+
+    # Mode legacy : affiche les métadonnées de plusieurs radios en texte
     radios = [
         ("100% Radio", "https://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3"),
         ("Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3"),
@@ -1047,21 +1078,19 @@ def main():
         ("Supernana", "https://radiosurle.net:8765/showsupernana"),
         ("Top 80 Radio", "https://securestreams6.autopo.st:2321/")
     ]
-    
-    fetcher = RadioFetcher()
-    
+
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_radio = {
             executor.submit(fetcher.get_metadata, name, url): (name, url)
             for name, url in radios
         }
-        
+
         for future in as_completed(future_to_radio):
             name, url = future_to_radio[future]
             try:
                 metadata = future.result()
                 print(display_metadata(metadata))
-                print()  # Ligne vide pour l'espacement
+                print()
             except Exception as e:
                 print(f"❌ Erreur pour {name}: {str(e)[:100]}...\n")
 
