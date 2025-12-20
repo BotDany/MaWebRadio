@@ -1,1 +1,1 @@
-web: gunicorn --bind 0.0.0.0:$PORT app:app
+web: python radio_metadata_fetcher_fixed_clean.py
