@@ -574,6 +574,58 @@ class RadioFetcher:
                 cover_url="https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png"
             )
 
+    def _get_m80_metadata(self, url: str, station_name: str) -> RadioMetadata:
+        """Récupère les métadonnées pour M80 (flux HLS Bauer Media)"""
+        try:
+            # M80 utilise un flux HLS qui ne fournit pas de métadonnées ICY standard
+            # On tente d'abord de récupérer le flux audio direct depuis le playlist
+            response = self.session.get(url, timeout=10)
+            
+            if response.status_code != 200:
+                return RadioMetadata(
+                    station=station_name,
+                    title="Écoutez M80",
+                    artist="A melhor música dos anos 80, 90 e mais",
+                    cover_url=f"https://www.google.com/s2/favicons?domain=m80.pt&sz=128"
+                )
+            
+            # Parser le playlist M3U8 pour trouver le flux audio
+            playlist_content = response.text
+            if '.aac' in playlist_content:
+                # Extraire l'URL du flux audio
+                import re
+                audio_url_match = re.search(r'(https://[^\s]+\.aac)', playlist_content)
+                if audio_url_match:
+                    audio_url = audio_url_match.group(1)
+                    
+                    # Tenter de récupérer les métadonnées ICY du flux audio
+                    try:
+                        audio_response = self.session.get(audio_url, stream=True, timeout=5)
+                        if 'icy-metaint' in audio_response.headers:
+                            # Utiliser la fonction ICY standard
+                            audio_response.close()
+                            return self._get_icy_metadata(audio_url, station_name)
+                        audio_response.close()
+                    except Exception:
+                        pass
+            
+            # Fallback: pas de métadonnées disponibles pour M80
+            return RadioMetadata(
+                station=station_name,
+                title="Écoutez M80",
+                artist="A melhor música dos anos 80, 90 e mais",
+                cover_url=f"https://www.google.com/s2/favicons?domain=m80.pt&sz=128"
+            )
+                
+        except Exception as e:
+            print(f"Erreur dans _get_m80_metadata pour {url}: {e}")
+            return RadioMetadata(
+                station=station_name,
+                title="Écoutez M80",
+                artist="A melhor música dos anos 80, 90 e mais",
+                cover_url=f"https://www.google.com/s2/favicons?domain=m80.pt&sz=128"
+            )
+
     def _get_streamradio_metadata(self, url: str, station_name: str) -> RadioMetadata:
         """Récupère les métadonnées pour les flux StreamRadio (Flash 80)"""
         try:
@@ -660,6 +712,8 @@ class RadioFetcher:
         # Détection du type de flux
         if 'bauermedia.pt/comercial' in url:
             metadata = self._get_radiocomercial_metadata(url, station_name)
+        elif 'bauermedia.pt' in url and 'm80' in url:
+            metadata = self._get_m80_metadata(url, station_name)
         elif "nrjaudio" in url:
             metadata = self._get_nrj_metadata(url, station_name)
 
