@@ -275,6 +275,14 @@ def _fetch_nostalgie_wr_api3_tracklist(session: requests.Session, webradio_id: i
             if not isinstance(obj, dict):
                 return None
 
+            # Format iOS observé: { data: { current: {...}, tracks: [...] } }
+            if isinstance(obj.get("data"), dict):
+                data_obj = obj.get("data")
+                if isinstance(data_obj.get("current"), dict):
+                    obj = data_obj.get("current")
+                else:
+                    obj = data_obj
+
             # Normaliser les enveloppes courantes
             for wrap_key in ("track", "current_track", "current", "song"):
                 if isinstance(obj.get(wrap_key), dict):
@@ -288,7 +296,7 @@ def _fetch_nostalgie_wr_api3_tracklist(session: requests.Session, webradio_id: i
             if not artist and isinstance(obj.get("artist"), dict):
                 artist = _nrjaudio_first_str(obj.get("artist"), ("name", "title"))
 
-            cover_url = _nrjaudio_first_str(obj, ("img_url", "cover_url", "cover", "image"))
+            cover_url = _nrjaudio_first_str(obj, ("artwork_image", "img_url", "cover_url", "cover", "image"))
             if not cover_url and isinstance(obj.get("pictures"), dict):
                 cover_url = _nrjaudio_first_str(obj.get("pictures"), ("xl", "l", "m", "s", "url"))
 
@@ -307,6 +315,21 @@ def _fetch_nostalgie_wr_api3_tracklist(session: requests.Session, webradio_id: i
                 continue
 
             data = r.json()
+
+            # Format iOS: { data: { current: {...}, tracks: [...] } }
+            if isinstance(data, dict) and isinstance(data.get("data"), dict):
+                d = data.get("data")
+
+                if isinstance(d.get("current"), dict):
+                    parsed_current = _parse_track_obj(d.get("current"))
+                    if parsed_current:
+                        return parsed_current
+
+                tracks_list = d.get("tracks")
+                if isinstance(tracks_list, list) and tracks_list:
+                    parsed_first = _parse_track_obj(tracks_list[0])
+                    if parsed_first:
+                        return parsed_first
 
             # Cas fréquent: le track courant est directement dans un objet
             if isinstance(data, dict):
