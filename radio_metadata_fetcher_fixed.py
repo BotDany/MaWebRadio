@@ -11,7 +11,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import urllib3
 import xml.etree.ElementTree as ET
 import argparse
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
+
+# Importer la fonction de recherche de pochettes
+from album_cover_fetcher import _fetch_album_cover_itunes
 
 # Désactiver les avertissements SSL
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -859,6 +862,14 @@ class RadioFetcher:
             # Déterminer l'URL de la cover
             if icy_url and icy_url.startswith('http'):
                 cover_url = icy_url
+            elif title and artist and title != "En direct" and artist != station_name:
+                # Rechercher la pochette d'album via iTunes
+                album_cover = _fetch_album_cover_itunes(artist, title)
+                if album_cover:
+                    cover_url = album_cover
+                else:
+                    # Fallback vers favicon si aucune pochette trouvée
+                    cover_url = f"https://www.google.com/s2/favicons?domain={urlparse(url).hostname}&sz=128" if url.startswith('http') else ""
             elif url.startswith('http'):
                 try:
                     hostname = urlparse(url).hostname

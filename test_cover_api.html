@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cover API</title>
+</head>
+<body>
+    <h1>Test API Cover</h1>
+    <button onclick="testCover()">Tester la cover</button>
+    <div id="result"></div>
+    <div id="cover"></div>
+
+    <script>
+        async function testCover() {
+            try {
+                const response = await fetch('/api/now-playing?name=Test&url=https://example.com/test.mp3');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+                
+                if (data.cover_url && data.cover_url.startsWith('http')) {
+                    const coverDiv = document.getElementById('cover');
+                    coverDiv.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = data.cover_url;
+                    img.alt = 'Cover test';
+                    img.style.maxWidth = '200px';
+                    coverDiv.appendChild(img);
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Erreur: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
