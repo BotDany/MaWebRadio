@@ -32,6 +32,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return url;
     }
 
+    function getRadioLogoUrl(radio) {
+        if (radio && typeof radio.logo_url === 'string' && radio.logo_url.trim()) {
+            return radio.logo_url.trim();
+        }
+        if (!radio || typeof radio.url !== 'string' || !radio.url.trim()) {
+            return '';
+        }
+        try {
+            const u = new URL(radio.url.trim());
+            const hostname = u.hostname;
+            if (!hostname) return '';
+            return 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(hostname) + '&sz=64';
+        } catch (e) {
+            return '';
+        }
+    }
+
     // ---------- AUTH ----------
 
     async function checkAuth() {
@@ -394,6 +411,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const logoContainer = li.querySelector('.radio-logo');
             if (logoContainer) {
                 logoContainer.innerHTML = '';
+                const logoUrl = getRadioLogoUrl(radio);
+                if (logoUrl) {
+                    const img = document.createElement('img');
+                    img.src = logoUrl;
+                    img.alt = radio.name;
+                    img.loading = 'lazy';
+                    img.referrerPolicy = 'no-referrer';
+                    img.onerror = () => {
+                        try {
+                            img.remove();
+                        } catch (e) {
+                            // ignore
+                        }
+                    };
+                    logoContainer.appendChild(img);
+                }
             }
 
             li.querySelector('.play-radio').addEventListener('click', () => {
