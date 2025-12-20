@@ -392,7 +392,7 @@ def _fetch_radiocomercial_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
         app_codename = "itunerfree"
         api_key = "d856b98d-c05f-42b1-a0d9-1292ba80772d"
         api_secret = "BMcvdrUKG03tgAf76j58zm9igAvhQr4G8PjyHGhzgGM"
-        radio_id = "413031"  # Radio Comercial
+        radio_id = "464230"  # Radio Comercial Portugal
         
         # Timestamp actuel
         timestamp = str(int(time.time()))
@@ -454,7 +454,7 @@ def _fetch_m80_mytuner_metadata() -> Optional[Tuple[str, str, str]]:
         app_codename = "itunerfree"
         api_key = "d856b98d-c05f-42b1-a0d9-1292ba80772d"
         api_secret = "BMcvdrUKG03tgAf76j58zm9igAvhQr4G8PjyHGhzgGM"
-        radio_id = "413031"
+        radio_id = "456649"  # M80 Portugal
         
         # Timestamp actuel
         timestamp = str(int(time.time()))
