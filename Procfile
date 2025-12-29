@@ -1,1 +1,1 @@
-web: python radio_player_web.py
+web: python debug_app.py
