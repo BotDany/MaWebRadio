@@ -484,7 +484,8 @@
         }
 
         async function updateMetadata() {
-            if (!isPlaying) return;
+            // Vérifier si une radio est sélectionnée (pas seulement si l'audio joue)
+            if (!currentStation || !currentUrl) return;
 
             try {
                 const response = await fetch('/api/metadata');
@@ -499,6 +500,11 @@
                     } else {
                         coverUrl.textContent = '';
                     }
+                } else if (data.status === 'no_data' && data.station) {
+                    // Afficher la station même si pas de métadonnées
+                    artist.textContent = `Artiste: ${data.station}`;
+                    title.textContent = `Titre: En direct`;
+                    coverUrl.textContent = '';
                 }
             } catch (error) {
                 console.error('Erreur de métadonnées:', error);
