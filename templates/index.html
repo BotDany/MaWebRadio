@@ -383,17 +383,19 @@
             console.log('🔇 Audio HTML5 en pause');
         });
 
+        audioPlayer.addEventListener('error', (e) => {
+            console.log('❌ Erreur audio:', e);
+            // NE PAS mettre isPlaying à false en cas d'erreur audio
+            // Les métadonnées doivent continuer de s'afficher
+            updateStatus('playing', `En direct - ${currentStation} (erreur audio)`);
+        });
+
         audioPlayer.addEventListener('ended', () => {
             // Relancer automatiquement pour les flux radio
             if (currentUrl && isPlaying) {
                 audioPlayer.load(); // Recharger le flux
                 audioPlayer.play().catch(e => console.log('Erreur reprise auto:', e));
             }
-        });
-
-        audioPlayer.addEventListener('error', (e) => {
-            console.error('❌ Erreur audio:', e);
-            updateStatus('stopped', 'Erreur audio');
         });
 
         window.addEventListener('click', (event) => {
