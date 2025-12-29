@@ -1,1 +1,1 @@
-web: python test_metadata.py
+web: python simple_metadata.py
