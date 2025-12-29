@@ -164,6 +164,8 @@ def stop():
 def get_metadata():
     global last_metadata
     
+    print(f"🔍 API métadonnées appelée - is_playing: {is_playing}, station: {current_station}")
+    
     if is_playing and current_station and current_url:
         try:
             metadata = fetcher.get_metadata(current_station, current_url)
@@ -175,22 +177,30 @@ def get_metadata():
                     last_metadata = current
                     print(f"🎵 [{current_station}] {metadata.artist} - {metadata.title}")
                 
-                return jsonify({
+                result = {
                     'status': 'success',
                     'artist': metadata.artist,
                     'title': metadata.title,
                     'cover_url': metadata.cover_url,
                     'station': current_station,
                     'is_playing': is_playing
-                })
+                }
+                print(f"📤 API renvoie: {result}")
+                return jsonify(result)
+            else:
+                print("❌ Métadonnées vides")
         except Exception as e:
-            print(f"Erreur métadonnées: {e}")
+            print(f"❌ Erreur métadonnées: {e}")
+    else:
+        print(f"❌ Conditions non remplies: is_playing={is_playing}, station={current_station}")
     
-    return jsonify({
+    result = {
         'status': 'no_data',
         'is_playing': is_playing,
         'station': current_station
-    })
+    }
+    print(f"📤 API renvoie (no_data): {result}")
+    return jsonify(result)
 
 @app.route('/api/history')
 def get_history():
