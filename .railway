@@ -1,0 +1,7 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python radio_player_web.py"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
