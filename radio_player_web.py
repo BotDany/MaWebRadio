@@ -48,9 +48,9 @@ def update_metadata_loop():
             print(f"Erreur dans la boucle de métadonnées: {e}")
             time.sleep(10)
 
-# Démarrer le thread de mise à jour
-metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
-metadata_thread.start()
+# Le thread sera démarré plus tard si nécessaire
+# metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
+# metadata_thread.start()
 
 # Liste des radios
 stations = [
@@ -90,6 +90,7 @@ def health():
 @app.route('/api/radios')
 def api_radios():
     """Route pour le healthcheck Railway - retourne la liste des radios"""
+    print("📡 Route /api/radios appelée - Healthcheck Railway")
     return {"status": "ok", "radios": [{"name": station[0], "url": station[1]} for station in stations]}
 
 @app.route('/api/play')
