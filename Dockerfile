@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5000
 
 # Start the app with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "radio_player_web:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "wsgi_fixed:app"]

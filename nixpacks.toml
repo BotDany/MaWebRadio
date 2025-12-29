@@ -1,13 +1,12 @@
 [phases.setup]
-# Install both Node and Python in the Railway build image
-nixPkgs = ["nodejs_20", "python311"]
+# Install Python only
+nixPkgs = ["python311"]
 
 [phases.install]
 cmds = [
-  "npm ci",
   "python3 -m pip install --upgrade pip --break-system-packages",
   "python3 -m pip install -r requirements.txt --break-system-packages"
 ]
 
 [start]
-cmd = "npm start"
+cmd = "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 wsgi_fixed:app"
