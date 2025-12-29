@@ -15,12 +15,42 @@ template_dir = os.path.join(os.getcwd(), 'templates')
 static_dir = os.path.join(os.getcwd(), 'static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
+# Logs au démarrage de l'application
+print("🎵 Démarrage du serveur web du lecteur radio...")
+print(f"📁 Répertoire courant: {os.getcwd()}")
+print(f"📂 Templates folder: {app.template_folder}")
+print(f"📂 Static folder: {app.static_folder}")
+
+# Vérifier si le template existe
+template_path = os.path.join(app.template_folder, 'index.html')
+print(f"📄 Template path: {template_path}")
+print(f"✅ Template exists: {os.path.exists(template_path)}")
+
+# Démarrer le thread de mise à jour
+metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
+metadata_thread.start()
+
+print("⚡ Reprise instantanée en direct activée!")
+print("🚀 Application Flask prête!")
+
 # Variables globales
 fetcher = RadioFetcher()
 current_station = None
 current_url = None
 is_playing = False
 last_metadata = None
+
+def update_metadata_loop():
+    """Thread qui met à jour les métadonnées en continu"""
+    while True:
+        try:
+            if is_playing and current_station and current_url:
+                # Les métadonnées sont mises à jour via l'API
+                pass
+            time.sleep(5)
+        except Exception as e:
+            print(f"Erreur dans la boucle de métadonnées: {e}")
+            time.sleep(10)
 
 # Liste des radios
 stations = [
@@ -163,40 +193,12 @@ def get_history():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-def update_metadata_loop():
-    """Thread qui met à jour les métadonnées en continu"""
-    while True:
-        try:
-            if is_playing and current_station and current_url:
-                # Les métadonnées sont mises à jour via l'API
-                pass
-            time.sleep(5)
-        except Exception as e:
-            print(f"Erreur dans la boucle de métadonnées: {e}")
-            time.sleep(10)
-
 if __name__ == '__main__':
-    print("🎵 Démarrage du serveur web du lecteur radio...")
-    print(f"📁 Répertoire courant: {os.getcwd()}")
-    print(f"📂 Templates folder: {app.template_folder}")
-    print(f"📂 Static folder: {app.static_folder}")
-    
-    # Vérifier si le template existe
-    template_path = os.path.join(app.template_folder, 'index.html')
-    print(f"📄 Template path: {template_path}")
-    print(f"✅ Template exists: {os.path.exists(template_path)}")
-    
-    # Démarrer le thread de mise à jour
-    metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
-    metadata_thread.start()
-    
     # Configuration pour Railway
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     
     print(f"🌐 Port: {port}")
     print(f"🐛 Debug: {debug}")
-    print("⚡ Reprise instantanée en direct activée!")
-    print("🚀 Déploiement Railway prêt!")
     
     app.run(debug=debug, host='0.0.0.0', port=port)
