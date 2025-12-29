@@ -26,10 +26,6 @@ template_path = os.path.join(app.template_folder, 'index.html')
 print(f"📄 Template path: {template_path}")
 print(f"✅ Template exists: {os.path.exists(template_path)}")
 
-# Démarrer le thread de mise à jour
-metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
-metadata_thread.start()
-
 print("⚡ Reprise instantanée en direct activée!")
 print("🚀 Application Flask prête!")
 
@@ -51,6 +47,10 @@ def update_metadata_loop():
         except Exception as e:
             print(f"Erreur dans la boucle de métadonnées: {e}")
             time.sleep(10)
+
+# Démarrer le thread de mise à jour
+metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
+metadata_thread.start()
 
 # Liste des radios
 stations = [
