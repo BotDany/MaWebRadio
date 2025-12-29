@@ -1,7 +1,16 @@
 from flask import Flask, jsonify, request
 import os
+import sys
+import time
+from radio_metadata_fetcher_fixed_clean import RadioFetcher
 
 app = Flask(__name__)
+
+# État global
+current_station = None
+current_url = None
+is_playing = False
+fetcher = RadioFetcher()
 
 @app.route('/')
 def home():
@@ -34,6 +43,14 @@ def home():
                 <div class="radio-item">
                     <h3>Nostalgie 80</h3>
                     <button onclick="playRadio('Nostalgie 80', 'https://scdn.nrjaudio.fm/fr/30601/mp3_128.mp3')">▶️ Play Nostalgie</button>
+                </div>
+                <div class="radio-item">
+                    <h3>100% Radio 80</h3>
+                    <button onclick="playRadio('100% Radio 80', 'http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3')">▶️ Play 100% Radio</button>
+                </div>
+                <div class="radio-item">
+                    <h3>Bide Et Musique</h3>
+                    <button onclick="playRadio('Bide Et Musique', 'https://relay1.bide-et-musique.com:9300/bm.mp3')">▶️ Play Bide Et Musique</button>
                 </div>
             </div>
             <div class="metadata" id="metadata">
@@ -88,35 +105,83 @@ def home():
 
 @app.route('/api/play')
 def play():
+    global current_station, current_url, is_playing
+    
     station = request.args.get('station')
     url = request.args.get('url')
     
-    print(f"▶️ Play: {station} - {url}")
+    if station and url:
+        current_station = station
+        current_url = url
+        is_playing = True
+        print(f"▶️ Play: {station} - {url}")
+        
+        return jsonify({
+            'status': 'playing',
+            'station': station,
+            'url': url
+        })
     
-    return jsonify({
-        'status': 'playing',
-        'station': station,
-        'url': url
-    })
+    return jsonify({'status': 'error', 'message': 'Station manquante'})
 
 @app.route('/api/metadata')
 def metadata():
-    # Simuler des métadonnées pour le test
-    if request.args.get('station') or True:  # Temporaire pour test
-        return jsonify({
-            'status': 'success',
-            'artist': 'Artiste Test',
-            'title': 'Titre Test',
-            'station': 'Radio Test',
-            'is_playing': True
-        })
+    global current_station, current_url, is_playing
     
-    return jsonify({
+    print(f"🔍 API appelée - station: {current_station}, playing: {is_playing}")
+    
+    if current_station and current_url and is_playing:
+        try:
+            # Utiliser le vrai fetcher
+            metadata = fetcher.get_metadata(current_station, current_url)
+            
+            if metadata and metadata.title and metadata.title.lower() != "en direct":
+                result = {
+                    'status': 'success',
+                    'artist': metadata.artist or current_station,
+                    'title': metadata.title,
+                    'cover_url': metadata.cover_url or '',
+                    'station': current_station,
+                    'is_playing': True
+                }
+                
+                print(f"📤 API renvoie: {result}")
+                return jsonify(result)
+            else:
+                result = {
+                    'status': 'no_data',
+                    'artist': current_station,
+                    'title': 'En direct',
+                    'station': current_station,
+                    'is_playing': True
+                }
+                
+                print(f"📤 API renvoie (no_metadata): {result}")
+                return jsonify(result)
+                
+        except Exception as e:
+            print(f"❌ Erreur métadonnées: {e}")
+            result = {
+                'status': 'error',
+                'artist': current_station,
+                'title': 'En direct',
+                'station': current_station,
+                'is_playing': True
+            }
+            
+            print(f"📤 API renvoie (error): {result}")
+            return jsonify(result)
+    
+    result = {
         'status': 'no_data',
-        'is_playing': False
-    })
+        'is_playing': False,
+        'station': current_station
+    }
+    
+    print(f"📤 API renvoie (no_data): {result}")
+    return jsonify(result)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print(f"🚀 Simple app démarrée sur le port {port}")
+    print(f"🚀 Simple app avec vrai fetcher démarrée sur le port {port}")
     app.run(host='0.0.0.0', port=port)
