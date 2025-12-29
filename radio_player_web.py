@@ -57,7 +57,13 @@ stations = [
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
     ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
     ("100% Radio 80", "http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3"),
+    ("Nostalgie 80", "https://scdn.nrjaudio.fm/fr/30601/mp3_128.mp3"),
     ("Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d"),
+    ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
+    ("RTL2 80s", "http://streaming.radio.rtl2.fr/rtl2-1-44-128"),
+    ("RFM 80-90", "http://rfm-live-mp3-128.scdn.arkena.com/rfm.mp3"),
+    ("NRJ 80s", "https://scdn.nrjaudio.fm/fr/30601/mp3_128.mp3"),
+    ("Virgin Radio 80s", "https://ais-live.cloud-services.asso.fr/virginradio.mp3"),
     ("Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream"),
     ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
     ("Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3"),
@@ -70,7 +76,6 @@ stations = [
     ("Top 80 Radio", "https://securestreams6.autopo.st:2321/"),
     ("Générikds", "https://www.radioking.com/play/generikids"),
     ("Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"),
-    ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
 ]
 
 @app.route('/')
