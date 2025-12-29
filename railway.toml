@@ -11,4 +11,4 @@ restartPolicyMaxRetries = 10
 name = "web"
 
 [services.variables]
-PORT = "5000"
+# Ne pas forcer le port, laisser Railway le définir dynamiquement
