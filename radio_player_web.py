@@ -45,7 +45,17 @@ stations = [
 
 @app.route('/')
 def index():
-    return render_template('index.html', stations=stations)
+    """Page principale du lecteur radio"""
+    try:
+        return render_template('index.html', stations=stations)
+    except Exception as e:
+        print(f"Erreur template: {e}")
+        return f"Erreur template: {e}", 500
+
+@app.route('/health')
+def health():
+    """Route de santé pour Railway"""
+    return {"status": "ok", "message": "Radio Player is running"}
 
 @app.route('/api/play')
 def play():
@@ -166,6 +176,16 @@ def update_metadata_loop():
             time.sleep(10)
 
 if __name__ == '__main__':
+    print("🎵 Démarrage du serveur web du lecteur radio...")
+    print(f"📁 Répertoire courant: {os.getcwd()}")
+    print(f"📂 Templates folder: {app.template_folder}")
+    print(f"📂 Static folder: {app.static_folder}")
+    
+    # Vérifier si le template existe
+    template_path = os.path.join(app.template_folder, 'index.html')
+    print(f"📄 Template path: {template_path}")
+    print(f"✅ Template exists: {os.path.exists(template_path)}")
+    
     # Démarrer le thread de mise à jour
     metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
     metadata_thread.start()
@@ -174,8 +194,8 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     
-    print("🎵 Démarrage du serveur web du lecteur radio...")
     print(f"🌐 Port: {port}")
+    print(f"🐛 Debug: {debug}")
     print("⚡ Reprise instantanée en direct activée!")
     print("🚀 Déploiement Railway prêt!")
     
