@@ -16,18 +16,23 @@ static_dir = os.path.join(os.getcwd(), 'static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 # Logs au démarrage de l'application
-print("🎵 Démarrage du serveur web du lecteur radio...")
-print(f"📁 Répertoire courant: {os.getcwd()}")
-print(f"📂 Templates folder: {app.template_folder}")
-print(f"📂 Static folder: {app.static_folder}")
+def log_startup():
+    print("🎵 Démarrage du serveur web du lecteur radio...")
+    print(f"📁 Répertoire courant: {os.getcwd()}")
+    print(f"📂 Templates folder: {app.template_folder}")
+    print(f"📂 Static folder: {app.static_folder}")
+    
+    # Vérifier si le template existe
+    template_path = os.path.join(app.template_folder, 'index.html')
+    print(f"📄 Template path: {template_path}")
+    print(f"✅ Template exists: {os.path.exists(template_path)}")
+    
+    print("⚡ Reprise instantanée en direct activée!")
+    print("🚀 Application Flask prête!")
 
-# Vérifier si le template existe
-template_path = os.path.join(app.template_folder, 'index.html')
-print(f"📄 Template path: {template_path}")
-print(f"✅ Template exists: {os.path.exists(template_path)}")
-
-print("⚡ Reprise instantanée en direct activée!")
-print("🚀 Application Flask prête!")
+# Appeler les logs seulement en développement local
+if os.environ.get('FLASK_ENV') == 'development':
+    log_startup()
 
 # Variables globales
 fetcher = RadioFetcher()
@@ -35,22 +40,35 @@ current_station = None
 current_url = None
 is_playing = False
 last_metadata = None
+last_metadata_obj = None
 
 def update_metadata_loop():
     """Thread qui met à jour les métadonnées en continu"""
     while True:
         try:
             if is_playing and current_station and current_url:
-                # Les métadonnées sont mises à jour via l'API
-                pass
+                # Récupérer les métadonnées
+                metadata = fetcher.get_metadata_with_history(current_station, current_url)
+                
+                if metadata:
+                    # Vérifier si les métadonnées ont changé
+                    current = (metadata.artist, metadata.title)
+                    if last_metadata != current:
+                        last_metadata = current
+                        print(f"🎵 [{current_station}] {metadata.artist} - {metadata.title}")
+                        
+                        # Mettre à jour la variable globale pour l'API
+                        global last_metadata_obj
+                        last_metadata_obj = metadata
             time.sleep(5)
         except Exception as e:
             print(f"Erreur dans la boucle de métadonnées: {e}")
             time.sleep(10)
 
-# Le thread sera démarré plus tard si nécessaire
+# Désactiver les métadonnées
 # metadata_thread = threading.Thread(target=update_metadata_loop, daemon=True)
 # metadata_thread.start()
+print("📡 Métadonnées désactivées")
 
 # Liste des radios
 stations = [
@@ -154,34 +172,12 @@ def stop():
 
 @app.route('/api/metadata')
 def get_metadata():
-    global last_metadata
-    
-    if is_playing and current_station and current_url:
-        try:
-            metadata = fetcher.get_metadata_with_history(current_station, current_url)
-            
-            if metadata:
-                # Vérifier si les métadonnées ont changé
-                current = (metadata.artist, metadata.title)
-                if last_metadata != current:
-                    last_metadata = current
-                    print(f"🎵 [{current_station}] {metadata.artist} - {metadata.title}")
-                
-                return jsonify({
-                    'status': 'success',
-                    'artist': metadata.artist,
-                    'title': metadata.title,
-                    'cover_url': metadata.cover_url,
-                    'station': current_station,
-                    'is_playing': is_playing
-                })
-        except Exception as e:
-            print(f"Erreur métadonnées: {e}")
-    
+    """Route simplifiée sans métadonnées"""
     return jsonify({
         'status': 'no_data',
         'is_playing': is_playing,
-        'station': current_station
+        'station': current_station,
+        'message': 'Métadonnées désactivées'
     })
 
 @app.route('/api/history')
