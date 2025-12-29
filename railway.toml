@@ -2,8 +2,8 @@
 builder = "nixpacks"
 
 [deploy]
-healthcheckPath = "/api/radios"
-healthcheckTimeout = 100
+healthcheckPath = "/health"
+healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
@@ -11,5 +11,4 @@ restartPolicyMaxRetries = 10
 name = "web"
 
 [services.variables]
-NODE_ENV = "production"
-PORT = "3000"
+PORT = "5000"

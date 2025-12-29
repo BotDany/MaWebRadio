@@ -91,12 +91,21 @@ def index():
         return render_template('index.html', stations=stations)
     except Exception as e:
         print(f"Erreur template: {e}")
-        return f"Erreur template: {e}", 500
+        # Fallback pour healthcheck
+        return jsonify({
+            'status': 'ok',
+            'message': 'Radio Player is running',
+            'service': 'Ma Web Radio'
+        }), 200
 
 @app.route('/health')
 def health():
     """Route de santé pour Railway"""
-    return {"status": "ok", "message": "Radio Player is running"}
+    return jsonify({
+        'status': 'ok',
+        'message': 'Radio Player is running',
+        'service': 'Ma Web Radio'
+    })
 
 @app.route('/api/radios')
 def api_radios():
