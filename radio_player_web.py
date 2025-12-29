@@ -1,7 +1,9 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, session
 import os
+import secrets
 
 app = Flask(__name__)
+app.secret_key = secrets.token_hex(16)  # Clé secrète pour les sessions
 
 # Données de test pour les métadonnées
 test_metadata = {
@@ -42,8 +44,21 @@ stations = [
     ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
 ]
 
-current_station = None
-is_playing = False
+def get_current_station():
+    """Récupérer la station actuelle depuis la session"""
+    return session.get('current_station')
+
+def get_is_playing():
+    """Récupérer l'état de lecture depuis la session"""
+    return session.get('is_playing', False)
+
+def set_current_station(station):
+    """Définir la station actuelle dans la session"""
+    session['current_station'] = station
+
+def set_is_playing(playing):
+    """Définir l'état de lecture dans la session"""
+    session['is_playing'] = playing
 
 @app.route('/')
 def index():
@@ -51,7 +66,8 @@ def index():
 
 @app.route('/api/metadata')
 def metadata():
-    global current_station, is_playing
+    current_station = get_current_station()
+    is_playing = get_is_playing()
     
     print(f"🔍 API appelée - station: {current_station}, playing: {is_playing}")
     
@@ -82,14 +98,12 @@ def metadata():
 
 @app.route('/api/play')
 def play():
-    global current_station, is_playing
-    
     station = request.args.get('station')
     url = request.args.get('url')
     
     if station and url:
-        current_station = station
-        is_playing = True
+        set_current_station(station)
+        set_is_playing(True)
         print(f"▶️ Play: {station}")
         return jsonify({
             'status': 'playing',
@@ -101,11 +115,9 @@ def play():
 
 @app.route('/api/stop')
 def stop():
-    global current_station, is_playing
-    
-    station = current_station
-    current_station = None
-    is_playing = False
+    station = get_current_station()
+    set_current_station(None)
+    set_is_playing(False)
     
     print(f"⏹️ Stop: {station}")
     return jsonify({'status': 'stopped'})
