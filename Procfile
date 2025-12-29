@@ -1,1 +1,1 @@
-web: python radio_player_web.py
+web: gunicorn radio_player_web:app
