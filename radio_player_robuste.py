@@ -3,7 +3,7 @@
 Version ultra-robuste pour Railway - sans dépendances complexes
 """
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 import os
 
 # Configuration Flask avec chemins explicites
