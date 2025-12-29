@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vérificateur ICY Simplifié</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #result { margin-top: 20px; padding: 15px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h2>Vérificateur ICY Simplifié</h2>
+    <input type="text" id="streamUrl" placeholder="URL du flux radio" style="width: 300px; padding: 5px;">
+    <button onclick="checkIcy()">Vérifier</button>
+    <div id="result"></div>
+
+    <script>
+        async function checkIcy() {
+            const url = document.getElementById('streamUrl').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = '';
+            resultDiv.textContent = 'Vérification en cours...';
+            
+            if (!url) {
+                resultDiv.textContent = 'Veuillez entrer une URL';
+                return;
+            }
+
+            try {
+                // Essayer de récupérer les en-têtes
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    headers: { 'Icy-MetaData': '1' },
+                    mode: 'no-cors'
+                }).catch(() => null);
+
+                let result = '<h3>Résultats :</h3>';
+                
+                // Vérifier les en-têtes ICY
+                if (response && response.headers) {
+                    const headers = response.headers;
+                    result += '<div style="margin: 10px 0; padding: 10px; background: #e9ecef;">';
+                    result += '<strong>En-têtes détectés :</strong><br>';
+                    result += `icy-name: ${headers.get('icy-name') || 'Non détecté'}<br>`;
+                    result += `icy-description: ${headers.get('icy-description') || 'Non détecté'}<br>`;
+                    result += `icy-metaint: ${headers.get('icy-metaint') || 'Non détecté'}`;
+                    result += '</div>';
+                } else {
+                    result += '<div class="error">Impossible de récupérer les en-têtes (CORS bloqué)</div>';
+                }
+
+                // Tester la lecture audio
+                result += '<h4>Test de lecture :</h4>';
+                const audio = new Audio();
+                
+                try {
+                    audio.src = url;
+                    await audio.play();
+                    result += '<div class="success">✓ Lecture audio réussie</div>';
+                    audio.pause();
+                } catch (e) {
+                    result += `<div class="error">Erreur de lecture: ${e.message}</div>`;
+                }
+
+                resultDiv.innerHTML = result;
+
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.textContent = 'Erreur: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

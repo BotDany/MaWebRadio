@@ -1,0 +1,94 @@
+{
+  "Flash 80 Radio": [
+    {
+      "timestamp": "2025-12-29 17:48:31",
+      "artist": "Bananarama",
+      "title": "Venus",
+      "cover_url": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/33/0f/4c/330f4c31-6b9a-b346-e625-01e8fba322cb/190295715762.jpg/600x600bb.jpg"
+    },
+    {
+      "timestamp": "2025-12-29 17:43:23",
+      "artist": "Alan Cook",
+      "title": "Bad Dreams (Maxi)",
+      "cover_url": "https://www.flash80.com/images/logo/2024/logo-flash80-2024.png"
+    },
+    {
+      "timestamp": "2025-12-29 17:32:38",
+      "artist": "Madonna",
+      "title": "Like a Prayer",
+      "cover_url": "https://example.com/cover3.jpg"
+    },
+    {
+      "timestamp": "2025-12-29 17:32:37",
+      "artist": "A-HA",
+      "title": "Take On Me",
+      "cover_url": "https://example.com/cover2.jpg"
+    },
+    {
+      "timestamp": "2025-12-29 17:32:36",
+      "artist": "Big Country",
+      "title": "In a Big Country",
+      "cover_url": "https://example.com/cover1.jpg"
+    }
+  ],
+  "RTL": [
+    {
+      "timestamp": "2025-12-29 17:32:54",
+      "artist": "Cyril Hanouna",
+      "title": "Les Grandes Gueules",
+      "cover_url": "https://images.rtl.fr/hanouna.jpg"
+    },
+    {
+      "timestamp": "2025-12-29 17:32:53",
+      "artist": "Jean-Jacques Bourdin",
+      "title": "Bourdin & Co",
+      "cover_url": "https://images.rtl.fr/bourdin.jpg"
+    },
+    {
+      "timestamp": "2025-12-29 17:32:52",
+      "artist": "Vincent Derosier",
+      "title": "RTL Soir",
+      "cover_url": "https://images.rtl.fr/micro.jpg"
+    }
+  ],
+  "Chante France-80s": [
+    {
+      "timestamp": "2025-12-29 17:48:48",
+      "artist": "Regrets",
+      "title": "Je Ne Veux Pas Rentrer Chez Moi Seule",
+      "cover_url": "https://www.lesindesradios.fr/servicesimb/images?version=6&iid=3120757949245428885/r/re/regrets/jeneveuxpasrentrerchezmoiseule/627526273_1713452264000&width=200"
+    },
+    {
+      "timestamp": "2025-12-29 17:46:23",
+      "artist": "Eddy Mitchell",
+      "title": "Couleur Menthe A L'Eau",
+      "cover_url": "https://www.lesindesradios.fr/servicesimb/images?version=6&iid=3120757949245428885/e/ed/eddymitchell/couleurmenthealeau/768575184_1729271727000&width=200"
+    },
+    {
+      "timestamp": "2025-12-29 17:42:55",
+      "artist": "Johnny Hallyday",
+      "title": "L'Envie",
+      "cover_url": "https://www.lesindesradios.fr/servicesimb/images?version=6&iid=3120757949245428885/j/jo/johnnyhallyday/lenvie/2052789767_1702900860000&width=200"
+    },
+    {
+      "timestamp": "2025-12-29 17:37:35",
+      "artist": "Gilbert Montagne",
+      "title": "Les Sunlights Des Tropiques",
+      "cover_url": "https://www.lesindesradios.fr/servicesimb/images?version=6&iid=3120757949245428885/g/gi/gilbertmontagne/lessunlightsdestropiques/222873043_1702893199000&width=200"
+    },
+    {
+      "timestamp": "2025-12-29 17:35:54",
+      "artist": "Mylene Farmer",
+      "title": "Comme J'Ai Mal",
+      "cover_url": "https://www.lesindesradios.fr/servicesimb/images?version=6&iid=3120757949245428885/m/my/mylenefarmer/commejaimal/1425967242_1702912147000&width=200"
+    }
+  ],
+  "Superloustic": [
+    {
+      "timestamp": "2025-12-29 17:47:09",
+      "artist": "Joseph Williams",
+      "title": "Gummi Bears Theme",
+      "cover_url": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/4b/64/6c/4b646cca-8602-5f1c-66ed-2f5578856765/2175fd20-1869-483c-a5fd-8e049a491d9f.jpg/600x600bb.jpg"
+    }
+  ]
+}
