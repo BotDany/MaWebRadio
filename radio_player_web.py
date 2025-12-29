@@ -10,7 +10,9 @@ import time
 import os
 from radio_metadata_fetcher_fixed_clean import RadioFetcher
 
-app = Flask(__name__)
+# Spécifier le chemin absolu pour les templates
+template_dir = os.path.join(os.getcwd(), 'templates')
+app = Flask(__name__, template_folder=template_dir)
 
 # Variables globales
 fetcher = RadioFetcher()
