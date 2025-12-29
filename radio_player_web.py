@@ -20,7 +20,19 @@ test_metadata = {
     "NRJ 80s": {"artist": "Michael Jackson", "title": "Billie Jean"},
     "Virgin Radio 80s": {"artist": "David Bowie", "title": "Let's Dance"},
     "Nostalgie-Les 80 Plus Grand Tubes": {"artist": "Queen", "title": "Bohemian Rhapsody"},
-    "Flash 80 Radio": {"artist": "Depeche Mode", "title": "Just Can't Get Enough"}
+    "Flash 80 Radio": {"artist": "Depeche Mode", "title": "Just Can't Get Enough"},
+    "Radio Comercial": {"artist": "Amália Rodrigues", "title": "Fado Português"},
+    "Bide Et Musique": {"artist": "Francis Cabrel", "title": "Je l'aime à mourir"},
+    "Mega Hits": {"artist": "Bruno Mars", "title": "Uptown Funk"},
+    "Superloustic": {"artist": "AC/DC", "title": "Highway to Hell"},
+    "Radio Gérard": {"artist": "Gérard", "title": "Le Morning Show"},
+    "Supernana": {"artist": "Les Nanas", "title": "Super Nana Show"},
+    "Génération Dorothée": {"artist": "Dorothée", "title": "Club Dorothée"},
+    "Made In 80": {"artist": "Jean-Michel Jarre", "title": "Oxygène"},
+    "Top 80 Radio": {"artist": "The Police", "title": "Every Breath You Take"},
+    "Générikds": {"artist": "Les Kids", "title": "Générik Kids"},
+    "Chansons Oubliées Où Presque": {"artist": "Léo Ferré", "title": "Avec le temps"},
+    "Nostalgie-Les Tubes 80 N1": {"artist": "Pink Floyd", "title": "Another Brick in the Wall"}
 }
 
 stations = [
