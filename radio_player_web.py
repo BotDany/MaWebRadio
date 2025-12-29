@@ -38,15 +38,11 @@ last_metadata = None
 
 def update_metadata_loop():
     """Thread qui met à jour les métadonnées en continu"""
-    global last_metadata
     while True:
         try:
             if is_playing and current_station and current_url:
-                # Mettre à jour les métadonnées
-                metadata = fetcher.get_metadata(current_station, current_url)
-                if metadata:
-                    last_metadata = metadata
-                    print(f"🎵 Métadonnées mises à jour: {metadata.artist} - {metadata.title}")
+                # Les métadonnées sont mises à jour via l'API
+                pass
             time.sleep(5)
         except Exception as e:
             print(f"Erreur dans la boucle de métadonnées: {e}")
@@ -61,13 +57,7 @@ stations = [
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
     ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
     ("100% Radio 80", "http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3"),
-    ("Nostalgie 80", "https://scdn.nrjaudio.fm/fr/30601/mp3_128.mp3"),
     ("Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d"),
-    ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
-    ("RTL2 80s", "http://streaming.radio.rtl2.fr/rtl2-1-44-128"),
-    ("RFM 80-90", "http://rfm-live-mp3-128.scdn.arkena.com/rfm.mp3"),
-    ("NRJ 80s", "https://scdn.nrjaudio.fm/fr/30601/mp3_128.mp3"),
-    ("Virgin Radio 80s", "https://ais-live.cloud-services.asso.fr/virginradio.mp3"),
     ("Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream"),
     ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
     ("Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3"),
@@ -80,6 +70,7 @@ stations = [
     ("Top 80 Radio", "https://securestreams6.autopo.st:2321/"),
     ("Générikds", "https://www.radioking.com/play/generikids"),
     ("Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"),
+    ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
 ]
 
 @app.route('/')
@@ -164,11 +155,9 @@ def stop():
 def get_metadata():
     global last_metadata
     
-    print(f"🔍 API métadonnées appelée - is_playing: {is_playing}, station: {current_station}")
-    
     if is_playing and current_station and current_url:
         try:
-            metadata = fetcher.get_metadata(current_station, current_url)
+            metadata = fetcher.get_metadata_with_history(current_station, current_url)
             
             if metadata:
                 # Vérifier si les métadonnées ont changé
@@ -177,30 +166,22 @@ def get_metadata():
                     last_metadata = current
                     print(f"🎵 [{current_station}] {metadata.artist} - {metadata.title}")
                 
-                result = {
+                return jsonify({
                     'status': 'success',
                     'artist': metadata.artist,
                     'title': metadata.title,
                     'cover_url': metadata.cover_url,
                     'station': current_station,
                     'is_playing': is_playing
-                }
-                print(f"📤 API renvoie: {result}")
-                return jsonify(result)
-            else:
-                print("❌ Métadonnées vides")
+                })
         except Exception as e:
-            print(f"❌ Erreur métadonnées: {e}")
-    else:
-        print(f"❌ Conditions non remplies: is_playing={is_playing}, station={current_station}")
+            print(f"Erreur métadonnées: {e}")
     
-    result = {
+    return jsonify({
         'status': 'no_data',
         'is_playing': is_playing,
         'station': current_station
-    }
-    print(f"📤 API renvoie (no_data): {result}")
-    return jsonify(result)
+    })
 
 @app.route('/api/history')
 def get_history():

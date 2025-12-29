@@ -1,1 +1,1 @@
-web: python force_metadata.py
+web: python radio_player_web.py
