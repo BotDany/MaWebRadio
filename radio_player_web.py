@@ -87,6 +87,11 @@ def health():
     """Route de santé pour Railway"""
     return {"status": "ok", "message": "Radio Player is running"}
 
+@app.route('/api/radios')
+def api_radios():
+    """Route pour le healthcheck Railway - retourne la liste des radios"""
+    return {"status": "ok", "radios": [{"name": station[0], "url": station[1]} for station in stations]}
+
 @app.route('/api/play')
 def play():
     global is_playing, current_station, current_url
