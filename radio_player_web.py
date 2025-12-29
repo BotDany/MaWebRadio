@@ -1,39 +1,18 @@
 from flask import Flask, render_template, jsonify, request
 import os
+import sys
+import time
+from radio_metadata_fetcher_fixed_clean import RadioFetcher
 
 class RadioState:
     def __init__(self):
         self.current_station = None
+        self.current_url = None
         self.is_playing = False
+        self.fetcher = RadioFetcher()
 
 app = Flask(__name__)
 radio_state = RadioState()
-
-# Données de test pour les métadonnées
-test_metadata = {
-    "RTL": {"artist": "Laurent Voulzy", "title": "Belle Ile En Mer"},
-    "Nostalgie 80": {"artist": "Prince", "title": "Purple Rain"},
-    "Chante France-80s": {"artist": "Michaël Lancelot", "title": "Le Grand Journal"},
-    "100% Radio 80": {"artist": "Madonna", "title": "Like a Virgin"},
-    "RFM 80-90": {"artist": "U2", "title": "With or Without You"},
-    "RTL2 80s": {"artist": "Sting", "title": "Englishman in New York"},
-    "NRJ 80s": {"artist": "Michael Jackson", "title": "Billie Jean"},
-    "Virgin Radio 80s": {"artist": "David Bowie", "title": "Let's Dance"},
-    "Nostalgie-Les 80 Plus Grand Tubes": {"artist": "Queen", "title": "Bohemian Rhapsody"},
-    "Flash 80 Radio": {"artist": "Depeche Mode", "title": "Just Can't Get Enough"},
-    "Radio Comercial": {"artist": "Amália Rodrigues", "title": "Fado Português"},
-    "Bide Et Musique": {"artist": "Francis Cabrel", "title": "Je l'aime à mourir"},
-    "Mega Hits": {"artist": "Bruno Mars", "title": "Uptown Funk"},
-    "Superloustic": {"artist": "AC/DC", "title": "Highway to Hell"},
-    "Radio Gérard": {"artist": "Gérard", "title": "Le Morning Show"},
-    "Supernana": {"artist": "Les Nanas", "title": "Super Nana Show"},
-    "Génération Dorothée": {"artist": "Dorothée", "title": "Club Dorothée"},
-    "Made In 80": {"artist": "Jean-Michel Jarre", "title": "Oxygène"},
-    "Top 80 Radio": {"artist": "The Police", "title": "Every Breath You Take"},
-    "Générikds": {"artist": "Les Kids", "title": "Générik Kids"},
-    "Chansons Oubliées Où Presque": {"artist": "Léo Ferré", "title": "Avec le temps"},
-    "Nostalgie-Les Tubes 80 N1": {"artist": "Pink Floyd", "title": "Another Brick in the Wall"}
-}
 
 stations = [
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
@@ -67,19 +46,51 @@ def index():
 def metadata():
     print(f"🔍 API appelée - station: {radio_state.current_station}, playing: {radio_state.is_playing}")
     
-    if radio_state.current_station and radio_state.is_playing:
-        metadata = test_metadata.get(radio_state.current_station, {"artist": "En direct", "title": radio_state.current_station})
-        
-        result = {
-            'status': 'success',
-            'artist': metadata['artist'],
-            'title': metadata['title'],
-            'station': radio_state.current_station,
-            'is_playing': True
-        }
-        
-        print(f"📤 API renvoie: {result}")
-        return jsonify(result)
+    if radio_state.current_station and radio_state.current_url and radio_state.is_playing:
+        try:
+            # Utiliser le vrai fetcher pour obtenir les métadonnées
+            metadata = radio_state.fetcher.get_metadata(radio_state.current_station, radio_state.current_url)
+            
+            if metadata and metadata.title and metadata.title.lower() != "en direct":
+                result = {
+                    'status': 'success',
+                    'artist': metadata.artist or radio_state.current_station,
+                    'title': metadata.title,
+                    'cover_url': metadata.cover_url or '',
+                    'station': radio_state.current_station,
+                    'is_playing': True
+                }
+                
+                print(f"📤 API renvoie: {result}")
+                return jsonify(result)
+            else:
+                # Si pas de métadonnées, renvoyer l'état actuel
+                result = {
+                    'status': 'no_data',
+                    'artist': radio_state.current_station,
+                    'title': 'En direct',
+                    'cover_url': '',
+                    'station': radio_state.current_station,
+                    'is_playing': True
+                }
+                
+                print(f"📤 API renvoie (no_metadata): {result}")
+                return jsonify(result)
+                
+        except Exception as e:
+            print(f"❌ Erreur métadonnées: {e}")
+            # En cas d'erreur, renvoyer l'état actuel
+            result = {
+                'status': 'error',
+                'artist': radio_state.current_station,
+                'title': 'En direct',
+                'cover_url': '',
+                'station': radio_state.current_station,
+                'is_playing': True
+            }
+            
+            print(f"📤 API renvoie (error): {result}")
+            return jsonify(result)
     
     result = {
         'status': 'no_data',
@@ -97,8 +108,9 @@ def play():
     
     if station and url:
         radio_state.current_station = station
+        radio_state.current_url = url
         radio_state.is_playing = True
-        print(f"▶️ Play: {station}")
+        print(f"▶️ Play: {station} - {url}")
         return jsonify({
             'status': 'playing',
             'station': station,
@@ -111,6 +123,7 @@ def play():
 def stop():
     station = radio_state.current_station
     radio_state.current_station = None
+    radio_state.current_url = None
     radio_state.is_playing = False
     
     print(f"⏹️ Stop: {station}")
