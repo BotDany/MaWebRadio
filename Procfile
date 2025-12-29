@@ -1,1 +1,1 @@
-web: python radio_metadata_fetcher_fixed_clean.py
+web: python radio_player_web.py

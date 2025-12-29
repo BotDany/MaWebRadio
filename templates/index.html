@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lecteur Radio avec Reprise Instantanée en Direct - 17 radios françaises avec audio HTML5">
+    <meta name="keywords" content="radio, musique, france, chante france, rtl, nostalgie, streaming, audio">
+    <meta property="og:title" content="🎵 Lecteur Radio - Reprise Instantanée">
+    <meta property="og:description" content="17 radios françaises avec reprise instantanée en direct">
+    <meta property="og:type" content="website">
+    <title>🎵 Lecteur Radio - Reprise Instantanée en Direct</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .station-selector {
+            margin-bottom: 20px;
+        }
+
+        .station-selector select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            cursor: pointer;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-play {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-play:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-pause {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-pause:hover {
+            background: #e68900;
+            transform: translateY(-2px);
+        }
+
+        .btn-stop {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-history {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-history:hover {
+            background: #0b7dda;
+            transform: translateY(-2px);
+        }
+
+        .metadata {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .metadata h3 {
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+
+        .metadata p {
+            margin: 5px 0;
+            font-size: 18px;
+        }
+
+        .artist {
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .title {
+            font-style: italic;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .status.playing {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status.paused {
+            background: #ff9800;
+            color: white;
+        }
+
+        .status.stopped {
+            background: #f44336;
+            color: white;
+        }
+
+        .url-display {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+
+        .info-box {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .info-box h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #f44336;
+        }
+
+        .history-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            .btn {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Lecteur Radio</h1>
+            <p>⚡ Reprise Instantanée en Direct</p>
+        </div>
+
+        <div class="player-card">
+            <div class="station-selector">
+                <select id="stationSelect">
+                    <option value="">-- Choisissez une radio --</option>
+                    {% for station, url in stations %}
+                    <option value="{{ station }}|{{ url }}">{{ station }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Lecteur Audio HTML5 -->
+            <div class="audio-player">
+                <audio id="audioPlayer" controls style="width: 100%; margin: 20px 0;">
+                    Votre navigateur ne supporte pas l'élément audio.
+                </audio>
+            </div>
+
+            <div class="controls">
+                <button id="playBtn" class="btn btn-play">▶️ Play</button>
+                <button id="pauseBtn" class="btn btn-pause">⏸️ Pause</button>
+                <button id="stopBtn" class="btn btn-stop">⏹️ Stop</button>
+                <button id="historyBtn" class="btn btn-history">📋 Historique</button>
+            </div>
+
+            <div id="status" class="status stopped">Status: Arrêté</div>
+
+            <div class="metadata">
+                <h3>🎵 En direct</h3>
+                <p id="artist" class="artist">Artiste: --</p>
+                <p id="title" class="title">Titre: --</p>
+                <p id="coverUrl"></p>
+            </div>
+
+            <div class="url-display">
+                <strong>URL du flux:</strong> <span id="urlDisplay">Aucune radio sélectionnée</span>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>⚡ Reprise Instantanée en Direct</h3>
+            <p><strong>💡 Quand vous mettez en pause (⏸️) et que vous appuyez sur Play (▶️):</strong></p>
+            <ul>
+                <li>→ La radio reprend <strong>INSTANTANÉMENT</strong> en DIRECT</li>
+                <li>→ Pas de reprise là où vous vous êtes arrêté</li>
+                <li>→ Toujours en temps réel comme une vraie radio !</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Modal pour l'historique -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>📋 Historique</h2>
+            <div id="historyContent" class="loading">
+                <div class="spinner"></div>
+                <p>Chargement de l'historique...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStation = null;
+        let currentUrl = null;
+        let isPlaying = false;
+
+        // Éléments DOM
+        const stationSelect = document.getElementById('stationSelect');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const historyBtn = document.getElementById('historyBtn');
+        const status = document.getElementById('status');
+        const artist = document.getElementById('artist');
+        const title = document.getElementById('title');
+        const coverUrl = document.getElementById('coverUrl');
+        const urlDisplay = document.getElementById('urlDisplay');
+        const historyModal = document.getElementById('historyModal');
+        const historyContent = document.getElementById('historyContent');
+        const closeBtn = document.getElementsByClassName('close')[0];
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        // Gestionnaires d'événements
+        stationSelect.addEventListener('change', onStationChange);
+        playBtn.addEventListener('click', onPlay);
+        pauseBtn.addEventListener('click', onPause);
+        stopBtn.addEventListener('click', onStop);
+        historyBtn.addEventListener('click', showHistory);
+        closeBtn.addEventListener('click', () => historyModal.style.display = 'none');
+
+        // Événements audio
+        audioPlayer.addEventListener('play', () => {
+            isPlaying = true;
+            updateStatus('playing', `Lecture de ${currentStation}`);
+            console.log('🔊 Audio HTML5 démarré');
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            isPlaying = false;
+            updateStatus('paused', 'Pause');
+            console.log('🔇 Audio HTML5 en pause');
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            // Relancer automatiquement pour les flux radio
+            if (currentUrl && isPlaying) {
+                audioPlayer.load(); // Recharger le flux
+                audioPlayer.play().catch(e => console.log('Erreur reprise auto:', e));
+            }
+        });
+
+        audioPlayer.addEventListener('error', (e) => {
+            console.error('❌ Erreur audio:', e);
+            updateStatus('stopped', 'Erreur audio');
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target == historyModal) {
+                historyModal.style.display = 'none';
+            }
+        });
+
+        function onStationChange() {
+            const value = stationSelect.value;
+            if (value) {
+                [currentStation, currentUrl] = value.split('|');
+                urlDisplay.textContent = currentUrl;
+                
+                // Configurer le lecteur audio
+                audioPlayer.src = currentUrl;
+                audioPlayer.load(); // Précharger mais ne pas jouer
+                
+                console.log('📻 Radio sélectionnée:', currentStation);
+                console.log('🔗 URL audio:', currentUrl);
+            } else {
+                currentStation = null;
+                currentUrl = null;
+                urlDisplay.textContent = 'Aucune radio sélectionnée';
+                audioPlayer.src = '';
+                audioPlayer.load();
+            }
+        }
+
+        async function onPlay() {
+            if (!currentStation) {
+                alert('Veuillez sélectionner une radio d\'abord!');
+                return;
+            }
+
+            try {
+                // Reprise instantanée en direct avec HTML5
+                audioPlayer.load(); // Recharger le flux pour le direct
+                await audioPlayer.play();
+                
+                isPlaying = true;
+                updateStatus('playing', `En direct - ${currentStation}`);
+                console.log('▶️ Reprise instantanée en direct:', currentStation);
+                
+            } catch (error) {
+                console.error('❌ Erreur lecture:', error);
+                updateStatus('stopped', 'Erreur de lecture');
+                
+                // Alternative: forcer la lecture
+                audioPlayer.muted = true;
+                await audioPlayer.play();
+                audioPlayer.muted = false;
+            }
+        }
+
+        async function onPause() {
+            try {
+                audioPlayer.pause();
+                isPlaying = false;
+                updateStatus('paused', 'Pause');
+                console.log('⏸️ Pause:', currentStation);
+            } catch (error) {
+                console.error('❌ Erreur pause:', error);
+            }
+        }
+
+        async function onStop() {
+            try {
+                audioPlayer.pause();
+                audioPlayer.src = '';
+                audioPlayer.load();
+                
+                isPlaying = false;
+                currentStation = null;
+                currentUrl = null;
+                stationSelect.value = '';
+                updateStatus('stopped', 'Arrêté');
+                artist.textContent = 'Artiste: --';
+                title.textContent = 'Titre: --';
+                coverUrl.textContent = '';
+                urlDisplay.textContent = 'Aucune radio sélectionnée';
+                
+                console.log('⏹️ Stop');
+                
+            } catch (error) {
+                console.error('❌ Erreur stop:', error);
+            }
+        }
+
+        async function updateMetadata() {
+            if (!isPlaying) return;
+
+            try {
+                const response = await fetch('/api/metadata');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    artist.textContent = `Artiste: ${data.artist}`;
+                    title.textContent = `Titre: ${data.title}`;
+                    
+                    if (data.cover_url) {
+                        coverUrl.innerHTML = `<a href="${data.cover_url}" target="_blank">📱 Voir la pochette</a>`;
+                    } else {
+                        coverUrl.textContent = '';
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur de métadonnées:', error);
+            }
+        }
+
+        async function showHistory() {
+            if (!currentStation) {
+                alert('Veuillez sélectionner une radio d\'abord!');
+                return;
+            }
+
+            historyModal.style.display = 'block';
+            historyContent.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement de l\'historique...</p></div>';
+
+            try {
+                const response = await fetch('/api/history');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    let html = `<h3>📋 Historique - ${data.station}</h3>`;
+                    
+                    if (data.history && data.history.length > 0) {
+                        data.history.forEach((track, index) => {
+                            html += `
+                                <div class="history-item">
+                                    <strong>${index + 1}. ${track.artist} - ${track.title}</strong><br>
+                                    ${track.timestamp ? `Heure: ${track.timestamp}<br>` : ''}
+                                    ${track.cover_url ? `<a href="${track.cover_url}" target="_blank">📱 Voir la pochette</a>` : ''}
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html += '<p>Aucun historique disponible pour cette radio.</p>';
+                    }
+                    
+                    historyContent.innerHTML = html;
+                } else {
+                    historyContent.innerHTML = `<p>Erreur: ${data.message}</p>`;
+                }
+            } catch (error) {
+                historyContent.innerHTML = `<p>Erreur de chargement: ${error.message}</p>`;
+            }
+        }
+
+        function updateStatus(statusType, message) {
+            status.className = `status ${statusType}`;
+            status.textContent = `Status: ${message}`;
+        }
+
+        // Mettre à jour les métadonnées toutes les 5 secondes
+        setInterval(updateMetadata, 5000);
+
+        // Initialisation
+        console.log('🎵 Lecteur Radio HTML5 avec Reprise Instantanée en Direct prêt!');
+        console.log('🔊 Audio HTML5 activé');
+        console.log('⚡ Pause → Play = Reprise instantanée en direct!');
+    </script>
+</body>
+</html>

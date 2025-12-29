@@ -6,6 +6,9 @@ import re
 import ssl
 import sys
 import time
+import os
+import signal
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Optional, Tuple
@@ -26,6 +29,12 @@ except ImportError:
     BeautifulSoup = None
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Fichier de cache pour l'historique
+HISTORY_CACHE_FILE = "radio_history_cache.json"
+
+# Variable globale pour arrêter proprement le monitoring
+stop_monitoring = False
 
 
 RADIOS = [
@@ -69,6 +78,60 @@ RADIO_LOGOS = {
     "Top 80 Radio": "https://i.ibb.co/4pD4X0x/top80radio.png"
 }
 
+
+def load_history_cache() -> dict:
+    """Charge le cache de l'historique depuis le fichier"""
+    try:
+        if os.path.exists(HISTORY_CACHE_FILE):
+            with open(HISTORY_CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+def save_history_cache(cache: dict):
+    """Sauvegarde le cache de l'historique dans le fichier"""
+    try:
+        with open(HISTORY_CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def add_to_history_cache(station_name: str, artist: str, title: str, cover_url: str = ""):
+    """Ajoute une chanson à l'historique en cache"""
+    cache = load_history_cache()
+    
+    if station_name not in cache:
+        cache[station_name] = []
+    
+    # Vérifier si la chanson n'est pas déjà dans les 5 dernières
+    recent_songs = cache[station_name][:5]
+    for song in recent_songs:
+        if song.get('artist') == artist and song.get('title') == title:
+            return  # Déjà dans l'historique récent
+    
+    # Ajouter au début de l'historique
+    new_song = {
+        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'artist': artist,
+        'title': title,
+        'cover_url': cover_url
+    }
+    
+    cache[station_name].insert(0, new_song)
+    
+    # Limiter l'historique à 50 chansons par radio
+    if len(cache[station_name]) > 50:
+        cache[station_name] = cache[station_name][:50]
+    
+    save_history_cache(cache)
+
+def get_cached_history(station_name: str, count: int = 10) -> list:
+    """Récupère l'historique depuis le cache"""
+    cache = load_history_cache()
+    if station_name in cache:
+        return cache[station_name][:count]
+    return []
 
 def _normalize_text(value: str) -> str:
     if not isinstance(value, str):
@@ -759,6 +822,263 @@ class RadioFetcher:
         except Exception:
             return RadioMetadata(station=station_name, title="En direct", artist=station_name, cover_url="", host="")
 
+    def _get_chantefrance_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        try:
+            # URL de l'API Chante France 80
+            api_url = f"https://www.chantefrance.com/api/TitleDiffusions?size=1&radioStreamId=3120757949245428885&date={int(time.time() * 1000)}"
+            
+            response = self.session.get(api_url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            
+            if data and len(data) > 0:
+                track = data[0]['title']
+                artist = track.get('artist', '').title()
+                title = track.get('title', '').title()
+                cover_url = track.get('coverUrl', '')
+                
+                if artist and title:
+                    # Nettoyage des noms d'artistes et titres
+                    artist = ' '.join(artist.split())  # Supprime les espaces multiples
+                    title = ' '.join(title.split())
+                    return RadioMetadata(
+                        station=station_name,
+                        title=title,
+                        artist=artist,
+                        cover_url=cover_url
+                    )
+        except Exception as e:
+            print(f"Erreur API Chante France pour {station_name}: {e}", file=sys.stderr)
+        return None
+
+    def get_chantefrance_history(self, station_name: str, count: int = 10) -> list:
+        """Récupère l'historique des musiques passées pour Chante France"""
+        try:
+            api_url = f"https://www.chantefrance.com/api/TitleDiffusions?size={count}&radioStreamId=3120757949245428885&date={int(time.time() * 1000)}"
+            
+            response = self.session.get(api_url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            
+            history = []
+            if data:
+                for item in data:
+                    track = item['title']
+                    artist = track.get('artist', '').title()
+                    title = track.get('title', '').title()
+                    cover_url = track.get('coverUrl', '')
+                    timestamp = item.get('timestamp', '')
+                    
+                    if artist and title:
+                        # Nettoyage des noms d'artistes et titres
+                        artist = ' '.join(artist.split())
+                        title = ' '.join(title.split())
+                        
+                        # Conversion du timestamp
+                        if timestamp:
+                            try:
+                                dt = timestamp.replace('T', ' ').replace('Z', '')
+                                history.append({
+                                    'timestamp': dt,
+                                    'artist': artist,
+                                    'title': title,
+                                    'cover_url': cover_url
+                                })
+                            except:
+                                history.append({
+                                    'timestamp': timestamp,
+                                    'artist': artist,
+                                    'title': title,
+                                    'cover_url': cover_url
+                                })
+            
+            return history
+        except Exception as e:
+            print(f"Erreur historique Chante France: {e}", file=sys.stderr)
+            return []
+
+    def get_nostalgie_history(self, station_name: str, radio_id: str, count: int = 10) -> list:
+        """Récupère l'historique des musiques passées pour Nostalgie"""
+        try:
+            headers = {
+                "Accept": "application/json",
+                "Accept-Language": "fr-FR,fr;q=0.9",
+                "User-Agent": "NostalgieApp/9490 CFNetwork/3826.500.131 Darwin/24.5.0",
+                "X-Device-Category": "mobile",
+                "X-App-Id": "fr_nosta_ios",
+            }
+            
+            response = self.session.get(
+                f"https://players.nrjaudio.fm/wr_api3/v1/webradios/{radio_id}/tracklist",
+                params={"timeshift_slot": 1},
+                timeout=6,
+                headers=headers,
+            )
+            
+            if response.status_code != 200:
+                return []
+                
+            data = response.json()
+            if not isinstance(data, dict):
+                return []
+                
+            data2 = data.get("data")
+            if not isinstance(data2, dict):
+                return []
+                
+            tracks = data2.get("tracks", [])
+            if not isinstance(tracks, list):
+                return []
+            
+            history = []
+            for track in tracks[:count]:
+                if isinstance(track, dict):
+                    title = _normalize_text(str(track.get("title") or ""))
+                    artist = _normalize_text(str(track.get("artist") or ""))
+                    cover_url = _normalize_text(str(track.get("artwork_image") or ""))
+                    
+                    if title and artist:
+                        history.append({
+                            'timestamp': '',  # Nostalgie ne fournit pas de timestamp
+                            'artist': artist,
+                            'title': title,
+                            'cover_url': cover_url
+                        })
+            
+            return history
+        except Exception as e:
+            print(f"Erreur historique Nostalgie: {e}", file=sys.stderr)
+            return []
+
+    def get_history(self, station_name: str, url: str, count: int = 10) -> list:
+        """Récupère l'historique des musiques passées selon la radio"""
+        station_lower = station_name.lower()
+        
+        # D'abord essayer les API officielles
+        # Chante France
+        if "chantefrance" in station_lower or "chante france" in station_lower:
+            return self.get_chantefrance_history(station_name, count)
+        
+        # Nostalgie
+        elif "nostalgie" in station_lower:
+            mapping = {
+                "Nostalgie-Les 80 Plus Grand Tubes": "1640",
+                "Nostalgie-Les Tubes 80 N1": "1283",
+            }
+            radio_id = mapping.get(station_name)
+            if radio_id:
+                return self.get_nostalgie_history(station_name, radio_id, count)
+        
+        # Pour toutes les autres radios, utiliser le cache local
+        return get_cached_history(station_name, count)
+
+    def get_metadata_with_history(self, station_name: str, url: str) -> RadioMetadata:
+        """Récupère les métadonnées et ajoute automatiquement à l'historique"""
+        metadata = self.get_metadata(station_name, url)
+        
+        # Ajouter à l'historique si c'est une musique (pas "En direct")
+        if metadata and metadata.title and metadata.title.lower() != "en direct":
+            add_to_history_cache(station_name, metadata.artist, metadata.title, metadata.cover_url)
+        
+        return metadata
+
+    def monitor_radio(self, station_name: str, url: str, interval: int = 30):
+        """Surveille une radio en continu et met à jour l'historique"""
+        global stop_monitoring
+        
+        print(f"🎵 Monitoring de {station_name} (Intervalle: {interval}s)")
+        print("Appuyez sur Ctrl+C pour mettre en pause/reprendre")
+        print("=" * 60)
+        
+        last_song = None
+        
+        while not stop_monitoring:
+            try:
+                metadata = self.get_metadata_with_history(station_name, url)
+                
+                current_song = f"{metadata.artist} - {metadata.title}"
+                
+                # Afficher seulement si la chanson a changé
+                if current_song != last_song:
+                    timestamp = time.strftime('%H:%M:%S')
+                    print(f"[{timestamp}] 🎶 {metadata.artist} - {metadata.title}")
+                    
+                    if metadata.cover_url:
+                        print(f"           📱 {metadata.cover_url}")
+                    
+                    last_song = current_song
+                
+                time.sleep(interval)
+                
+            except KeyboardInterrupt:
+                print(f"\n⏸️  Mise en pause - Appuyez sur Entrée pour reprendre, Ctrl+C pour arrêter")
+                
+                # Attendre que l'utilisateur décide
+                while not stop_monitoring:
+                    try:
+                        # Attendre une seconde à la fois pour vérifier stop_monitoring
+                        time.sleep(1)
+                    except KeyboardInterrupt:
+                        print("\n🛑 Arrêt du monitoring")
+                        stop_monitoring = True
+                        break
+                
+                if not stop_monitoring:
+                    print("▶️  Reprise du monitoring...")
+                    continue
+                    
+            except Exception as e:
+                print(f"❌ Erreur: {e}")
+                time.sleep(interval)
+        
+        print("✅ Monitoring terminé")
+
+    def monitor_multiple_radios(self, stations: list, interval: int = 30):
+        """Surveille plusieurs radios en continu"""
+        global stop_monitoring
+        
+        print(f"🎵 Monitoring de {len(stations)} radios (Intervalle: {interval}s)")
+        print("Appuyez sur Ctrl+C pour mettre en pause/reprendre")
+        print("=" * 60)
+        
+        last_songs = {station: None for station, _ in stations}
+        
+        while not stop_monitoring:
+            try:
+                for station_name, url in stations:
+                    try:
+                        metadata = self.get_metadata_with_history(station_name, url)
+                        current_song = f"{metadata.artist} - {metadata.title}"
+                        
+                        # Afficher seulement si la chanson a changé
+                        if current_song != last_songs[station_name]:
+                            timestamp = time.strftime('%H:%M:%S')
+                            print(f"[{timestamp}] {station_name}: 🎶 {metadata.artist} - {metadata.title}")
+                            last_songs[station_name] = current_song
+                            
+                    except Exception as e:
+                        print(f"[{time.strftime('%H:%M:%S')}] ❌ {station_name}: Erreur {e}")
+                
+                time.sleep(interval)
+                
+            except KeyboardInterrupt:
+                print(f"\n⏸️  Mise en pause - Appuyez sur Entrée pour reprendre, Ctrl+C pour arrêter")
+                
+                # Attendre que l'utilisateur décide
+                while not stop_monitoring:
+                    try:
+                        time.sleep(1)
+                    except KeyboardInterrupt:
+                        print("\n🛑 Arrêt du monitoring")
+                        stop_monitoring = True
+                        break
+                
+                if not stop_monitoring:
+                    print("▶️  Reprise du monitoring...")
+                    continue
+        
+        print("✅ Monitoring terminé")
+
     def get_metadata(self, station_name: str, url: str) -> RadioMetadata:
         cache_key = f"{station_name}:{url}"
         now = time.time()
@@ -771,6 +1091,13 @@ class RadioFetcher:
         # Spécial: Bide Et Musique - essayer d'abord le parsing web
         if "bide" in station_name.lower():
             md = self._get_bide_musique_metadata(station_name)
+            if md:
+                self.cache[cache_key] = (md, now)
+                return md
+
+        # Spécial: Chante France 80 - essayer d'abord l'API
+        if "chantefrance" in station_name.lower() or "chante france" in station_name.lower():
+            md = self._get_chantefrance_metadata(station_name)
             if md:
                 self.cache[cache_key] = (md, now)
                 return md
@@ -836,6 +1163,67 @@ class RadioFetcher:
         
         self.cache[cache_key] = (md, now)
         return md
+
+
+def _cli_monitor_once(station_name: str, url: str, interval: int = 30) -> int:
+    """Lance le monitoring d'une seule radio"""
+    try:
+        fetcher = RadioFetcher()
+        fetcher.monitor_radio(station_name, url, interval)
+        return 0
+    except Exception as e:
+        print(f"Erreur: {e}", file=sys.stderr)
+        return 1
+
+def _cli_monitor_all(interval: int = 30) -> int:
+    """Lance le monitoring de toutes les radios"""
+    try:
+        fetcher = RadioFetcher()
+        fetcher.monitor_multiple_radios(RADIOS, interval)
+        return 0
+    except Exception as e:
+        print(f"Erreur: {e}", file=sys.stderr)
+        return 1
+
+def _signal_handler(signum, frame):
+    """Gestionnaire de signal pour arrêt propre"""
+    global stop_monitoring
+    stop_monitoring = True
+    print("\n🛑 Signal d'arrêt reçu, arrêt en cours...")
+
+
+def _cli_history_once(station_name: str, url: str, count: int = 10) -> int:
+    try:
+        fetcher = RadioFetcher()
+        history = fetcher.get_history(station_name, url, count)
+        
+        if history:
+            print(f"Historique des {len(history)} dernières musiques sur {station_name}:")
+            print("=" * 60)
+            for i, track in enumerate(history, 1):
+                print(f"{i:2d}. {track['artist']} - {track['title']}")
+                if track['timestamp']:
+                    print(f"    Heure: {track['timestamp']}")
+                if track['cover_url']:
+                    print(f"    Pochette: {track['cover_url']}")
+                print()
+        else:
+            # Vérifier si c'est une radio connue mais sans historique
+            station_lower = station_name.lower()
+            if any(keyword in station_lower for keyword in ["rtl", "bide", "100%", "mega", "flash", "superloustic", "radio gérard", "supernana", "génération", "made in", "top 80", "générikds", "chansons oubliées"]):
+                print(f"L'historique n'est pas encore disponible pour {station_name}")
+                print("Fonctionnalité actuellement disponible pour:")
+                print("  ✅ Chante France")
+                print("  ✅ Nostalgie (Les 80 Plus Grand Tubes, Les Tubes 80 N1)")
+                print("\nLes autres radios seront ajoutées progressivement...")
+            else:
+                print(f"Aucun historique disponible pour {station_name}")
+                print("Essayez avec --list pour voir les radios supportées")
+        
+        return 0
+    except Exception as e:
+        print(f"Erreur: {e}", file=sys.stderr)
+        return 1
 
 
 def _cli_json_once(station_name: str, url: str) -> int:
@@ -909,11 +1297,20 @@ def _run_all_radios() -> int:
 
 
 def _entrypoint() -> int:
+    # Configurer le gestionnaire de signal
+    signal.signal(signal.SIGINT, _signal_handler)
+    signal.signal(signal.SIGTERM, _signal_handler)
+    
     parser = argparse.ArgumentParser(add_help=True)
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--list-all", action="store_true")
     parser.add_argument("--run-all", action="store_true")
+    parser.add_argument("--history", action="store_true", help="Affiche l'historique des musiques passées")
+    parser.add_argument("--monitor", action="store_true", help="Surveille une radio en continu")
+    parser.add_argument("--monitor-all", action="store_true", help="Surveille toutes les radios en continu")
+    parser.add_argument("--count", type=int, default=10, help="Nombre de musiques à afficher dans l'historique (défaut: 10)")
+    parser.add_argument("--interval", type=int, default=30, help="Intervalle de monitoring en secondes (défaut: 30)")
     parser.add_argument("--station", type=str, default="")
     parser.add_argument("--url", type=str, default="")
     args, _ = parser.parse_known_args()
@@ -929,13 +1326,33 @@ def _entrypoint() -> int:
     if args.run_all:
         return _run_all_radios()
 
+    if args.monitor_all:
+        return _cli_monitor_all(args.interval)
+
+    if args.monitor:
+        if not args.station or not args.url:
+            sys.stderr.write("Missing --station or --url for --monitor\n")
+            return 2
+        return _cli_monitor_once(args.station, args.url, args.interval)
+
+    if args.history:
+        if not args.station or not args.url:
+            sys.stderr.write("Missing --station or --url for --history\n")
+            return 2
+        return _cli_history_once(args.station, args.url, args.count)
+
     if args.json:
         if not args.station or not args.url:
             sys.stderr.write("Missing --station or --url\n")
             return 2
         return _cli_json_once(args.station, args.url)
 
-    sys.stderr.write("Use --json --station <name> --url <stream_url>\n")
+    sys.stderr.write("Usage:\n")
+    sys.stderr.write("  --json --station <name> --url <stream_url>\n")
+    sys.stderr.write("  --history --station <name> --url <stream_url> [--count N]\n")
+    sys.stderr.write("  --monitor --station <name> --url <stream_url> [--interval N]\n")
+    sys.stderr.write("  --monitor-all [--interval N]\n")
+    sys.stderr.write("  --list | --list-all | --run-all\n")
     return 2
 
 
