@@ -38,11 +38,15 @@ last_metadata = None
 
 def update_metadata_loop():
     """Thread qui met à jour les métadonnées en continu"""
+    global last_metadata
     while True:
         try:
             if is_playing and current_station and current_url:
-                # Les métadonnées sont mises à jour via l'API
-                pass
+                # Mettre à jour les métadonnées
+                metadata = fetcher.get_metadata(current_station, current_url)
+                if metadata:
+                    last_metadata = metadata
+                    print(f"🎵 Métadonnées mises à jour: {metadata.artist} - {metadata.title}")
             time.sleep(5)
         except Exception as e:
             print(f"Erreur dans la boucle de métadonnées: {e}")
@@ -162,7 +166,7 @@ def get_metadata():
     
     if is_playing and current_station and current_url:
         try:
-            metadata = fetcher.get_metadata_with_history(current_station, current_url)
+            metadata = fetcher.get_metadata(current_station, current_url)
             
             if metadata:
                 # Vérifier si les métadonnées ont changé
