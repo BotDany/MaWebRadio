@@ -362,5 +362,6 @@ def test_radio(radio_name):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print(f"🚀 Application finale avec {len(RADIOS)} radios démarrée sur le port {port}")
+    radios = load_radios()
+    print(f"🚀 Application finale avec {len(radios)} radios démarrée sur le port {port}")
     app.run(host='0.0.0.0', port=port)
