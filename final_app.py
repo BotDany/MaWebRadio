@@ -212,7 +212,7 @@ def delete_radio(radio_name):
 @app.route('/admin/test/<path:radio_name>')
 @app.route('/admin/test/<radio_name>')
 def test_radio(radio_name):
-    """Tester une radio"""
+    """Tester une radio et récupérer les métadonnées"""
     try:
         # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
         import urllib.parse
@@ -224,16 +224,35 @@ def test_radio(radio_name):
         # Trouver l'URL de la radio
         for name, url in radios:
             if name == radio_name:
-                return redirect(url_for('admin'))
-                # TODO: Ajouter un vrai test de lecture
-                # Pour le moment, on redirige vers l'admin
+                # Importer le fetcher de métadonnées
+                from radio_metadata_fetcher_fixed_clean import fetch_metadata_for_station
+                
+                # Récupérer les métadonnées
+                metadata = fetch_metadata_for_station(name, url)
+                
+                if metadata and metadata.title and metadata.artist:
+                    return jsonify({
+                        'status': 'success',
+                        'artist': metadata.artist,
+                        'title': metadata.title,
+                        'cover_url': metadata.cover_url
+                    })
+                else:
+                    return jsonify({
+                        'status': 'no_data',
+                        'message': 'Aucune métadonnée disponible'
+                    })
         else:
-            flash(f'Radio "{radio_name}" non trouvée', 'error')
+            return jsonify({
+                'status': 'error',
+                'message': f'Radio "{radio_name}" non trouvée'
+            })
             
     except Exception as e:
-        flash(f'Erreur lors du test: {str(e)}', 'error')
-    
-    return redirect(url_for('admin'))
+        return jsonify({
+            'status': 'error',
+            'message': f'Erreur lors du test: {str(e)}'
+        })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
