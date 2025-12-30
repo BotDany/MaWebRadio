@@ -6,14 +6,33 @@ Script pour créer les tables et insérer les radios dans le nouveau PostgreSQL
 import psycopg
 import os
 
-# Configuration du nouveau PostgreSQL - À MODIFIER
-DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'VOTRE_NOUVEAU_HOST'),
-    'dbname': os.environ.get('DB_NAME', 'VOTRE_NOUVELLE_DB'),
-    'user': os.environ.get('DB_USER', 'VOTRE_NOUVEAU_USER'),
-    'password': os.environ.get('DB_PASSWORD', 'VOTRE_NOUVEAU_PASSWORD'),
-    'port': os.environ.get('DB_PORT', 'VOTRE_NOUVEAU_PORT')
-}
+# Configuration du nouveau PostgreSQL - Utilise DATABASE_URL de Railway
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # Parse DATABASE_URL (format: postgresql://user:password@host:port/database)
+    import re
+    match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
+    if match:
+        DB_CONFIG = {
+            'host': match.group(3),
+            'dbname': match.group(5),
+            'user': match.group(1),
+            'password': match.group(2),
+            'port': match.group(4)
+        }
+    else:
+        print("❌ Format DATABASE_URL invalide")
+        exit(1)
+else:
+    # Configuration manuelle si DATABASE_URL n'est pas disponible
+    DB_CONFIG = {
+        'host': os.environ.get('DB_HOST', 'localhost'),
+        'dbname': os.environ.get('DB_NAME', 'railway'),
+        'user': os.environ.get('DB_USER', 'postgres'),
+        'password': os.environ.get('DB_PASSWORD', ''),
+        'port': os.environ.get('DB_PORT', '5432')
+    }
 
 def setup_database():
     """Créer la table et insérer les radios par défaut"""
