@@ -22,13 +22,10 @@ def get_db_connection():
         return None
 
 def load_radios():
-    """Charger la liste des radios depuis PostgreSQL ou fallback"""
+    """Charger la liste des radios depuis PostgreSQL ou fallback immédiat"""
     try:
-        conn = get_db_connection()
-        if conn is None:
-            print("⚠️ PostgreSQL inaccessible, utilisation des radios par défaut")
-            return get_default_radios()
-        
+        # Timeout très court pour éviter le blocage au démarrage
+        conn = psycopg.connect(**DB_CONFIG, connect_timeout=1)
         cursor = conn.cursor(row_factory=dict_row)
         
         cursor.execute("SELECT name, url FROM radios ORDER BY name")
@@ -46,7 +43,7 @@ def load_radios():
         
     except Exception as e:
         print(f"❌ Erreur chargement radios PostgreSQL: {e}")
-        print("📻 Utilisation des radios par défaut")
+        print("📻 Utilisation immédiate des radios par défaut")
         return get_default_radios()
 
 def get_default_radios():
