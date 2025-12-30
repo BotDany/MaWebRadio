@@ -249,10 +249,11 @@ def add_radio():
     return redirect(url_for('admin'))
 
 @app.route('/admin/edit/<path:radio_name>', methods=['POST'])
+@app.route('/admin/edit/<radio_name>', methods=['POST'])
 def edit_radio(radio_name):
     """Modifier une radio existante"""
     try:
-        # Décoder le nom de la radio
+        # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
         import urllib.parse
         radio_name = urllib.parse.unquote(radio_name)
         
@@ -292,10 +293,11 @@ def edit_radio(radio_name):
     return redirect(url_for('admin'))
 
 @app.route('/admin/delete/<path:radio_name>', methods=['POST'])
+@app.route('/admin/delete/<radio_name>', methods=['POST'])
 def delete_radio(radio_name):
     """Supprimer une radio"""
     try:
-        # Décoder le nom de la radio
+        # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
         import urllib.parse
         radio_name = urllib.parse.unquote(radio_name)
         
@@ -321,10 +323,11 @@ def delete_radio(radio_name):
     return redirect(url_for('admin'))
 
 @app.route('/admin/test/<path:radio_name>')
+@app.route('/admin/test/<radio_name>')
 def test_radio(radio_name):
     """Tester une radio"""
     try:
-        # Décoder le nom de la radio
+        # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
         import urllib.parse
         radio_name = urllib.parse.unquote(radio_name)
         radios = load_radios()
