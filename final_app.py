@@ -162,12 +162,14 @@ def edit_radio(radio_name):
         # Trouver la radio à modifier
         for i, (name, url) in enumerate(radios):
             if name == radio_name:
+                new_name = request.form.get('name')
                 new_url = request.form.get('url')
-                if new_url:
-                    radios[i] = [name, new_url]
+                
+                if new_name and new_url:
+                    radios[i] = [new_name, new_url]
                     
                     if save_radios(radios):
-                        flash(f'Radio "{name}" modifiée avec succès!', 'success')
+                        flash(f'Radio "{name}" modifiée en "{new_name}" avec succès!', 'success')
                     else:
                         flash(f'Erreur lors de la modification de la radio "{name}"', 'error')
                 break
