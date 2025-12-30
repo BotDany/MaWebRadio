@@ -3,13 +3,13 @@ import psycopg
 import os
 from psycopg.rows import dict_row
 
-# Configuration de la base de données - Variables Railway internes
+# Configuration de la base de données - Configuration externe qui fonctionnait
 DB_CONFIG = {
-    'host': os.environ.get('PGHOST', 'postgres.railway.internal'),
-    'dbname': os.environ.get('PGDATABASE', 'railway'),
-    'user': os.environ.get('PGUSER', 'postgres'),
-    'password': os.environ.get('PGPASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
-    'port': os.environ.get('PGPORT', '5432')
+    'host': os.environ.get('DB_HOST', 'trolley.proxy.rlwy.net'),
+    'dbname': os.environ.get('DB_NAME', 'railway'),
+    'user': os.environ.get('DB_USER', 'postgres'),
+    'password': os.environ.get('DB_PASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
+    'port': os.environ.get('DB_PORT', '27920')
 }
 
 def get_db_connection():
