@@ -271,6 +271,207 @@
                 padding: 10px 20px;
             }
         }
+
+        /* Styles pour l'administration */
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .admin-panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h3 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .btn-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .btn-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .admin-section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .admin-section:last-child {
+            border-bottom: none;
+        }
+
+        .admin-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .admin-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .radio-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .radio-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .radio-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .radio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .radio-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .radio-url {
+            color: #666;
+            font-size: 0.8em;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .radio-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .radio-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .admin-form {
+                flex-direction: column;
+            }
+            
+            .radio-actions {
+                flex-direction: column;
+            }
+            
+            .btn-sm {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -302,6 +503,7 @@
                 <button id="pauseBtn" class="btn btn-pause">⏸️ Pause</button>
                 <button id="stopBtn" class="btn btn-stop">⏹️ Stop</button>
                 <button id="historyBtn" class="btn btn-history">📋 Historique</button>
+                <button id="adminBtn" class="btn btn-admin">🔧 Admin</button>
             </div>
 
             <div id="status" class="status stopped">Status: Arrêté</div>
@@ -326,6 +528,41 @@
                 <li>→ Pas de reprise là où vous vous êtes arrêté</li>
                 <li>→ Toujours en temps réel comme une vraie radio !</li>
             </ul>
+        </div>
+
+        <!-- Panneau d'administration -->
+        <div id="adminPanel" class="admin-panel" style="display: none;">
+            <div class="admin-header">
+                <h3>🔧 Administration des Radios</h3>
+                <button id="closeAdminBtn" class="btn-close">❌</button>
+            </div>
+            
+            <!-- Messages Flash -->
+            <div id="flashMessages"></div>
+            
+            <!-- Section Ajouter une radio -->
+            <div class="admin-section">
+                <h4>➕ Ajouter une nouvelle radio</h4>
+                <form id="addRadioForm" class="admin-form">
+                    <div class="form-group">
+                        <label for="newRadioName">Nom de la radio *</label>
+                        <input type="text" id="newRadioName" required placeholder="Ex: Ma Radio Personnalisée">
+                    </div>
+                    <div class="form-group">
+                        <label for="newRadioUrl">URL du flux *</label>
+                        <input type="url" id="newRadioUrl" required placeholder="Ex: https://example.com/stream.mp3">
+                    </div>
+                    <button type="submit" class="btn btn-primary">➕ Ajouter</button>
+                </form>
+            </div>
+            
+            <!-- Section Liste des radios -->
+            <div class="admin-section">
+                <h4>📻 Liste des radios (<span id="radioCount">0</span>)</h4>
+                <div id="radioList" class="radio-list">
+                    <!-- Les radios seront chargées dynamiquement -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -565,6 +802,200 @@
             status.className = `status ${statusType}`;
             status.textContent = `Status: ${message}`;
         }
+
+        // Fonctions d'administration
+        function showAdminPanel() {
+            adminPanel.style.display = 'block';
+            loadRadiosForAdmin();
+        }
+
+        function hideAdminPanel() {
+            adminPanel.style.display = 'none';
+        }
+
+        function loadRadiosForAdmin() {
+            // Charger les radios depuis le select principal
+            const stationSelect = document.getElementById('stationSelect');
+            const radios = [];
+            
+            for (let i = 1; i < stationSelect.options.length; i++) {
+                const option = stationSelect.options[i];
+                const [station, url] = option.value.split('|');
+                radios.push({ station, url });
+            }
+            
+            displayRadioList(radios);
+            document.getElementById('radioCount').textContent = radios.length;
+        }
+
+        function displayRadioList(radios) {
+            const radioList = document.getElementById('radioList');
+            
+            radioList.innerHTML = radios.map((radio, index) => `
+                <div class="radio-item" id="adminRadio-${index}">
+                    <div class="radio-header">
+                        <div>
+                            <div class="radio-name">${radio.station}</div>
+                            <div class="radio-url">${radio.url}</div>
+                        </div>
+                        <div class="radio-status status-warning" id="adminStatus-${index}">
+                            ❓ Non testé
+                        </div>
+                    </div>
+                    <div class="radio-actions">
+                        <button class="btn btn-info btn-sm" onclick="testAdminRadio('${radio.station}', ${index})">
+                            🧪 Tester
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="editAdminRadio('${radio.station}', '${radio.url}', ${index})">
+                            ✏️ Modifier
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteAdminRadio('${radio.station}', ${index})">
+                            🗑️ Supprimer
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function testAdminRadio(stationName, index) {
+            const statusElement = document.getElementById(`adminStatus-${index}`);
+            statusElement.className = 'radio-status status-warning';
+            statusElement.innerHTML = '🔄 Test en cours...';
+            
+            try {
+                const response = await fetch(`/admin/test/${encodeURIComponent(stationName)}`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusElement.className = 'radio-status status-success';
+                    statusElement.innerHTML = `✅ ${data.artist} - ${data.title}`;
+                } else if (data.status === 'no_data') {
+                    statusElement.className = 'radio-status status-warning';
+                    statusElement.innerHTML = '🎙️ En direct';
+                } else {
+                    statusElement.className = 'radio-status status-error';
+                    statusElement.innerHTML = `❌ ${data.message || 'Erreur'}`;
+                }
+            } catch (error) {
+                statusElement.className = 'radio-status status-error';
+                statusElement.innerHTML = '❌ Erreur de test';
+            }
+        }
+
+        function editAdminRadio(stationName, stationUrl, index) {
+            const newName = prompt('Nouveau nom de la radio:', stationName);
+            if (newName === null) return;
+            
+            const newUrl = prompt('Nouvelle URL de la radio:', stationUrl);
+            if (newUrl === null) return;
+            
+            if (!newName.trim() || !newUrl.trim()) {
+                alert('Le nom et l\'URL sont obligatoires');
+                return;
+            }
+            
+            updateRadio(stationName, newName.trim(), newUrl.trim());
+        }
+
+        async function updateRadio(oldName, newName, newUrl) {
+            try {
+                const formData = new FormData();
+                formData.append('name', newName);
+                formData.append('url', newUrl);
+                
+                const response = await fetch(`/admin/edit/${encodeURIComponent(oldName)}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showFlashMessage('✅ Radio modifiée avec succès', 'success');
+                    setTimeout(() => {
+                        location.reload(); // Recharger pour mettre à jour la liste
+                    }, 1500);
+                } else {
+                    showFlashMessage('❌ Erreur lors de la modification', 'error');
+                }
+            } catch (error) {
+                showFlashMessage('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteAdminRadio(stationName, index) {
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer la radio "${stationName}" ?`)) {
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                
+                const response = await fetch(`/admin/delete/${encodeURIComponent(stationName)}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showFlashMessage('✅ Radio supprimée avec succès', 'success');
+                    setTimeout(() => {
+                        location.reload(); // Recharger pour mettre à jour la liste
+                    }, 1500);
+                } else {
+                    showFlashMessage('❌ Erreur lors de la suppression', 'error');
+                }
+            } catch (error) {
+                showFlashMessage('❌ Erreur: ' + error.message, 'error');
+            }
+        }
+
+        function showFlashMessage(message, type) {
+            const flashMessages = document.getElementById('flashMessages');
+            flashMessages.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            
+            // Auto-supprimer après 5 secondes
+            setTimeout(() => {
+                flashMessages.innerHTML = '';
+            }, 5000);
+        }
+
+        // Événements pour l'administration
+        document.getElementById('adminBtn').addEventListener('click', showAdminPanel);
+        document.getElementById('closeAdminBtn').addEventListener('click', hideAdminPanel);
+
+        // Formulaire d'ajout de radio
+        document.getElementById('addRadioForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('newRadioName').value.trim();
+            const url = document.getElementById('newRadioUrl').value.trim();
+            
+            if (!name || !url) {
+                showFlashMessage('❌ Le nom et l\'URL sont obligatoires', 'error');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('url', url);
+                
+                const response = await fetch('/admin/add', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showFlashMessage('✅ Radio ajoutée avec succès', 'success');
+                    document.getElementById('addRadioForm').reset();
+                    setTimeout(() => {
+                        location.reload(); // Recharger pour mettre à jour la liste
+                    }, 1500);
+                } else {
+                    showFlashMessage('❌ Erreur lors de l\'ajout', 'error');
+                }
+            } catch (error) {
+                showFlashMessage('❌ Erreur: ' + error.message, 'error');
+            }
+        });
 
         // Mettre à jour les métadonnées toutes les 5 secondes
         setInterval(updateMetadata, 5000);
