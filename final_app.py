@@ -16,10 +16,7 @@ app = Flask(__name__)
 app.secret_key = 'radio_admin_secret_key_2025'
 radio_state = RadioState()
 
-# Donner le temps à l'application de démarrer complètement
-print("⏱️ Initialisation de l'application...")
-time.sleep(2)
-print("✅ Application prête !")
+print("🚀 Démarrage de l'application webradio...")
 
 @app.route('/')
 def index():
