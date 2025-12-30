@@ -54,7 +54,7 @@ RADIOS = [
     ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
     ("Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"),
     ("Supernana", "https://radiosurle.net:8765/showsupernana"),
-    ("Top 80 Radio", "https://securestreams6.autopo.st:2321/")
+    ("Top 80 Radio", "https://top80.ice.infomaniak.ch/top80-128.mp3"),
 ]
 
 # Dictionnaire des logos par défaut pour chaque radio
