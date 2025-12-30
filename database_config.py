@@ -3,13 +3,13 @@ import psycopg
 import os
 from psycopg.rows import dict_row
 
-# Configuration de la base de données
+# Configuration de la base de données - À MODIFIER avec les nouveaux identifiants
 DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'trolley.proxy.rlwy.net'),
-    'dbname': os.environ.get('DB_NAME', 'railway'),
-    'user': os.environ.get('DB_USER', 'postgres'),
-    'password': os.environ.get('DB_PASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
-    'port': os.environ.get('DB_PORT', '27920')
+    'host': os.environ.get('DB_HOST', 'NOUVEAU_HOST'),  # Remplacer avec le nouveau host
+    'dbname': os.environ.get('DB_NAME', 'NOUVEAU_DB'),  # Remplacer avec le nouveau nom de base
+    'user': os.environ.get('DB_USER', 'NOUVEAU_USER'),  # Remplacer avec le nouvel utilisateur
+    'password': os.environ.get('DB_PASSWORD', 'NOUVEAU_PASSWORD'),  # Remplacer avec le nouveau password
+    'port': os.environ.get('DB_PORT', 'NOUVEAU_PORT')  # Remplacer avec le nouveau port
 }
 
 def get_db_connection():
