@@ -44,7 +44,7 @@ RADIOS = [
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
     ("Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream"),
     ("Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"),
-    ("Générikds", "https://listen.radioking.com/radio/49799/stream/554719"),
+    ("Générikds", "https://listen.radioking.com/radio/497599/stream/554719"),
     ("Made In 80", "https://listen.radioking.com/radio/260719/stream/305509"),
     ("Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC?csegid=2&dist=rmultimedia_apps&gdpr=1&bundle-id=pt.megahits.ios"),
     ("Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d"),
@@ -54,12 +54,7 @@ RADIOS = [
     ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
     ("Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"),
     ("Supernana", "https://radiosurle.net:8765/showsupernana"),
-    ("Top 80 Radio", "https://securestreams6.autopo.st:2321/"),
-    ("Nostalgie 80", "https://scdn.nrjaudio.fm/fr/30601/mp3_128.mp3"),
-    ("RTL2 80s", "http://streaming.radio.rtl2.fr/rtl2-1-44-128"),
-    ("RFM 80-90", "http://rfm-live-mp3-128.scdn.arkena.com/rfm.mp3"),
-    ("NRJ 80s", "https://scdn.nrjaudio.fm/fr/30601/mp3_128.mp3"),
-    ("Virgin Radio 80s", "https://ais-live.cloud-services.asso.fr/virginradio.mp3"),
+    ("Top 80 Radio", "https://securestreams6.autopo.st:2321/")
 ]
 
 # Dictionnaire des logos par défaut pour chaque radio
