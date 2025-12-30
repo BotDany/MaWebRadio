@@ -2,6 +2,7 @@ import json
 import os
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
 from radio_metadata_fetcher_fixed_clean import RadioFetcher
+from database_config import load_radios, save_radios
 
 class RadioState:
     def __init__(self):
@@ -13,18 +14,6 @@ class RadioState:
 app = Flask(__name__)
 app.secret_key = 'radio_admin_secret_key_2025'
 radio_state = RadioState()
-
-def load_radios():
-    """Charger la liste des radios depuis le fichier JSON"""
-    try:
-        if os.path.exists('radios_config.json'):
-            with open('radios_config.json', 'r', encoding='utf-8') as f:
-                return json.load(f)
-        else:
-            return []
-    except Exception as e:
-        print(f"Erreur chargement radios: {e}")
-        return []
 
 @app.route('/')
 def index():
@@ -128,6 +117,118 @@ def stop():
     
     print(f"⏹️ Stop: {station}")
     return jsonify({'status': 'stopped'})
+
+# Routes d'administration
+@app.route('/admin')
+def admin():
+    """Page d'administration des radios"""
+    radios = load_radios()
+    return render_template('admin.html', stations=radios)
+
+@app.route('/admin/add', methods=['POST'])
+def add_radio():
+    """Ajouter une nouvelle radio"""
+    name = request.form.get('name')
+    url = request.form.get('url')
+    
+    if name and url:
+        radios = load_radios()
+        radios.append([name, url])
+        
+        if save_radios(radios):
+            flash(f'Radio "{name}" ajoutée avec succès!', 'success')
+        else:
+            flash(f'Erreur lors de l\'ajout de la radio "{name}"', 'error')
+    else:
+        flash('Veuillez remplir tous les champs', 'error')
+    
+    return redirect(url_for('admin'))
+
+@app.route('/admin/edit/<path:radio_name>', methods=['POST'])
+@app.route('/admin/edit/<radio_name>', methods=['POST'])
+def edit_radio(radio_name):
+    """Modifier une radio existante"""
+    try:
+        # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
+        import urllib.parse
+        radio_name = urllib.parse.unquote(radio_name)
+        
+        # Charger les radios existantes
+        radios = load_radios()
+        
+        # Trouver la radio à modifier
+        for i, (name, url) in enumerate(radios):
+            if name == radio_name:
+                new_url = request.form.get('url')
+                if new_url:
+                    radios[i] = [name, new_url]
+                    
+                    if save_radios(radios):
+                        flash(f'Radio "{name}" modifiée avec succès!', 'success')
+                    else:
+                        flash(f'Erreur lors de la modification de la radio "{name}"', 'error')
+                break
+        else:
+            flash(f'Radio "{radio_name}" non trouvée', 'error')
+            
+    except Exception as e:
+        flash(f'Erreur lors de la modification: {str(e)}', 'error')
+    
+    return redirect(url_for('admin'))
+
+@app.route('/admin/delete/<path:radio_name>', methods=['POST'])
+@app.route('/admin/delete/<radio_name>', methods=['POST'])
+def delete_radio(radio_name):
+    """Supprimer une radio"""
+    try:
+        # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
+        import urllib.parse
+        radio_name = urllib.parse.unquote(radio_name)
+        
+        # Charger les radios existantes
+        radios = load_radios()
+        
+        # Filtrer pour supprimer la radio
+        updated_radios = [(name, url) for name, url in radios if name != radio_name]
+        
+        if len(updated_radios) < len(radios):
+            if save_radios(updated_radios):
+                flash(f'Radio "{radio_name}" supprimée avec succès!', 'success')
+            else:
+                flash(f'Erreur lors de la suppression de la radio "{radio_name}"', 'error')
+        else:
+            flash(f'Radio "{radio_name}" non trouvée', 'error')
+            
+    except Exception as e:
+        flash(f'Erreur lors de la suppression: {str(e)}', 'error')
+    
+    return redirect(url_for('admin'))
+
+@app.route('/admin/test/<path:radio_name>')
+@app.route('/admin/test/<radio_name>')
+def test_radio(radio_name):
+    """Tester une radio"""
+    try:
+        # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
+        import urllib.parse
+        radio_name = urllib.parse.unquote(radio_name)
+        
+        # Charger les radios existantes
+        radios = load_radios()
+        
+        # Trouver l'URL de la radio
+        for name, url in radios:
+            if name == radio_name:
+                return redirect(url_for('admin'))
+                # TODO: Ajouter un vrai test de lecture
+                # Pour le moment, on redirige vers l'admin
+        else:
+            flash(f'Radio "{radio_name}" non trouvée', 'error')
+            
+    except Exception as e:
+        flash(f'Erreur lors du test: {str(e)}', 'error')
+    
+    return redirect(url_for('admin'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
