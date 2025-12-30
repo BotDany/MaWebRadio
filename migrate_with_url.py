@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 OLD_URL = "postgresql://postgres:LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe@trolley.proxy.rlwy.net:27920/railway"
 
 # Nouvelle base (destination) - DATABASE_URL de Railway
-NEW_URL = os.environ.get('DATABASE_URL')
+NEW_URL = "postgresql://postgres:LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe@postgres.railway.internal:5432/railway"
 
 def parse_url(url):
     """Parser une URL PostgreSQL"""
@@ -47,10 +47,6 @@ def migrate():
         old_conn.close()
         
         print("🔌 Connexion à la nouvelle base...")
-        if not NEW_URL:
-            print("❌ DATABASE_URL non trouvé")
-            return
-            
         new_config = parse_url(NEW_URL)
         print(f"📍 Connexion vers: {new_config['host']}:{new_config['port']}")
         
