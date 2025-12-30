@@ -3,14 +3,30 @@ import psycopg
 import os
 from psycopg.rows import dict_row
 
-# Configuration de la base de données - Variables Railway internes (nouveau projet)
-DB_CONFIG = {
-    'host': os.environ.get('PGHOST'),  # Pas de fallback pour forcer les bonnes variables
-    'dbname': os.environ.get('PGDATABASE'),
-    'user': os.environ.get('PGUSER'),
-    'password': os.environ.get('PGPASSWORD'),  # Utiliser le vrai password de Railway
-    'port': os.environ.get('PGPORT')
-}
+# Configuration de la base de données - Utilise DATABASE_URL de Railway
+import re
+from urllib.parse import urlparse
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    # Parser DATABASE_URL
+    parsed = urlparse(DATABASE_URL)
+    DB_CONFIG = {
+        'host': parsed.hostname,
+        'dbname': parsed.path[1:],  # Enlever le /
+        'user': parsed.username,
+        'password': parsed.password,
+        'port': parsed.port
+    }
+else:
+    # Fallback si DATABASE_URL n'est pas disponible
+    DB_CONFIG = {
+        'host': os.environ.get('PGHOST'),
+        'dbname': os.environ.get('PGDATABASE'),
+        'user': os.environ.get('PGUSER'),
+        'password': os.environ.get('PGPASSWORD'),
+        'port': os.environ.get('PGPORT')
+    }
 
 def get_db_connection():
     """Établir une connexion à la base de données PostgreSQL"""
