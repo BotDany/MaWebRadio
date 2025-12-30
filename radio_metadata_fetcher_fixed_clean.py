@@ -1481,4 +1481,7 @@ def _entrypoint() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(_entrypoint())
+    try:
+        raise SystemExit(_entrypoint())
+    except SystemExit as e:
+        sys.exit(e.code)
