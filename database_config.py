@@ -5,11 +5,11 @@ from psycopg.rows import dict_row
 
 # Configuration de la base de données
 DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
-    'database': os.environ.get('DB_NAME', 'ma_webradio'),
+    'host': os.environ.get('DB_HOST', 'trolley.proxy.rlwy.net'),
+    'dbname': os.environ.get('DB_NAME', 'railway'),
     'user': os.environ.get('DB_USER', 'postgres'),
-    'password': os.environ.get('DB_PASSWORD', ''),
-    'port': os.environ.get('DB_PORT', '5432')
+    'password': os.environ.get('DB_PASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
+    'port': os.environ.get('DB_PORT', '27920')
 }
 
 def get_db_connection():
