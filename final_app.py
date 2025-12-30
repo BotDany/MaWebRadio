@@ -1,11 +1,9 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
 from radio_metadata_fetcher_fixed_clean import RadioFetcher
-from database_config import load_radios, save_radios
+import json
+import os
 
-class RadioState:
-    def __init__(self):
-        self.current_station = None
-        self.current_url = None
+# Utiliser JSON pour le moment (PostgreSQL pas encore configuré sur Railway)
         self.is_playing = False
         self.fetcher = RadioFetcher()
 
