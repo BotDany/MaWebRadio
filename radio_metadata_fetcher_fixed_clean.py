@@ -305,7 +305,7 @@ def _fetch_nrjaudio_wr_api3_tracklist_metadata(session: requests.Session, radio_
         r = session.get(
             f"https://players.nrjaudio.fm/wr_api3/v1/webradios/{radio_id}/tracklist",
             params={"timeshift_slot": 1},
-            timeout=6,
+            timeout=3,
             headers=headers,
         )
         if r.status_code != 200:
@@ -378,7 +378,7 @@ def _fetch_infomaniak_icecast_status(session: requests.Session, stream_url: str,
 
         for url in candidates:
             try:
-                r = session.get(url, timeout=(3, 3), headers=headers)
+                r = session.get(url, timeout=(2, 3), headers=headers)
             except Exception:
                 continue
 
@@ -454,7 +454,7 @@ def _fetch_100radio_ws_metas(session: requests.Session, station_name: str) -> Op
         for id_ in ids:
             url = f"https://www.centpourcent.com/ws/metas?id={id_}"
             try:
-                r = session.get(url, timeout=(3, 6), headers=headers, stream=True)
+                r = session.get(url, timeout=(2, 3), headers=headers, stream=True)
             except Exception:
                 continue
 
@@ -528,7 +528,7 @@ class RadioFetcher:
         self.session.mount("https://", HTTPAdapter(max_retries=retry_strategy))
 
         self.cache = {}
-        self.cache_timeout_s = 10
+        self.cache_timeout_s = 5
 
     def _parse_hls_metadata(self, content: str, station_name: str) -> Optional[RadioMetadata]:
         """Parse les métadonnées XML depuis un flux HLS"""
@@ -614,7 +614,7 @@ class RadioFetcher:
             import urllib.parse
             query = urllib.parse.quote_plus(f"{artist} {title}")
             url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"
-            response = self.session.get(url, timeout=5)
+            response = self.session.get(url, timeout=3)
             if response.status_code == 200:
                 data = response.json()
                 if data.get('results'):
