@@ -830,41 +830,45 @@ class RadioFetcher:
 
     def _get_radioking_metadata(self, station_name: str, url: str) -> Optional[RadioMetadata]:
         """Récupérer les métadonnées pour les radios RadioKing"""
-            api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Accept": "application/json",
-                "Referer": "https://www.radioking.com/"
-            }
-            
-            # Ajouter un petit délai pour laisser le temps à l'API de répondre
-            time.sleep(0.5)
-            
-            response = requests.get(api_url, headers=headers, timeout=10)  # Timeout augmenté à 10s
-            
-            if response.status_code == 200:
-                print("   ✅ API accessible")
-                data = response.json()
-            
-            if data and len(data) > 0:
-                track = data[0]['title']
-                artist = track.get('artist', '').title()
-                title = track.get('title', '').title()
-                cover_url = track.get('coverUrl', '')
+        try:
+            if "generikids" in station_name.lower():
+                print(" Générikds: Test API RadioKing")
+                api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "application/json",
+                    "Referer": "https://www.radioking.com/"
+                }
                 
-                if artist and title:
-                    # Nettoyage des noms d'artistes et titres
-                    artist = ' '.join(artist.split())  # Supprime les espaces multiples
-                    title = ' '.join(title.split())
-                    return RadioMetadata(
-                        station=station_name,
-                        title=title,
-                        artist=artist,
-                        cover_url=cover_url
-                    )
+                # Ajouter un petit délai pour laisser le temps à l'API de répondre
+                time.sleep(0.5)
+                
+                response = self.session.get(api_url, headers=headers, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data and 'title' in data and 'artist' in data:
+                        title = data['title'].strip()
+                        artist = data['artist'].strip()
+                        cover_url = data.get('cover', '')
+                        
+                        if title and artist:
+                            print(f" RadioKing API: {artist} - {title}")
+                            return RadioMetadata(
+                                station=station_name,
+                                title=title,
+                                artist=artist,
+                                cover_url=cover_url,
+                                host=""
+                            )
+                
+                # Fallback sur ICY direct
+                print(" Fallback sur ICY direct")
+                return self._get_icy_metadata(url, station_name)
+                
         except Exception as e:
-            print(f"Erreur API Chante France pour {station_name}: {e}", file=sys.stderr)
-        return None
+            print(f" Erreur RadioKing: {e}")
+            return None
 
     def get_chantefrance_history(self, station_name: str, count: int = 10) -> list:
         """Récupère l'historique des musiques passées pour Chante France"""
