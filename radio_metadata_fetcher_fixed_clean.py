@@ -830,87 +830,21 @@ class RadioFetcher:
 
     def _get_radioking_metadata(self, station_name: str, url: str) -> Optional[RadioMetadata]:
         """Récupérer les métadonnées pour les radios RadioKing"""
-        try:
             api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 "Accept": "application/json",
-                "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
                 "Referer": "https://www.radioking.com/"
             }
             
-            # Essayer de récupérer la page pour trouver le vrai flux
-            response = self.session.get(url, headers=headers, timeout=5)  # Réduit à 5s
+            # Ajouter un petit délai pour laisser le temps à l'API de répondre
+            time.sleep(0.5)
+            
+            response = requests.get(api_url, headers=headers, timeout=10)  # Timeout augmenté à 10s
             
             if response.status_code == 200:
-                # Chercher le vrai flux dans la page
-                content = response.text
-                
-                # Patterns pour trouver les flux RadioKing
-                patterns = [
-                    r'\"stream_url\":\"([^\"]+)\"',
-                    r'\"url\":\"([^\"]+\.mp3[^\"]*)\"',
-                    r'\"file\":\"([^\"]+\.mp3[^\"]*)\"',
-                    r'src:\s*[\'"]([^\'\"]+\.mp3[^\'\"]*)[\'"]',
-                    r'href=[\'"]([^\'\"]+\.mp3[^\'\"]*)[\'"]'
-                ]
-                
-                for pattern in patterns:
-                    matches = re.findall(pattern, content)
-                    for match in matches:
-                        stream_url = match.replace('\\/', '/').replace('\\', '')
-                        if stream_url.startswith('http') and '.mp3' in stream_url:
-                            print(f"🎵 RadioKing: Flux trouvé: {stream_url}")
-                            
-                            # Maintenant essayer de récupérer les métadonnées ICY sur ce flux
-                            return self._get_icy_metadata(stream_url, station_name)
-                
-                # Si pas de flux trouvé, essayer les métadonnées directes
-                title_patterns = [
-                    r'<title>([^<]+)</title>',
-                    r'\"current_title\":\"([^\"]+)\"',
-                    r'\"title\":\"([^\"]+)\"',
-                    r'current_song:\s*[\'"]([^\'\"]+)[\'"]'
-                ]
-                
-                for pattern in title_patterns:
-                    matches = re.findall(pattern, content)
-                    if matches:
-                        title = matches[0].strip()
-                        if title and title.lower() != station_name.lower():
-                            print(f"🎵 RadioKing: Titre trouvé: {title}")
-                            
-                            if " - " in title:
-                                artist, song_title = title.split(" - ", 1)
-                                return RadioMetadata(
-                                    station=station_name,
-                                    title=song_title.strip(),
-                                    artist=artist.strip(),
-                                    cover_url=RADIO_LOGOS.get(station_name, ""),
-                                    host=""
-                                )
-                            else:
-                                return RadioMetadata(
-                                    station=station_name,
-                                    title=title,
-                                    artist=station_name,
-                                    cover_url=RADIO_LOGOS.get(station_name, ""),
-                                    host=""
-                                )
-            
-            print(f"⚠️ RadioKing: Pas de métadonnées trouvées pour {station_name}")
-            return None
-            
-        except Exception as e:
-            print(f"❌ RadioKing erreur: {e}")
-            return None
-
-    def _get_chantefrance_metadata(self, station_name: str) -> Optional[RadioMetadata]:
-        try:
-            # URL de l'API Chante France 80
-            api_url = f"https://www.chantefrance.com/api/TitleDiffusions?size=1&radioStreamId=3120757949245428885&date={int(time.time() * 1000)}"
-            
-            response = self.session.get(api_url, timeout=5)
+                print("   API accessible")
+                data = response.json()
             response.raise_for_status()
             data = response.json()
             
