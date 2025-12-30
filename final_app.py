@@ -94,8 +94,33 @@ def metadata():
         try:
             # Utiliser le vrai fetcher pour obtenir les métadonnées
             print(f"🔍 Appel fetcher.get_metadata pour {radio_state.current_station}")
-            metadata = radio_state.fetcher.get_metadata(radio_state.current_station, radio_state.current_url)
-            print(f"🔍 Résultat fetcher: {metadata}")
+            
+            # SOLUTION RAPIDE: Pour Générikds, utiliser l'API directement
+            if "generikids" in radio_state.current_station.lower():
+                try:
+                    api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
+                    response = requests.get(api_url, timeout=3)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        metadata = type('RadioMetadata', (), {
+                            'artist': data.get('artist', radio_state.current_station),
+                            'title': data.get('title', 'En direct'),
+                            'cover_url': data.get('cover', ''),
+                            'station': radio_state.current_station,
+                            'host': ''
+                        })()
+                        print(f"🎵 API directe: {metadata.artist} - {metadata.title}")
+                    else:
+                        metadata = None
+                except Exception as e:
+                    print(f"❌ Erreur API directe: {e}")
+                    metadata = None
+            else:
+                # Utiliser le fetcher normal pour les autres radios
+                metadata = radio_state.fetcher.get_metadata(radio_state.current_station, radio_state.current_url)
+            
+            print(f"🔍 Résultat final: {metadata}")
             print(f"🔍 Type de metadata: {type(metadata)}")
             
             if metadata and metadata.title and metadata.title.lower() != "en direct":
