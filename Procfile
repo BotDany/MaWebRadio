@@ -1,1 +1,1 @@
-web: gunicorn wsgi_railway:app
+web: python final_app.py
