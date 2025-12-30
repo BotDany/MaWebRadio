@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""
+Test pur sans aucune dépendance - juste Flask
+"""
+
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return "<h1>Hello World from Railway!</h1><p>Application fonctionne!</p>"
+
+if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting on port {port}")
+    app.run(host='0.0.0.0', port=port)
