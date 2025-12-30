@@ -99,8 +99,9 @@ def metadata():
             station_lower = radio_state.current_station.lower()
             print(f"🔍 Station en minuscules: '{station_lower}'")
             print(f"🔍 Contient 'generikids': {'generikids' in station_lower}")
+            print(f"🔍 Contient 'générikds': {'générikds' in station_lower}")
             
-            if "generikids" in station_lower:
+            if "generikids" in station_lower or "générikds" in station_lower:
                 try:
                     api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
                     response = requests.get(api_url, timeout=3)
