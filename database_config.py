@@ -5,11 +5,11 @@ from psycopg.rows import dict_row
 
 # Configuration de la base de données - Variables Railway internes (nouveau projet)
 DB_CONFIG = {
-    'host': os.environ.get('PGHOST', 'postgres.railway.internal'),
-    'dbname': os.environ.get('PGDATABASE', 'railway'),
-    'user': os.environ.get('PGUSER', 'postgres'),
-    'password': os.environ.get('PGPASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
-    'port': os.environ.get('PGPORT', '5432')
+    'host': os.environ.get('PGHOST'),  # Pas de fallback pour forcer les bonnes variables
+    'dbname': os.environ.get('PGDATABASE'),
+    'user': os.environ.get('PGUSER'),
+    'password': os.environ.get('PGPASSWORD'),  # Utiliser le vrai password de Railway
+    'port': os.environ.get('PGPORT')
 }
 
 def get_db_connection():
