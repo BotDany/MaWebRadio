@@ -1,1 +1,1 @@
-web: python debug_port.py
+web: gunicorn wsgi_entrypoint:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
