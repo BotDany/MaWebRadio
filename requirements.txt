@@ -1,5 +1,5 @@
-# Requirements pour l'application radio
-flask==3.0.3
+# Requirements pour l'application radio web
+Flask==3.0.3
 requests==2.31.0
 beautifulsoup4==4.12.3
 urllib3==2.2.3
