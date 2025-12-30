@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
 from radio_metadata_fetcher_fixed_clean import RadioFetcher
 from database_config import load_radios, save_radios
@@ -14,6 +15,11 @@ class RadioState:
 app = Flask(__name__)
 app.secret_key = 'radio_admin_secret_key_2025'
 radio_state = RadioState()
+
+# Donner le temps à l'application de démarrer complètement
+print("⏱️ Initialisation de l'application...")
+time.sleep(2)
+print("✅ Application prête !")
 
 @app.route('/')
 def index():
