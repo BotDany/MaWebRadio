@@ -123,6 +123,40 @@ def stop():
     print(f"⏹️ Stop: {station}")
     return jsonify({'status': 'stopped'})
 
+@app.route('/api/history')
+def history():
+    if not radio_state.current_station:
+        return jsonify({'status': 'error', 'message': 'Aucune radio sélectionnée'})
+    
+    try:
+        # Utiliser le fetcher pour obtenir l'historique
+        history_data = radio_state.fetcher.get_history(radio_state.current_station, radio_state.current_url, 10)
+        
+        if history_data and len(history_data) > 0:
+            result = {
+                'status': 'success',
+                'station': radio_state.current_station,
+                'history': history_data
+            }
+        else:
+            result = {
+                'status': 'success',
+                'station': radio_state.current_station,
+                'history': [],
+                'message': 'Aucun historique disponible pour cette radio'
+            }
+        
+        print(f"📋 Historique: {len(history_data) if history_data else 0} chansons pour {radio_state.current_station}")
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Erreur historique: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Erreur: {str(e)}',
+            'station': radio_state.current_station
+        })
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 Application finale avec {len(RADIOS)} radios démarrée sur le port {port}")
