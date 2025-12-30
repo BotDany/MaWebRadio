@@ -1,1 +1,1 @@
-web: python final_app_minimal.py
+web: python debug_port.py
