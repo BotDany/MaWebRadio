@@ -225,10 +225,11 @@ def test_radio(radio_name):
         for name, url in radios:
             if name == radio_name:
                 # Importer le fetcher de métadonnées
-                from radio_metadata_fetcher_fixed_clean import fetch_metadata_for_station
+                from radio_metadata_fetcher_fixed_clean import RadioFetcher
                 
-                # Récupérer les métadonnées
-                metadata = fetch_metadata_for_station(name, url)
+                # Créer une instance et récupérer les métadonnées
+                fetcher = RadioFetcher()
+                metadata = fetcher.get_metadata(name, url)
                 
                 if metadata and metadata.title and metadata.artist:
                     return jsonify({
