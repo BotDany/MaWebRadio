@@ -30,7 +30,7 @@ RADIOS = [
     ("Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"),
     ("Top 80 Radio", "https://securestreams6.autopo.st:2321/"),
     ("Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"),
-    ("Générikds", "https://play.radioking.io/generikids"),
+    ("Générikds", "https://listen.radioking.com/radio/49799/stream/554719"),
 ]
 
 @app.route('/')
