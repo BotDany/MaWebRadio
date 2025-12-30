@@ -829,6 +829,7 @@ class RadioFetcher:
                 cover_url = RADIO_LOGOS[station_name]
             
             return RadioMetadata(station=station_name, title=title or "En direct", artist=artist or station_name, cover_url=cover_url, host="")
+
         except Exception:
             return RadioMetadata(station=station_name, title="En direct", artist=station_name, cover_url="", host="")
 
@@ -837,7 +838,69 @@ class RadioFetcher:
         try:
             print(f"🔍 RadioKing: Tentative de récupération pour {station_name}")
             
-            # RadioKing nécessite une approche spéciale
+            # 1. Essayer l'API RadioKing d'abord (plus fiable et plus rapide)
+            if "generikids" in station_name.lower():
+                try:
+                    api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
+                    response = self.session.get(api_url, timeout=5)  # Réduit à 5s
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        if not data.get("is_live", True) and data.get("title") and data.get("artist"):
+                            title = data["title"]
+                            artist = data["artist"]
+                            cover_url = data.get("cover", "")
+                            
+                            print(f"🎵 RadioKing API: {artist} - {title}")
+                            
+                            return RadioMetadata(
+                                station=station_name,
+                                title=title,
+                                artist=artist,
+                                cover_url=cover_url,
+                                host=""
+                            )
+                        else:
+                            print(f"🎙️ RadioKing API: En direct ou pas de titre")
+                            return RadioMetadata(
+                                station=station_name,
+                                title="En direct",
+                                artist=station_name,
+                                cover_url=RADIO_LOGOS.get(station_name, ""),
+                                host=""
+                            )
+                except Exception as api_error:
+                    print(f"⚠️ RadioKing API erreur: {api_error}")
+            
+            # 2. Pour RadioKing, utiliser directement l'URL de streaming connue
+            # Pas besoin de parser la page, on connaît le flux direct
+            if "generikids" in station_name.lower():
+                try:
+                    # URL directe du flux Générikds
+                    stream_url = "https://listen.radioking.com/radio/497599/stream/554719"
+                    print(f"🎵 RadioKing: Utilisation flux direct: {stream_url}")
+                    
+                    # Récupérer les métadonnées ICY avec timeout réduit
+                    icy_metadata = self._get_icy_metadata(stream_url, station_name)
+                    
+                    if icy_metadata and icy_metadata.title and icy_metadata.title.lower() != "en direct":
+                        print(f"🎵 RadioKing ICY: {icy_metadata.artist} - {icy_metadata.title}")
+                        return icy_metadata
+                    else:
+                        # Si ICY ne marche pas, retourner "En direct" avec les infos de l'API si disponibles
+                        print(f"🎙️ RadioKing: Pas de métadonnées ICY, fallback En direct")
+                        return RadioMetadata(
+                            station=station_name,
+                            title="En direct",
+                            artist=station_name,
+                            cover_url=RADIO_LOGOS.get(station_name, ""),
+                            host=""
+                        )
+                except Exception as stream_error:
+                    print(f"⚠️ RadioKing flux erreur: {stream_error}")
+            
+            # 3. Méthode traditionnelle pour autres radios RadioKing (avec timeout réduit)
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -846,7 +909,7 @@ class RadioFetcher:
             }
             
             # Essayer de récupérer la page pour trouver le vrai flux
-            response = self.session.get(url, headers=headers, timeout=10)
+            response = self.session.get(url, headers=headers, timeout=5)  # Réduit à 5s
             
             if response.status_code == 200:
                 # Chercher le vrai flux dans la page
@@ -870,46 +933,46 @@ class RadioFetcher:
                             
                             # Maintenant essayer de récupérer les métadonnées ICY sur ce flux
                             return self._get_icy_metadata(stream_url, station_name)
-                
-                # Si pas de flux trouvé, essayer les métadonnées directes
-                title_patterns = [
-                    r'<title>([^<]+)</title>',
-                    r'\"current_title\":\"([^\"]+)\"',
-                    r'\"title\":\"([^\"]+)\"',
-                    r'current_song:\s*[\'"]([^\'\"]+)[\'"]'
-                ]
-                
-                for pattern in title_patterns:
-                    matches = re.findall(pattern, content)
-                    if matches:
-                        title = matches[0].strip()
-                        if title and title.lower() != station_name.lower():
-                            print(f"🎵 RadioKing: Titre trouvé: {title}")
-                            
-                            if " - " in title:
-                                artist, song_title = title.split(" - ", 1)
-                                return RadioMetadata(
-                                    station=station_name,
-                                    title=song_title.strip(),
-                                    artist=artist.strip(),
-                                    cover_url=RADIO_LOGOS.get(station_name, ""),
-                                    host=""
-                                )
-                            else:
-                                return RadioMetadata(
-                                    station=station_name,
-                                    title=title,
-                                    artist=station_name,
-                                    cover_url=RADIO_LOGOS.get(station_name, ""),
-                                    host=""
-                                )
             
-            print(f"⚠️ RadioKing: Pas de métadonnées trouvées pour {station_name}")
-            return None
+            # Si pas de flux trouvé, essayer les métadonnées directes
+            title_patterns = [
+                r'<title>([^<]+)</title>',
+                r'\"current_title\":\"([^\"]+)\"',
+                r'\"title\":\"([^\"]+)\"',
+                r'current_song:\s*[\'"]([^\'\"]+)[\'"]'
+            ]
             
-        except Exception as e:
-            print(f"❌ RadioKing erreur: {e}")
-            return None
+            for pattern in title_patterns:
+                matches = re.findall(pattern, content)
+                if matches:
+                    title = matches[0].strip()
+                    if title and title.lower() != station_name.lower():
+                        print(f"🎵 RadioKing: Titre trouvé: {title}")
+                        
+                        if " - " in title:
+                            artist, song_title = title.split(" - ", 1)
+                            return RadioMetadata(
+                                station=station_name,
+                                title=song_title.strip(),
+                                artist=artist.strip(),
+                                cover_url=RADIO_LOGOS.get(station_name, ""),
+                                host=""
+                            )
+                        else:
+                            return RadioMetadata(
+                                station=station_name,
+                                title=title,
+                                artist=station_name,
+                                cover_url=RADIO_LOGOS.get(station_name, ""),
+                                host=""
+                            )
+        
+        print(f"⚠️ RadioKing: Pas de métadonnées trouvées pour {station_name}")
+        return None
+        
+    except Exception as e:
+        print(f"❌ RadioKing erreur: {e}")
+        return None
 
     def _get_chantefrance_metadata(self, station_name: str) -> Optional[RadioMetadata]:
         try:
