@@ -739,8 +739,16 @@ class RadioFetcher:
     def _get_chantefrance_metadata(self, station_name: str) -> Optional[RadioMetadata]:
         """Extrait les métadonnées depuis l'API Chante France"""
         try:
+            # Déterminer le bon radioStreamId selon la radio
+            if "80" in station_name.lower():
+                # Chante France 80s
+                radio_stream_id = "3120757949245428885"
+            else:
+                # Chante France standard
+                radio_stream_id = "3120757949245428885"  # Même ID pour l'instant
+            
             # URL de l'API pour les métadonnées en direct
-            api_url = "https://www.chantefrance.com/api/TitleDiffusions?size=1&radioStreamId=3120757949245428885"
+            api_url = f"https://www.chantefrance.com/api/TitleDiffusions?size=1&radioStreamId={radio_stream_id}"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': 'application/json',
