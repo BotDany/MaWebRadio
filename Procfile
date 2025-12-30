@@ -1,1 +1,1 @@
-web: python diagnostic_app.py
+web: python final_app.py
