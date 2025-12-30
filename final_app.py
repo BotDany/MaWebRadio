@@ -248,10 +248,14 @@ def add_radio():
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/edit/<radio_name>', methods=['POST'])
+@app.route('/admin/edit/<path:radio_name>', methods=['POST'])
 def edit_radio(radio_name):
     """Modifier une radio existante"""
     try:
+        # Décoder le nom de la radio
+        import urllib.parse
+        radio_name = urllib.parse.unquote(radio_name)
+        
         new_name = request.form.get('name', '').strip()
         new_url = request.form.get('url', '').strip()
         
@@ -287,10 +291,14 @@ def edit_radio(radio_name):
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/delete/<radio_name>', methods=['POST'])
+@app.route('/admin/delete/<path:radio_name>', methods=['POST'])
 def delete_radio(radio_name):
     """Supprimer une radio"""
     try:
+        # Décoder le nom de la radio
+        import urllib.parse
+        radio_name = urllib.parse.unquote(radio_name)
+        
         # Charger les radios existantes
         radios = load_radios()
         
@@ -312,10 +320,13 @@ def delete_radio(radio_name):
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/test/<radio_name>')
+@app.route('/admin/test/<path:radio_name>')
 def test_radio(radio_name):
     """Tester une radio"""
     try:
+        # Décoder le nom de la radio
+        import urllib.parse
+        radio_name = urllib.parse.unquote(radio_name)
         radios = load_radios()
         
         # Trouver l'URL de la radio
