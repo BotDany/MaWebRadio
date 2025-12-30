@@ -12,8 +12,8 @@ from urllib.parse import urlparse
 # Ancienne base (source) - URL que vous avez montrée
 OLD_URL = "postgresql://postgres:LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe@trolley.proxy.rlwy.net:27920/railway"
 
-# Nouvelle base (destination) - DATABASE_URL de Railway
-NEW_URL = "postgresql://postgres:LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe@postgres.railway.internal:5432/railway"
+# Nouvelle base (destination) - URL publique de la nouvelle base
+NEW_URL = "postgresql://postgres:LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe@trolley.proxy.rlwy.net:27920/railway"
 
 def parse_url(url):
     """Parser une URL PostgreSQL"""
