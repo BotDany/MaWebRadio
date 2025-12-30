@@ -88,6 +88,7 @@ def index():
 
 @app.route('/api/metadata')
 def metadata():
+    import requests
     print(f"🔍 API appelée - station: {radio_state.current_station}, playing: {radio_state.is_playing}")
     
     if radio_state.current_station and radio_state.current_url and radio_state.is_playing:
