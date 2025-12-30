@@ -835,8 +835,6 @@ class RadioFetcher:
     def _get_radioking_metadata(self, station_name: str, url: str) -> Optional[RadioMetadata]:
         """Récupérer les métadonnées pour les radios RadioKing"""
         try:
-            print(f"🔍 RadioKing: Tentative de récupération pour {station_name}")
-            
             # 1. Essayer l'API RadioKing d'abord pour Générikds (plus fiable et plus rapide)
             if "generikids" in station_name.lower():
                 try:
