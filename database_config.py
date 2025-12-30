@@ -1,7 +1,7 @@
 # Configuration PostgreSQL pour les radios
-import psycopg2
+import psycopg
 import os
-from psycopg2.extras import RealDictCursor
+from psycopg.rows import dict_row
 
 # Configuration de la base de données
 DB_CONFIG = {
@@ -13,14 +13,22 @@ DB_CONFIG = {
 }
 
 def get_db_connection():
-    """Créer une connexion à la base de données"""
-    return psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
+    """Établir une connexion à la base de données PostgreSQL"""
+    try:
+        conn = psycopg.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        print(f"Erreur de connexion à la base de données: {e}")
+        return None
 
 def load_radios():
     """Charger la liste des radios depuis PostgreSQL"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
+        if conn is None:
+            return []
+        
+        cursor = conn.cursor(row_factory=dict_row)
         
         cursor.execute("SELECT name, url FROM radios ORDER BY name")
         radios = cursor.fetchall()
