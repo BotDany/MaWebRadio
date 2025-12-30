@@ -880,21 +880,21 @@ class RadioFetcher:
                                 continue
                             
                         if metadata_found:
-                            print("✅ Générikds: Métadonnées trouvées via ICY")
+                            print(" Générikds: Métadonnées trouvées via ICY")
                         else:
-                            print("�️ Générikds: Pas de métadonnées ICY, fallback En direct")
+                            print(" Générikds: Pas de métadonnées ICY, fallback En direct")
                             
                     except Exception as e:
-                        print(f"⚠️ Erreur ICY Générikds: {e}")
+                        print(f" Erreur ICY Générikds: {e}")
                         
-                    # Fallback final
-                    return RadioMetadata(
-                        station=station_name,
-                        title="En direct",
-                        artist=station_name,
-                        cover_url=RADIO_LOGOS.get(station_name, ""),
-                        host=""
-                    )
+                # Fallback final
+                return RadioMetadata(
+                    station=station_name,
+                    title="En direct",
+                    artist=station_name,
+                    cover_url=RADIO_LOGOS.get(station_name, ""),
+                    host=""
+                )
 
             # 2. Méthode traditionnelle pour toutes les radios RadioKing
             headers = {
