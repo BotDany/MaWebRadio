@@ -736,6 +736,45 @@ class RadioFetcher:
             
         return None
 
+    def _get_chantefrance_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Extrait les métadonnées depuis l'API Chante France"""
+        try:
+            # URL de l'API pour les métadonnées en direct
+            api_url = "https://www.chantefrance.com/api/TitleDiffusions?size=1&radioStreamId=3120757949245428885"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json',
+                'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+                'Referer': 'https://www.chantefrance.com/'
+            }
+            
+            response = self.session.get(api_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            # Parser le JSON
+            data = response.json()
+            
+            if data and len(data) > 0:
+                track = data[0].get('title', {})
+                title = track.get('title', '').strip()
+                artist = track.get('artist', '').strip()
+                cover_url = track.get('coverUrl', '')
+                
+                if title and artist:
+                    print(f"🎵 Chante France API: {artist} - {title}")
+                    return RadioMetadata(
+                        station=station_name,
+                        title=title,
+                        artist=artist,
+                        cover_url=cover_url,
+                        host=""
+                    )
+            
+        except Exception as e:
+            print(f"Erreur extraction Chante France: {e}")
+            
+        return None
+
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
         try:
             headers = {
