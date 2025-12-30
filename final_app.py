@@ -1,7 +1,6 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
-import os
-import json
 from radio_metadata_fetcher_fixed_clean import RadioFetcher
+from database_config import load_radios, save_radios
 
 class RadioState:
     def __init__(self):
