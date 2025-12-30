@@ -96,7 +96,11 @@ def metadata():
             print(f"🔍 Appel fetcher.get_metadata pour {radio_state.current_station}")
             
             # SOLUTION RAPIDE: Pour Générikds, utiliser l'API directement
-            if "generikids" in radio_state.current_station.lower():
+            station_lower = radio_state.current_station.lower()
+            print(f"🔍 Station en minuscules: '{station_lower}'")
+            print(f"🔍 Contient 'generikids': {'generikids' in station_lower}")
+            
+            if "generikids" in station_lower:
                 try:
                     api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
                     response = requests.get(api_url, timeout=3)
