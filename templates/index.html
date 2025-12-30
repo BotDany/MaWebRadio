@@ -432,13 +432,19 @@
             }
 
             try {
-                // Reprise instantanée en direct avec HTML5
-                audioPlayer.load(); // Recharger le flux pour le direct
-                await audioPlayer.play();
+                // Appeler l'API pour indiquer que la radio joue
+                const response = await fetch(`/api/play?station=${encodeURIComponent(currentStation)}&url=${encodeURIComponent(currentUrl)}`);
+                const data = await response.json();
                 
-                isPlaying = true;
-                updateStatus('playing', `En direct - ${currentStation}`);
-                console.log('▶️ Reprise instantanée en direct:', currentStation);
+                if (data.status === 'playing') {
+                    // Reprise instantanée en direct avec HTML5
+                    audioPlayer.load(); // Recharger le flux pour le direct
+                    await audioPlayer.play();
+                    
+                    isPlaying = true;
+                    updateStatus('playing', `En direct - ${currentStation}`);
+                    console.log('▶️ Reprise instantanée en direct:', currentStation);
+                }
                 
             } catch (error) {
                 console.error('❌ Erreur lecture:', error);
@@ -467,6 +473,9 @@
                 audioPlayer.pause();
                 audioPlayer.src = '';
                 audioPlayer.load();
+                
+                // Appeler l'API pour arrêter
+                await fetch('/api/stop');
                 
                 isPlaying = false;
                 currentStation = null;

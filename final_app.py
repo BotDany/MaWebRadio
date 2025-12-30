@@ -1,7 +1,16 @@
-from flask import Flask, jsonify, request
+from flask import Flask, render_template, jsonify, request
 import os
+from radio_metadata_fetcher_fixed_clean import RadioFetcher
+
+class RadioState:
+    def __init__(self):
+        self.current_station = None
+        self.current_url = None
+        self.is_playing = False
+        self.fetcher = RadioFetcher()
 
 app = Flask(__name__)
+radio_state = RadioState()
 
 # Liste des radios qui fonctionnent
 RADIOS = [
@@ -24,173 +33,95 @@ RADIOS = [
 ]
 
 @app.route('/')
-def home():
-    # Générer les boutons pour chaque radio
-    radio_buttons = ""
-    for name, url in RADIOS:
-        radio_buttons += f'<button onclick="playRadio(\'{name}\', \'{url}\')">▶️ {name}</button>\n'
-    
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>🎵 Radio Player - Métadonnées Réelles</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; }}
-            .container {{ max-width: 1000px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); }}
-            h1 {{ text-align: center; margin-bottom: 30px; font-size: 2.5em; }}
-            .radio-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 30px 0; }}
-            button {{ padding: 15px 20px; margin: 5px; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.3s; font-weight: bold; }}
-            button:hover {{ transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }}
-            button:active {{ transform: translateY(0); }}
-            .metadata {{ margin: 30px 0; padding: 30px; background: rgba(255,255,255,0.2); border-radius: 15px; text-align: center; backdrop-filter: blur(10px); }}
-            .metadata h3 {{ font-size: 1.8em; margin-bottom: 20px; }}
-            .metadata p {{ font-size: 1.2em; margin: 10px 0; }}
-            .artist {{ font-size: 1.5em; font-weight: bold; color: #4CAF50; }}
-            .title {{ font-size: 1.4em; font-weight: bold; color: #2196F3; }}
-            .status {{ font-size: 1.1em; color: #FFC107; }}
-            .loading {{ animation: pulse 1.5s infinite; }}
-            @keyframes pulse {{ 0% {{ opacity: 1; }} 50% {{ opacity: 0.5; }} 100% {{ opacity: 1; }} }}
-            .success {{ border: 2px solid #4CAF50; }}
-            .error {{ border: 2px solid #f44336; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>🎵 Radio Player - Métadonnées Réelles</h1>
-            
-            <div class="radio-grid">
-                {radio_buttons}
-            </div>
-            
-            <div class="metadata" id="metadata">
-                <h3>🎵 Métadonnées en Direct</h3>
-                <p class="artist" id="artist">Artiste: --</p>
-                <p class="title" id="title">Titre: --</p>
-                <p class="status" id="status">Status: Sélectionnez une radio</p>
-            </div>
-        </div>
-        
-        <script>
-            let currentStation = null;
-            let currentUrl = null;
-            let updateInterval = null;
-            
-            function playRadio(station, url) {{
-                currentStation = station;
-                currentUrl = url;
-                
-                // Arrêter l'ancien intervalle
-                if (updateInterval) {{
-                    clearInterval(updateInterval);
-                }}
-                
-                // Mettre à jour l'interface immédiatement
-                document.getElementById('status').innerHTML = `<span class="loading">🔄 Connexion à ${{station}}...</span>`;
-                document.getElementById('artist').textContent = 'Artiste: --';
-                document.getElementById('title').textContent = 'Titre: --';
-                
-                // Appeler l'API pour obtenir les métadonnées
-                updateMetadata();
-                
-                // Mettre à jour toutes les 5 secondes
-                updateInterval = setInterval(updateMetadata, 5000);
-            }}
-            
-            async function updateMetadata() {{
-                if (!currentStation || !currentUrl) return;
-                
-                try {{
-                    const response = await fetch('/api/metadata', {{
-                        method: 'POST',
-                        headers: {{
-                            'Content-Type': 'application/json',
-                        }},
-                        body: JSON.stringify({{
-                            station: currentStation,
-                            url: currentUrl
-                        }})
-                    }});
-                    
-                    const data = await response.json();
-                    console.log('Metadata:', data);
-                    
-                    const metadataDiv = document.getElementById('metadata');
-                    
-                    if (data.status === 'success') {{
-                        document.getElementById('artist').textContent = `Artiste: ${{data.artist}}`;
-                        document.getElementById('title').textContent = `Titre: ${{data.title}}`;
-                        document.getElementById('status').innerHTML = `✅ ${{data.station}} - En direct`;
-                        metadataDiv.className = 'metadata success';
-                    }} else if (data.status === 'no_metadata') {{
-                        document.getElementById('artist').textContent = `Artiste: ${{data.artist}}`;
-                        document.getElementById('title').textContent = `Titre: ${{data.title}}`;
-                        document.getElementById('status').innerHTML = `📻 ${{data.station}} - En direct`;
-                        metadataDiv.className = 'metadata';
-                    }} else {{
-                        document.getElementById('artist').textContent = 'Artiste: --';
-                        document.getElementById('title').textContent = 'Titre: --';
-                        document.getElementById('status').innerHTML = `❌ Erreur: ${{data.error}}`;
-                        metadataDiv.className = 'metadata error';
-                    }}
-                }} catch (error) {{
-                    console.error('Error:', error);
-                    document.getElementById('status').innerHTML = `❌ Erreur: ${{error.message}}`;
-                    document.getElementById('metadata').className = 'metadata error';
-                }}
-            }}
-        </script>
-    </body>
-    </html>
-    """
+def index():
+    return render_template('index.html', stations=RADIOS)
 
-@app.route('/api/metadata', methods=['POST'])
-def get_metadata():
-    try:
-        data = request.get_json()
-        station = data.get('station')
-        url = data.get('url')
-        
-        if not station or not url:
-            return jsonify({'status': 'error', 'error': 'Station ou URL manquante'})
-        
-        print(f"🔍 Requête métadonnées: {station} - {url}")
-        
-        # Importer et utiliser le fetcher
-        from radio_metadata_fetcher_fixed_clean import RadioFetcher
-        fetcher = RadioFetcher()
-        
-        metadata = fetcher.get_metadata(station, url)
-        
-        if metadata and metadata.title and metadata.title.lower() != "en direct":
-            result = {
-                'status': 'success',
-                'artist': metadata.artist or station,
-                'title': metadata.title,
-                'station': station,
-                'url': url
-            }
-            print(f"📤 Succès: {result}")
-            return jsonify(result)
-        else:
-            result = {
-                'status': 'no_metadata',
-                'artist': station,
-                'title': 'En direct',
-                'station': station,
-                'url': url
-            }
-            print(f"📤 Pas de métadonnées: {result}")
-            return jsonify(result)
+@app.route('/api/metadata')
+def metadata():
+    print(f"🔍 API appelée - station: {radio_state.current_station}, playing: {radio_state.is_playing}")
+    
+    if radio_state.current_station and radio_state.current_url and radio_state.is_playing:
+        try:
+            # Utiliser le vrai fetcher pour obtenir les métadonnées
+            metadata = radio_state.fetcher.get_metadata(radio_state.current_station, radio_state.current_url)
             
-    except Exception as e:
-        print(f"❌ Erreur: {e}")
+            if metadata and metadata.title and metadata.title.lower() != "en direct":
+                result = {
+                    'status': 'success',
+                    'artist': metadata.artist or radio_state.current_station,
+                    'title': metadata.title,
+                    'cover_url': metadata.cover_url or '',
+                    'station': radio_state.current_station,
+                    'is_playing': True
+                }
+                
+                print(f"📤 API renvoie: {result}")
+                return jsonify(result)
+            else:
+                # Si pas de métadonnées, renvoyer l'état actuel
+                result = {
+                    'status': 'no_data',
+                    'artist': radio_state.current_station,
+                    'title': 'En direct',
+                    'cover_url': '',
+                    'station': radio_state.current_station,
+                    'is_playing': True
+                }
+                
+                print(f"📤 API renvoie (no_metadata): {result}")
+                return jsonify(result)
+                
+        except Exception as e:
+            print(f"❌ Erreur métadonnées: {e}")
+            # En cas d'erreur, renvoyer l'état actuel
+            result = {
+                'status': 'error',
+                'artist': radio_state.current_station,
+                'title': 'En direct',
+                'cover_url': '',
+                'station': radio_state.current_station,
+                'is_playing': True
+            }
+            
+            print(f"📤 API renvoie (error): {result}")
+            return jsonify(result)
+    
+    result = {
+        'status': 'no_data',
+        'is_playing': False,
+        'station': radio_state.current_station
+    }
+    
+    print(f"📤 API renvoie (no_data): {result}")
+    return jsonify(result)
+
+@app.route('/api/play')
+def play():
+    station = request.args.get('station')
+    url = request.args.get('url')
+    
+    if station and url:
+        radio_state.current_station = station
+        radio_state.current_url = url
+        radio_state.is_playing = True
+        print(f"▶️ Play: {station} - {url}")
         return jsonify({
-            'status': 'error',
-            'error': str(e),
+            'status': 'playing',
             'station': station,
             'url': url
         })
+    
+    return jsonify({'status': 'error', 'message': 'Station manquante'})
+
+@app.route('/api/stop')
+def stop():
+    station = radio_state.current_station
+    radio_state.current_station = None
+    radio_state.current_url = None
+    radio_state.is_playing = False
+    
+    print(f"⏹️ Stop: {station}")
+    return jsonify({'status': 'stopped'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
