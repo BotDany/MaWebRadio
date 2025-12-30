@@ -843,10 +843,8 @@ class RadioFetcher:
             response = requests.get(api_url, headers=headers, timeout=10)  # Timeout augmenté à 10s
             
             if response.status_code == 200:
-                print("   API accessible")
+                print("   ✅ API accessible")
                 data = response.json()
-            response.raise_for_status()
-            data = response.json()
             
             if data and len(data) > 0:
                 track = data[0]['title']
