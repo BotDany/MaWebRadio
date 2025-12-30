@@ -121,6 +121,37 @@ def stop():
     print(f"⏹️ Stop: {station}")
     return jsonify({'status': 'stopped'})
 
+@app.route('/api/history/<int:count>')
+def get_history(count=10):
+    """Récupérer l'historique des musiques passées"""
+    if radio_state.current_station and radio_state.current_url:
+        try:
+            # Importer le fetcher pour utiliser la méthode get_history
+            from radio_metadata_fetcher_fixed_clean import RadioFetcher
+            fetcher = RadioFetcher()
+            history = fetcher.get_history(radio_state.current_station, radio_state.current_url, count)
+            
+            if history:
+                return jsonify({
+                    'status': 'success',
+                    'history': history
+                })
+            else:
+                return jsonify({
+                    'status': 'no_data',
+                    'message': 'Aucun historique disponible'
+                })
+        except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'message': f'Erreur lors de la récupération de l\'historique: {str(e)}'
+            })
+    else:
+        return jsonify({
+            'status': 'no_station',
+            'message': 'Aucune radio sélectionnée'
+        })
+
 # Routes d'administration
 @app.route('/admin')
 def admin():
