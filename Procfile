@@ -1,1 +1,1 @@
-web: python final_app.py
+web: python final_app.py --port=$PORT
