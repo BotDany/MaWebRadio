@@ -831,75 +831,10 @@ class RadioFetcher:
     def _get_radioking_metadata(self, station_name: str, url: str) -> Optional[RadioMetadata]:
         """Récupérer les métadonnées pour les radios RadioKing"""
         try:
-            # 1. Essayer l'API# Spécial: Générikds - approche simplifiée avec fallback direct
-            if "generikids" in station_name.lower():
-                print("🎵 Générikds: Test approche simplifiée")
-                
-                # Essayer direct ICY sur le flux original (plus fiable)
-                try:
-                    headers = {
-                        "Icy-MetaData": "1",
-                        "Accept": "*/*",
-                        "User-Agent": "VLC/3.0.18",
-                        "Connection": "close"
-                    }
-                    
-                    response = self.session.get(url, headers=headers, timeout=5)
-                    
-                    if response.status_code == 200 and "icy-metaint" in response.headers:
-                        # Parser les métadonnées ICY
-                        meta_int = int(response.headers["icy-metaint"])
-                        metadata_found = False
-                        
-                        for attempt in range(3):  # 3 tentatives maximum
-                            try:
-                                meta_len = ord(response.raw.read(1))
-                                if meta_len <= 0:
-                                    continue
-                                meta = response.raw.read(meta_len).rstrip(b"\x00").decode("utf-8", errors="ignore")
-                                
-                                if "StreamTitle=" in meta:
-                                    stream_title = meta.split("StreamTitle=")[1].split(";")[0].strip('"')
-                                    if stream_title and " - " in stream_title:
-                                        artist, title = stream_title.split(" - ", 1)
-                                        artist = artist.strip()
-                                        title = title.strip()
-                                        
-                                        print(f"� Générikds ICY: {artist} - {title}")
-                                        
-                                        return RadioMetadata(
-                                            station=station_name,
-                                            title=title,
-                                            artist=artist,
-                                            cover_url=RADIO_LOGOS.get(station_name, ""),
-                                            host=""
-                                        )
-                                        metadata_found = True
-                                        break
-                            except Exception as parse_error:
-                                continue
-                            
-                        if metadata_found:
-                            print(" Générikds: Métadonnées trouvées via ICY")
-                        else:
-                            print(" Générikds: Pas de métadonnées ICY, fallback En direct")
-                            
-                    except Exception as e:
-                        print(f" Erreur ICY Générikds: {e}")
-                        
-                # Fallback final
-                return RadioMetadata(
-                    station=station_name,
-                    title="En direct",
-                    artist=station_name,
-                    cover_url=RADIO_LOGOS.get(station_name, ""),
-                    host=""
-                )
-
-            # 2. Méthode traditionnelle pour toutes les radios RadioKing
+            api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept": "application/json",
                 "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
                 "Referer": "https://www.radioking.com/"
             }
