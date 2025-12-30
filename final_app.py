@@ -96,6 +96,7 @@ def metadata():
             print(f"🔍 Appel fetcher.get_metadata pour {radio_state.current_station}")
             metadata = radio_state.fetcher.get_metadata(radio_state.current_station, radio_state.current_url)
             print(f"🔍 Résultat fetcher: {metadata}")
+            print(f"🔍 Type de metadata: {type(metadata)}")
             
             if metadata and metadata.title and metadata.title.lower() != "en direct":
                 result = {
