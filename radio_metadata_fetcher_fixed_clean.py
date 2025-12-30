@@ -835,7 +835,7 @@ class RadioFetcher:
             if "generikids" in station_name.lower():
                 try:
                     api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
-                    response = self.session.get(api_url, timeout=5)  # Réduit à 5s
+                    response = self.session.get(api_url, timeout=3)  # Ultra-rapide
                     
                     if response.status_code == 200:
                         data = response.json()
@@ -866,6 +866,31 @@ class RadioFetcher:
                 except Exception as api_error:
                     print(f"⚠️ RadioKing API erreur: {api_error}")
             
+            # Si l'API échoue, essayer directement ICY sur le flux original
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+                "Referer": "https://www.radioking.com/"
+            }
+            
+            try:
+                response = self.session.get(url, headers=headers, timeout=3)  # Ultra-rapide
+                if response.status_code == 200:
+                    print(f"🎵 Générikds ICY: Test direct")
+                    return self._get_icy_metadata(url, station_name)
+            except Exception as icy_error:
+                print(f"⚠️ Générikds ICY erreur: {icy_error}")
+            
+            # En dernier recours, retourner "En direct"
+            return RadioMetadata(
+                station=station_name,
+                title="En direct",
+                artist=station_name,
+                cover_url=RADIO_LOGOS.get(station_name, ""),
+                host=""
+            )
+
             # 2. Méthode traditionnelle pour toutes les radios RadioKing
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
