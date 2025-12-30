@@ -22,11 +22,12 @@ def get_db_connection():
         return None
 
 def load_radios():
-    """Charger la liste des radios depuis PostgreSQL"""
+    """Charger la liste des radios depuis PostgreSQL ou fallback"""
     try:
         conn = get_db_connection()
         if conn is None:
-            return []
+            print("⚠️ PostgreSQL inaccessible, utilisation des radios par défaut")
+            return get_default_radios()
         
         cursor = conn.cursor(row_factory=dict_row)
         
@@ -36,12 +37,37 @@ def load_radios():
         cursor.close()
         conn.close()
         
+        if not radios:
+            print("⚠️ Aucune radio dans PostgreSQL, utilisation des radios par défaut")
+            return get_default_radios()
+        
         # Convertir en liste de tuples pour compatibilité
         return [[radio['name'], radio['url']] for radio in radios]
         
     except Exception as e:
         print(f"❌ Erreur chargement radios PostgreSQL: {e}")
-        return []
+        print("📻 Utilisation des radios par défaut")
+        return get_default_radios()
+
+def get_default_radios():
+    """Retourner la liste des radios par défaut"""
+    return [
+        ["RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"],
+        ["Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"],
+        ["100% Radio 80", "http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3"],
+        ["RFM 80-90", "http://rfm-live-mp3-128.scdn.arkena.com/rfm.mp3"],
+        ["RTL2 80s", "http://streaming.radio.rtl2.fr/rtl2-1-44-128"],
+        ["Virgin Radio 80s", "https://ais-live.cloud-services.asso.fr/virginradio.mp3"],
+        ["Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3"],
+        ["Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream"],
+        ["Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC"],
+        ["Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"],
+        ["Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"],
+        ["Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"],
+        ["Top 80 Radio", "https://securestreams6.autopo.st:2321/"],
+        ["Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"],
+        ["Générikds", "https://listen.radioking.com/radio/497599/stream/554719"]
+    ]
 
 def save_radios(radios):
     """Sauvegarder la liste des radios dans PostgreSQL"""
@@ -68,7 +94,12 @@ def save_radios(radios):
 def init_database():
     """Initialiser la base de données et créer la table si nécessaire"""
     try:
+        print("🔌 Tentative de connexion à PostgreSQL...")
         conn = get_db_connection()
+        if conn is None:
+            print("⚠️ Impossible de se connecter à PostgreSQL, utilisation du mode fallback")
+            return False
+            
         cursor = conn.cursor()
         
         # Créer la table des radios
@@ -86,9 +117,13 @@ def init_database():
         conn.close()
         
         print("✅ Base de données PostgreSQL initialisée")
+        return True
         
     except Exception as e:
-        print(f"❌ Erreur initialisation DB: {e}")
+        print(f"⚠️ Erreur initialisation DB: {e}")
+        print("📻 L'application continuera en mode fallback")
+        return False
 
-# Initialiser la base de données au démarrage
+# Initialiser la base de données au démarrage (non bloquant)
+print("🚀 Démarrage de l'application webradio...")
 init_database()
