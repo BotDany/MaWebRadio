@@ -44,7 +44,7 @@ RADIOS = [
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
     ("Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream"),
     ("Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"),
-    ("Générikds", "https://www.radioking.com/play/generikids"),
+    ("Générikds", "https://listen.radioking.com/radio/49799/stream/554719"),
     ("Made In 80", "https://listen.radioking.com/radio/260719/stream/305509"),
     ("Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC?csegid=2&dist=rmultimedia_apps&gdpr=1&bundle-id=pt.megahits.ios"),
     ("Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d"),
