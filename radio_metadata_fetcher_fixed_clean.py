@@ -52,6 +52,7 @@ RADIOS = [
     ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
     ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
     ("Radio Gérard", "https://radiosurle.net:8765/radiogerard"),
+    ("RFM", "https://29043.live.streamtheworld.com/RFMAAC.aac?dist=triton-widget&tdsdk=js-2.9&swm=false&pname=tdwidgets&pversion=2.9&banners=300x250%2C728x90&gdpr=1&gdpr_consent=CQdTAsAQdTAsAAKA9APTCLFgAAAAAAAAAB6YAAAXsgLAA4AGaAZ8BHgCVQHbAQUAjSBIgCSgEowJkgUWAo4BVICrIFYAK5gV9AtWBbwC9gAA.IAAA.YAAAAAAAAAAA&burst-time=15"),
     ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
     ("Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"),
     ("Supernana", "https://radiosurle.net:8765/showsupernana"),
