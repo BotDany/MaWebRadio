@@ -8,7 +8,7 @@ DB_CONFIG = {
     'host': os.environ.get('DB_HOST', 'trolley.proxy.rlwy.net'),
     'dbname': os.environ.get('DB_NAME', 'railway'),
     'user': os.environ.get('DB_USER', 'postgres'),
-    'password': os.environ.get('DB_PASSWORD', 'FaRlPPimVlnNwjsJlBnZoFWDmxDgfDFo'),
+    'password': os.environ.get('DB_PASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
     'port': os.environ.get('DB_PORT', '27920')
 }
 

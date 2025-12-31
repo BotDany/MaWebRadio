@@ -70,19 +70,15 @@ RADIO_LOGOS = {
     "Générikds": "https://www.radioking.com/api/v2/radio/play/logo/1b8d4f5f-9e5f-4f3d-8e5f-1b8d4f5f9e5f/300/300",
     "Made In 80": "https://i.ibb.co/4pD4X0x/madein80.png",
     "Mega Hits": "https://megahits.sapo.pt/wp-content/uploads/2020/06/logo-megahits.png",
-    "Nostalgie Romania": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
     "Nostalgie-Les 80 Plus Grand Tubes": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
     "Nostalgie-Les Tubes 80 N1": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
-    "NRJ 80s": "https://cdn.nrjaudio.fm/radio/200/nrj-1.png",
     "Radio Comercial": "https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png",
     "Radio Gérard": "https://radiosurle.net:8765/radiogerard/cover.jpg",
-    "RFM 80-90": "https://cdn.radiofrance.fr/s3/cruiser-production/2018/11/2b8e8d0e-0f9f-11e9-8c7d-42010aee0001/300x300_rfm_2018.jpg",
+    "RFM": "https://cdn.radiofrance.fr/s3/cruiser-production/2018/11/2b8e8d0e-0f9f-11e9-8c7d-42010aee0001/300x300_rfm_2018.jpg",
     "RTL": "https://www.rtl.fr/favicon-192x192.png",
-    "RTL2 80s": "https://www.rtl2.fr/favicon-192x192.png",
     "Superloustic": "https://i.ibb.co/4pD4X0x/superloustic.png",
     "Supernana": "https://i.ibb.co/4pD4X0x/supernana.png",
-    "Top 80 Radio": "https://i.ibb.co/4pD4X0x/top80radio.png",
-    "Virgin Radio 80s": "https://www.virginradio.fr/sites/default/files/styles/1200x1200/public/2023-03/logo-virgin-radio-2023.png"
+    "Top 80 Radio": "https://i.ibb.co/4pD4X0x/top80radio.png"
 }
 
 
