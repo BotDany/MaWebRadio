@@ -1181,6 +1181,12 @@ class RadioFetcher:
             self.cache[cache_key] = (md, now)
             return md
 
+        # Spécial: RFM - utiliser ICY avec headers spécifiques StreamTheWorld
+        if "rfm" in station_name.lower():
+            md = self._get_icy_metadata(url, station_name)
+            self.cache[cache_key] = (md, now)
+            return md
+
         if station_name.strip().lower() == "100% radio 80":
             md = _fetch_100radio_ws_metas(self.session, station_name)
             if md:

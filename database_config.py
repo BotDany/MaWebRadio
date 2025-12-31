@@ -52,6 +52,7 @@ def get_default_radios():
         ["RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"],
         ["Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"],
         ["100% Radio 80", "http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3"],
+        ["RFM", "https://29043.live.streamtheworld.com/RFMAAC.aac?dist=triton-widget&tdsdk=js-2.9&swm=false&pname=tdwidgets&pversion=2.9&banners=300x250%2C728x90&gdpr=1&gdpr_consent=CQdTAsAQdTAsAAKA9APTCLFgAAAAAAAAAB6YAAAXsgLAA4AGaAZ8BHgCVQHbAQUAjSBIgCSgEowJkgUWAo4BVICrIFYAK5gV9AtWBbwC9gAA.IAAA.YAAAAAAAAAAA&burst-time=15"],
         ["RFM 80-90", "http://rfm-live-mp3-128.scdn.arkena.com/rfm.mp3"],
         ["RTL2 80s", "http://streaming.radio.rtl2.fr/rtl2-1-44-128"],
         ["Virgin Radio 80s", "https://ais-live.cloud-services.asso.fr/virginradio.mp3"],
