@@ -781,6 +781,51 @@ class RadioFetcher:
             
         return None
 
+    def _get_rfm_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Extrait les métadonnées depuis l'API Triton Digital de RFM"""
+        try:
+            # API Triton Digital pour RFM
+            timestamp = int(time.time() * 1000)
+            api_url = f"https://np.tritondigital.com/public/nowplaying?mountName=RFMAAC&numberToFetch=1&eventType=track&request.preventCache={timestamp}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/xml, text/xml, */*',
+                'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+                'Referer': 'https://www.rfm.fr/'
+            }
+            
+            response = self.session.get(api_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            # Parser le XML
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(response.content)
+            
+            # Extraire les métadonnées depuis le XML
+            nowplaying_info = root.find('.//nowplaying-info[@type="track"]')
+            if nowplaying_info is not None:
+                artist_element = nowplaying_info.find('.//property[@name="track_artist_name"]')
+                title_element = nowplaying_info.find('.//property[@name="cue_title"]')
+                
+                if artist_element is not None and title_element is not None:
+                    artist = artist_element.text.strip() if artist_element.text else ""
+                    title = title_element.text.strip() if title_element.text else ""
+                    
+                    if title and artist:
+                        print(f"🎵 RFM API: {artist} - {title}")
+                        return RadioMetadata(
+                            station=station_name,
+                            title=title,
+                            artist=artist,
+                            cover_url="",  # RFM ne fournit pas de cover dans cette API
+                            host=""
+                        )
+            
+        except Exception as e:
+            print(f"Erreur extraction RFM API: {e}")
+            
+        return None
+
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
         try:
             headers = {
@@ -1166,9 +1211,9 @@ class RadioFetcher:
                 self.cache[cache_key] = (md, now)
                 return md
 
-        # Spécial: RTL - essayer d'abord l'API
-        if "rtl" in station_name.lower():
-            md = self._get_rtl_api_metadata(station_name)
+        # Spécial: RFM - essayer d'abord l'API Triton Digital
+        if "rfm" in station_name.lower():
+            md = self._get_rfm_metadata(station_name)
             if md:
                 self.cache[cache_key] = (md, now)
                 return md
@@ -1178,8 +1223,14 @@ class RadioFetcher:
             self.cache[cache_key] = (md, now)
             return md
 
-        # Spécial: RFM - utiliser ICY avec headers spécifiques StreamTheWorld
-        if "rfm" in station_name.lower():
+        # Spécial: RTL - essayer d'abord l'API
+        if "rtl" in station_name.lower():
+            md = self._get_rtl_api_metadata(station_name)
+            if md:
+                self.cache[cache_key] = (md, now)
+                return md
+            
+            # Sinon, essayer avec le flux ICY standard
             md = self._get_icy_metadata(url, station_name)
             self.cache[cache_key] = (md, now)
             return md
