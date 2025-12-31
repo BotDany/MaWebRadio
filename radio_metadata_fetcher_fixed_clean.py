@@ -44,6 +44,7 @@ RADIOS = [
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
     ("Top 80 Radio", "https://securestreams6.autopo.st:2321/stream.mp3"),
     ("Rádio São Miguel", "https://nl.digitalrm.pt:8140/stream"),
+    ("RFM Portugal", "https://29043.live.streamtheworld.com/RFMAAC.aac?dist=triton-widget&tdsdk=js-2.9&swm=false&pname=tdwidgets&pversion=2.9&banners=300x250%2C728x90&gdpr=1&gdpr_consent=CQdTAsAQdTAsAAKA9APTCLFgAAAAAAAAAB6YAAAXsgLAA4AGaAZ8BHgCVQHbAQUAjSBIgCSgEowJkgUWAo4BVICrIFYAK5gV9AtWBbwC9gAA.IAAA.YAAAAAAAAAAA&burst-time=15"),
     ("Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"),
     ("Générikds", "https://listen.radioking.com/radio/497599/stream/554719"),
     ("Made In 80", "https://listen.radioking.com/radio/260719/stream/305509"),
@@ -75,6 +76,8 @@ RADIO_LOGOS = {
     "Radio Comercial": "https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png",
     "Radio Gérard": "https://radiosurle.net:8765/radiogerard/cover.jpg",
     "RFM": "https://cdn.radiofrance.fr/s3/cruiser-production/2018/11/2b8e8d0e-0f9f-11e9-8c7d-42010aee0001/300x300_rfm_2018.jpg",
+    "RFM Portugal": "https://images.rfm.pt/logo-rfm-1200x1200.png",
+    "Rádio São Miguel": "https://www.radiosaomiguel.pt/images/logo-radiosaomiguel.png",
     "RTL": "https://www.rtl.fr/favicon-192x192.png",
     "Superloustic": "https://i.ibb.co/4pD4X0x/superloustic.png",
     "Supernana": "https://i.ibb.co/4pD4X0x/supernana.png",
@@ -1211,9 +1214,9 @@ class RadioFetcher:
                 self.cache[cache_key] = (md, now)
                 return md
 
-        # Spécial: RFM - essayer d'abord l'API Triton Digital
-        if "rfm" in station_name.lower():
-            md = self._get_rfm_metadata(station_name)
+        # Spécial: RFM Portugal - essayer d'abord les APIs portugaises
+        if "rfm" in station_name.lower() and "portugal" in station_name.lower():
+            md = self._get_rfm_portugal_metadata(station_name)
             if md:
                 self.cache[cache_key] = (md, now)
                 return md
