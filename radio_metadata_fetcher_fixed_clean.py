@@ -922,24 +922,37 @@ class RadioFetcher:
     def _get_rfm_portugal_metadata(self, station_name: str) -> Optional[RadioMetadata]:
         """Extrait les métadonnées depuis les APIs RFM Portugal (musique + animateurs)"""
         try:
-            # 1. Essayer d'abord l'API des chansons
-            music_metadata = self._get_rfm_portugal_music_metadata(station_name)
-            if music_metadata:
-                return music_metadata
-            
-            # 2. Si pas de musique, essayer l'API des animateurs
+            # 1. Récupérer l'animateur (toujours)
             host_metadata = self._get_rfm_portugal_host_metadata(station_name)
-            if host_metadata:
-                return host_metadata
+            host_name = host_metadata.artist if host_metadata else "RFM Portugal"
+            host_image = host_metadata.cover_url if host_metadata else ""
             
-            # 3. Fallback si aucune API ne fonctionne
-            return RadioMetadata(
-                station=station_name,
-                title="En direct",
-                artist=station_name,
-                cover_url="",
-                host=""
-            )
+            # 2. Récupérer la musique
+            music_metadata = self._get_rfm_portugal_music_metadata(station_name)
+            
+            if music_metadata and music_metadata.title and music_metadata.artist:
+                # Il y a de la musique : combiner animateur + chanson
+                print(f"🎵 RFM Portugal: {host_name} - {music_metadata.artist} - {music_metadata.title}")
+                return RadioMetadata(
+                    station=station_name,
+                    title=music_metadata.title,
+                    artist=f"{host_name} - {music_metadata.artist}",
+                    cover_url=music_metadata.cover_url or host_image,
+                    host=host_name
+                )
+            else:
+                # Pas de musique : afficher l'animateur
+                if host_metadata:
+                    return host_metadata
+                else:
+                    # Fallback si aucune API ne fonctionne
+                    return RadioMetadata(
+                        station=station_name,
+                        title="En direct",
+                        artist=host_name,
+                        cover_url=host_image,
+                        host=host_name
+                    )
             
         except Exception as e:
             print(f"Erreur extraction RFM Portugal: {e}")
