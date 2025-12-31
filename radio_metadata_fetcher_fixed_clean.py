@@ -53,7 +53,6 @@ RADIOS = [
     ("Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk"),
     ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
     ("Radio Gérard", "https://radiosurle.net:8765/radiogerard"),
-    ("RFM", "https://29043.live.streamtheworld.com/RFMAAC.aac?dist=triton-widget&tdsdk=js-2.9&swm=false&pname=tdwidgets&pversion=2.9&banners=300x250%2C728x90&gdpr=1&gdpr_consent=CQdTAsAQdTAsAAKA9APTCLFgAAAAAAAAAB6YAAAXsgLAA4AGaAZ8BHgCVQHbAQUAjSBIgCSgEowJkgUWAo4BVICrIFYAK5gV9AtWBbwC9gAA.IAAA.YAAAAAAAAAAA&burst-time=15"),
     ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
     ("Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"),
     ("Supernana", "https://radiosurle.net:8765/showsupernana"),
@@ -75,7 +74,6 @@ RADIO_LOGOS = {
     "Nostalgie-Les Tubes 80 N1": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
     "Radio Comercial": "https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png",
     "Radio Gérard": "https://radiosurle.net:8765/radiogerard/cover.jpg",
-    "RFM": "https://cdn.radiofrance.fr/s3/cruiser-production/2018/11/2b8e8d0e-0f9f-11e9-8c7d-42010aee0001/300x300_rfm_2018.jpg",
     "RFM Portugal": "https://images.rfm.pt/logo-rfm-1200x1200.png",
     "Rádio São Miguel": "https://www.radiosaomiguel.pt/images/logo-radiosaomiguel.png",
     "RTL": "https://www.rtl.fr/favicon-192x192.png",
@@ -781,51 +779,6 @@ class RadioFetcher:
             
         except Exception as e:
             print(f"Erreur extraction Chante France: {e}")
-            
-        return None
-
-    def _get_rfm_metadata(self, station_name: str) -> Optional[RadioMetadata]:
-        """Extrait les métadonnées depuis l'API Triton Digital de RFM"""
-        try:
-            # API Triton Digital pour RFM
-            timestamp = int(time.time() * 1000)
-            api_url = f"https://np.tritondigital.com/public/nowplaying?mountName=RFMAAC&numberToFetch=1&eventType=track&request.preventCache={timestamp}"
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'application/xml, text/xml, */*',
-                'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
-                'Referer': 'https://www.rfm.fr/'
-            }
-            
-            response = self.session.get(api_url, headers=headers, timeout=10)
-            response.raise_for_status()
-            
-            # Parser le XML
-            import xml.etree.ElementTree as ET
-            root = ET.fromstring(response.content)
-            
-            # Extraire les métadonnées depuis le XML
-            nowplaying_info = root.find('.//nowplaying-info[@type="track"]')
-            if nowplaying_info is not None:
-                artist_element = nowplaying_info.find('.//property[@name="track_artist_name"]')
-                title_element = nowplaying_info.find('.//property[@name="cue_title"]')
-                
-                if artist_element is not None and title_element is not None:
-                    artist = artist_element.text.strip() if artist_element.text else ""
-                    title = title_element.text.strip() if title_element.text else ""
-                    
-                    if title and artist:
-                        print(f"🎵 RFM API: {artist} - {title}")
-                        return RadioMetadata(
-                            station=station_name,
-                            title=title,
-                            artist=artist,
-                            cover_url="",  # RFM ne fournit pas de cover dans cette API
-                            host=""
-                        )
-            
-        except Exception as e:
-            print(f"Erreur extraction RFM API: {e}")
             
         return None
 
