@@ -43,7 +43,7 @@ RADIOS = [
     ("Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"),
     ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
     ("Top 80 Radio", "https://securestreams6.autopo.st:2321/stream.mp3"),
-    ("Nostalgie Romania", "https://nl.digitalrm.pt:8140/stream"),
+    ("Rádio São Miguel", "https://nl.digitalrm.pt:8140/stream"),
     ("Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"),
     ("Générikds", "https://listen.radioking.com/radio/497599/stream/554719"),
     ("Made In 80", "https://listen.radioking.com/radio/260719/stream/305509"),
