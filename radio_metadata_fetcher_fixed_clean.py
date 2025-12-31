@@ -829,6 +829,122 @@ class RadioFetcher:
             
         return None
 
+    def _get_rfm_portugal_music_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Extrait les métadonnées depuis l'API RFM Portugal OnAir"""
+        try:
+            # API RFM Portugal pour les chansons
+            api_url = "https://configsa01.blob.core.windows.net/rfm/rfmOnAir.xml"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/xml, text/xml, */*',
+                'Referer': 'https://rfm.pt/'
+            }
+            
+            response = self.session.get(api_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            # Parser le XML (encodage utf-16)
+            import xml.etree.ElementTree as ET
+            content = response.content.decode('utf-16')
+            root = ET.fromstring(content)
+            
+            # Extraire les métadonnées de la chanson
+            song_element = root.find('.//song')
+            if song_element is not None:
+                name_element = song_element.find('.//name')
+                artist_element = song_element.find('.//artist')
+                cover_element = song_element.find('.//capa')
+                
+                if name_element is not None and artist_element is not None:
+                    title = name_element.text.strip() if name_element.text else ""
+                    artist = artist_element.text.strip() if artist_element.text else ""
+                    cover_url = cover_element.text.strip() if cover_element is not None and cover_element.text else ""
+                    
+                    if title and artist:
+                        print(f"🎵 RFM Portugal: {artist} - {title}")
+                        return RadioMetadata(
+                            station=station_name,
+                            title=title,
+                            artist=artist,
+                            cover_url=cover_url,
+                            host=""
+                        )
+            
+        except Exception as e:
+            print(f"Erreur extraction RFM Portugal Music API: {e}")
+            
+        return None
+
+    def _get_rfm_portugal_host_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Extrait les informations des animateurs depuis l'API RFM Portugal"""
+        try:
+            # API RFM Portugal pour les animateurs
+            api_url = "https://rfm.pt/ajax/emissao/locutor_player.aspx"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'pt-PT,pt;q=0.9,en;q=0.8',
+                'Referer': 'https://rfm.pt/',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            
+            response = self.session.get(api_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            # Parser le JSON
+            data = response.json()
+            
+            # Extraire les informations de l'animateur
+            locutors = data.get('locutor', [])
+            if locutors:
+                locutor = locutors[0]  # Prendre le premier animateur
+                
+                program_name = locutor.get('locutorName', 'En direct')
+                schedule = locutor.get('strHorario1', '')
+                image_url = locutor.get('srcImg', '')
+                
+                # Utiliser le nom du programme comme "artiste" et "En direct" comme titre
+                print(f"🎙️ RFM Portugal: {program_name} ({schedule})")
+                
+                return RadioMetadata(
+                    station=station_name,
+                    title="En direct",
+                    artist=program_name,
+                    cover_url=image_url,
+                    host=program_name
+                )
+            
+        except Exception as e:
+            print(f"Erreur extraction RFM Portugal Host API: {e}")
+            
+        return None
+
+    def _get_rfm_portugal_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Extrait les métadonnées depuis les APIs RFM Portugal (musique + animateurs)"""
+        try:
+            # 1. Essayer d'abord l'API des chansons
+            music_metadata = self._get_rfm_portugal_music_metadata(station_name)
+            if music_metadata:
+                return music_metadata
+            
+            # 2. Si pas de musique, essayer l'API des animateurs
+            host_metadata = self._get_rfm_portugal_host_metadata(station_name)
+            if host_metadata:
+                return host_metadata
+            
+            # 3. Fallback si aucune API ne fonctionne
+            return RadioMetadata(
+                station=station_name,
+                title="En direct",
+                artist=station_name,
+                cover_url="",
+                host=""
+            )
+            
+        except Exception as e:
+            print(f"Erreur extraction RFM Portugal: {e}")
+            return None
+
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
         try:
             headers = {
