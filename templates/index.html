@@ -129,25 +129,92 @@
             padding: 20px;
             border-radius: 15px;
             margin: 20px 0;
+            text-align: center;
         }
 
-        .metadata h3 {
-            margin-bottom: 15px;
+        .album-cover {
+            width: 200px;
+            height: 200px;
+            border-radius: 15px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .album-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        .album-cover .placeholder {
+            color: #999;
+            font-size: 60px;
+            opacity: 0.5;
+        }
+
+        .track-info {
+            margin-top: 15px;
+        }
+
+        .track-info .artist {
+            font-weight: bold;
+            font-size: 22px;
+            margin-bottom: 8px;
             color: #4CAF50;
         }
 
-        .metadata p {
-            margin: 5px 0;
-            font-size: 18px;
-        }
-
-        .artist {
-            font-weight: bold;
-            font-size: 20px;
-        }
-
-        .title {
+        .track-info .title {
             font-style: italic;
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .track-info .station {
+            font-size: 14px;
+            color: #ccc;
+            opacity: 0.8;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .album-cover {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .track-info .artist {
+                font-size: 20px;
+            }
+            
+            .track-info .title {
+                font-size: 16px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
         }
 
         .status {
@@ -509,10 +576,14 @@
             <div id="status" class="status stopped">Status: Arrêté</div>
 
             <div class="metadata">
-                <h3>🎵 En direct</h3>
-                <p id="artist" class="artist">Artiste: --</p>
-                <p id="title" class="title">Titre: --</p>
-                <p id="coverUrl"></p>
+                <div class="album-cover" id="albumCover">
+                    <div class="placeholder">🎵</div>
+                </div>
+                <div class="track-info">
+                    <div id="artist" class="artist">Artiste: --</div>
+                    <div id="title" class="title">Titre: --</div>
+                    <div id="station" class="station">Station: --</div>
+                </div>
             </div>
 
             <div class="url-display">
@@ -592,7 +663,8 @@
         const status = document.getElementById('status');
         const artist = document.getElementById('artist');
         const title = document.getElementById('title');
-        const coverUrl = document.getElementById('coverUrl');
+        const station = document.getElementById('station');
+        const albumCover = document.getElementById('albumCover');
         const urlDisplay = document.getElementById('urlDisplay');
         const historyModal = document.getElementById('historyModal');
         const historyContent = document.getElementById('historyContent');
@@ -706,29 +778,21 @@
         }
 
         async function onStop() {
-            try {
-                audioPlayer.pause();
-                audioPlayer.src = '';
-                audioPlayer.load();
-                
-                // Appeler l'API pour arrêter
-                await fetch('/api/stop');
-                
-                isPlaying = false;
-                currentStation = null;
-                currentUrl = null;
-                stationSelect.value = '';
-                updateStatus('stopped', 'Arrêté');
-                artist.textContent = 'Artiste: --';
-                title.textContent = 'Titre: --';
-                coverUrl.textContent = '';
-                urlDisplay.textContent = 'Aucune radio sélectionnée';
-                
-                console.log('⏹️ Stop');
-                
-            } catch (error) {
-                console.error('❌ Erreur stop:', error);
-            }
+            audioPlayer.pause();
+            audioPlayer.src = '';
+            currentStation = null;
+            currentUrl = null;
+            isPlaying = false;
+            isPaused = false;
+            
+            updateStatus('stopped', 'Arrêté');
+            artist.textContent = 'Artiste: --';
+            title.textContent = 'Titre: --';
+            station.textContent = 'Station: --';
+            albumCover.innerHTML = '<div class="placeholder">🎵</div>';
+            urlDisplay.textContent = 'Aucune radio sélectionnée';
+            
+            console.log('⏹️ Stop');
         }
 
         async function updateMetadata() {
@@ -740,19 +804,22 @@
                 const data = await response.json();
                 
                 if (data.status === 'success') {
-                    artist.textContent = `Artiste: ${data.artist}`;
-                    title.textContent = `Titre: ${data.title}`;
+                    artist.textContent = data.artist || 'Artiste inconnu';
+                    title.textContent = data.title || 'Titre inconnu';
+                    station.textContent = data.station || currentStation;
                     
-                    if (data.cover_url) {
-                        coverUrl.innerHTML = `<a href="${data.cover_url}" target="_blank">📱 Voir la pochette</a>`;
+                    // Afficher la pochette d'album
+                    if (data.cover_url && data.cover_url !== '') {
+                        albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
                     } else {
-                        coverUrl.textContent = '';
+                        albumCover.innerHTML = '<div class="placeholder">🎵</div>';
                     }
                 } else if (data.status === 'no_data' && data.station) {
                     // Afficher la station même si pas de métadonnées
-                    artist.textContent = `Artiste: ${data.station}`;
-                    title.textContent = `Titre: En direct`;
-                    coverUrl.textContent = '';
+                    artist.textContent = data.station;
+                    title.textContent = 'En direct';
+                    station.textContent = data.station;
+                    albumCover.innerHTML = '<div class="placeholder">🎙️</div>';
                 }
             } catch (error) {
                 console.error('Erreur de métadonnées:', error);
@@ -997,10 +1064,11 @@
             }
         });
 
-        // Mettre à jour les métadonnées toutes les 5 secondes
-        setInterval(updateMetadata, 5000);
-
+        // Démarrer le rafraîchissement des métadonnées
+        setInterval(updateMetadata, 5000); // Toutes les 5 secondes
+        
         // Initialisation
+        updateMetadata();
         console.log('🎵 Lecteur Radio HTML5 avec Reprise Instantanée en Direct prêt!');
         console.log('🔊 Audio HTML5 activé');
         console.log('⚡ Pause → Play = Reprise instantanée en direct!');
