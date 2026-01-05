@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 Lecteur Radio - Reprise Instantanée en Direct</title>
     <meta name="description" content="Lecteur Radio avec Reprise Instantanée en Direct - 17 radios françaises avec audio HTML5">
     <meta name="keywords" content="radio, musique, france, chante france, rtl, nostalgie, streaming, audio">
     <meta property="og:title" content="🎵 Lecteur Radio - Reprise Instantanée">
@@ -684,12 +685,22 @@
             isPlaying = true;
             updateStatus('playing', `Lecture de ${currentStation}`);
             console.log('🔊 Audio HTML5 démarré');
+            
+            // Mettre à jour le Media Session pour iPhone
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
         });
 
         audioPlayer.addEventListener('pause', () => {
             isPlaying = false;
             updateStatus('paused', 'Pause');
             console.log('🔇 Audio HTML5 en pause');
+            
+            // Mettre à jour le Media Session pour iPhone
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
         });
 
         audioPlayer.addEventListener('error', (e) => {
@@ -792,6 +803,17 @@
             albumCover.innerHTML = '<div class="placeholder">🎵</div>';
             urlDisplay.textContent = 'Aucune radio sélectionnée';
             
+            // Effacer les métadonnées du Media Session pour iPhone
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: 'Radio',
+                    artist: 'Aucune radio',
+                    album: 'Ma Web Radio',
+                    artwork: []
+                });
+                navigator.mediaSession.playbackState = 'none';
+            }
+            
             console.log('⏹️ Stop');
         }
 
@@ -814,15 +836,80 @@
                     } else {
                         albumCover.innerHTML = '<div class="placeholder">🎵</div>';
                     }
+                    
+                    // Mettre à jour les métadonnées pour le centre de notifications iPhone
+                    updateMediaMetadata(data.artist, data.title, data.cover_url, currentStation);
                 } else if (data.status === 'no_data' && data.station) {
                     // Afficher la station même si pas de métadonnées
                     artist.textContent = data.station;
                     title.textContent = 'En direct';
                     station.textContent = data.station;
                     albumCover.innerHTML = '<div class="placeholder">🎙️</div>';
+                    
+                    // Mettre à jour les métadonnées pour le centre de notifications iPhone
+                    updateMediaMetadata(data.station, 'En direct', '', data.station);
                 }
             } catch (error) {
                 console.error('Erreur de métadonnées:', error);
+            }
+        }
+
+        // Fonction pour mettre à jour les métadonnées du Media Session (iPhone notifications)
+        function updateMediaMetadata(artist, title, coverUrl, station) {
+            if ('mediaSession' in navigator) {
+                // Créer l'artwork pour la pochette
+                let artwork = [];
+                if (coverUrl && coverUrl !== '') {
+                    artwork = [
+                        { src: coverUrl, sizes: '96x96', type: 'image/jpeg' },
+                        { src: coverUrl, sizes: '128x128', type: 'image/jpeg' },
+                        { src: coverUrl, sizes: '192x192', type: 'image/jpeg' },
+                        { src: coverUrl, sizes: '256x256', type: 'image/jpeg' },
+                        { src: coverUrl, sizes: '384x384', type: 'image/jpeg' },
+                        { src: coverUrl, sizes: '512x512', type: 'image/jpeg' }
+                    ];
+                } else {
+                    // Placeholder artwork
+                    const placeholderSvg = 'data:image/svg+xml;base64,' + btoa(`
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                            <rect width="512" height="512" fill="#333"/>
+                            <text x="256" y="280" font-family="Arial" font-size="120" fill="#999" text-anchor="middle">🎵</text>
+                        </svg>
+                    `);
+                    artwork = [
+                        { src: placeholderSvg, sizes: '512x512', type: 'image/svg+xml' }
+                    ];
+                }
+                
+                // Mettre à jour les métadonnées du Media Session
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: title || 'En direct',
+                    artist: artist || station,
+                    album: station || 'Radio',
+                    artwork: artwork
+                });
+                
+                // Définir les actions de contrôle
+                navigator.mediaSession.setActionHandler('play', () => {
+                    onPlay();
+                });
+                
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    onPause();
+                });
+                
+                navigator.mediaSession.setActionHandler('stop', () => {
+                    onStop();
+                });
+                
+                // Mettre à l'état "playing" si la radio joue
+                if (isPlaying) {
+                    navigator.mediaSession.playbackState = 'playing';
+                } else {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
+                
+                console.log('📱 Media Session mis à jour:', { artist, title, station });
             }
         }
 
