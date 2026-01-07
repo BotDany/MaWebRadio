@@ -870,12 +870,12 @@
                     ];
                 } else {
                     // Placeholder artwork
-                    const placeholderSvg = 'data:image/svg+xml;base64,' + btoa(`
+                    const placeholderSvg = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(`
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                             <rect width="512" height="512" fill="#333"/>
                             <text x="256" y="280" font-family="Arial" font-size="120" fill="#999" text-anchor="middle">🎵</text>
                         </svg>
-                    `);
+                    `)));
                     artwork = [
                         { src: placeholderSvg, sizes: '512x512', type: 'image/svg+xml' }
                     ];
