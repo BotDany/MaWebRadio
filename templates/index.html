@@ -1678,49 +1678,17 @@
                 
                 console.log(`🔍 Chargement logo pour: "${stationName}"`);
                 
-                // Pour les radios avec "100%", utiliser directement iTunes pour les pochettes
-                if (stationName && stationName.includes("100%")) {
-                    console.log(`🎵 Radio "${stationName}" détectée, utilisation logo par défaut au chargement...`);
-                    console.log(`🖼️ Élément img:`, img);
-                    
-                    // Forcer l'affichage de l'image
-                    img.style.display = 'block';
-                    
-                    // Utiliser le logo par défaut au chargement
-                    img.src = defaultLogos["100% Radio 80"];
-                    console.log(`🖼️ Logo par défaut affecté:`, defaultLogos["100% Radio 80"]);
-                    
-                    return;
-                }
+                // Forcer l'affichage de l'image pour toutes les radios
+                img.style.display = 'block';
+                img.style.visibility = 'visible';
                 
-                // Pour les autres radios, essayer l'API
-                fetch(`/api/metadata?station=${encodeURIComponent(stationName)}`)
-                    .then(response => {
-                        console.log(`📡 Réponse API pour "${stationName}":`, response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log(`📊 Données reçues pour "${stationName}":`, data);
-                        if (data.cover_url && data.cover_url !== '') {
-                            console.log(`✅ Pochette trouvée pour "${stationName}":`, data.cover_url);
-                            img.src = data.cover_url;
-                        } else {
-                            console.log(`❌ Pas de pochette pour "${stationName}", essai logo par défaut`);
-                            // Fallback vers le logo par défaut
-                            if (defaultLogos[stationName]) {
-                                console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
-                                img.src = defaultLogos[stationName];
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.log(`❌ Erreur API pour "${stationName}", essai logo par défaut:`, error);
-                        // Fallback vers le logo par défaut
-                        if (defaultLogos[stationName]) {
-                            console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
-                            img.src = defaultLogos[stationName];
-                        }
-                    });
+                // Utiliser le logo par défaut pour toutes les radios au chargement
+                if (defaultLogos[stationName]) {
+                    console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
+                    img.src = defaultLogos[stationName];
+                } else {
+                    console.log(`❌ Pas de logo par défaut pour "${stationName}"`);
+                }
             });
         }
         
