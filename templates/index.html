@@ -375,6 +375,31 @@
             background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
         }
 
+        /* Barre de progression en bas */
+        .progress-container-bottom {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-bottom {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .progress-bottom {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
         /* Espace en bas pour les contrôles fixes */
         body {
             padding-bottom: 80px;
@@ -768,6 +793,11 @@
 
     <!-- Contrôles personnalisés en bas -->
     <div class="custom-controls-bottom">
+        <div class="progress-container-bottom">
+            <div class="progress-bar-bottom">
+                <div class="progress-bottom" id="progressBar"></div>
+            </div>
+        </div>
         <div class="control-buttons-bottom">
             <button id="playPauseBtn" class="control-btn play-btn">▶️</button>
             <button id="muteBtn" class="control-btn mute-btn">🔊</button>
