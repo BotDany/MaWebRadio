@@ -1157,9 +1157,53 @@
                     
                     // Afficher la pochette d'album
                     if (data.cover_url && data.cover_url !== '') {
-                        albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
-                        // Mettre à jour la pochette de la radio actuelle dans la grille
-                        updateCurrentRadioCover(data.cover_url);
+                        // Pour 100% Radio 80, essayer iTunes si l'URL centpourcent ne fonctionne pas
+                        if (data.station && data.station.includes("100%") && data.cover_url.includes('centpourcent.com')) {
+                            console.log(`🎵 100% Radio 80 détectée, essai iTunes pour album-cover...`);
+                            
+                            if (data.artist && data.title) {
+                                console.log(`🎵 Recherche iTunes pour album-cover: ${data.artist} - ${data.title}`);
+                                
+                                const query = encodeURIComponent(`${data.artist} ${data.title}`);
+                                const iTunesUrl = `https://itunes.apple.com/search?term=${query}&entity=song&limit=1`;
+                                
+                                fetch(iTunesUrl)
+                                    .then(response => response.json())
+                                    .then(iTunesData => {
+                                        if (iTunesData.results && iTunesData.results.length > 0) {
+                                            const result = iTunesData.results[0];
+                                            const artworkUrl100 = result.artworkUrl100;
+                                            
+                                            if (artworkUrl100) {
+                                                const iTunesCover = artworkUrl100.replace('100x100', '600x600');
+                                                console.log(`✅ Pochette iTunes trouvée pour album-cover: ${iTunesCover}`);
+                                                
+                                                albumCover.innerHTML = `<img src="${iTunesCover}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
+                                                // Mettre à jour la pochette de la radio actuelle dans la grille
+                                                updateCurrentRadioCover(iTunesCover);
+                                            } else {
+                                                console.log(`❌ Pas de artworkUrl100, utilisation placeholder`);
+                                                albumCover.innerHTML = '<div class="placeholder">🎵</div>';
+                                            }
+                                        } else {
+                                            console.log(`❌ Pas de résultats iTunes, utilisation placeholder`);
+                                            albumCover.innerHTML = '<div class="placeholder">🎵</div>';
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.log(`❌ Erreur recherche iTunes: ${error}, utilisation placeholder`);
+                                        albumCover.innerHTML = '<div class="placeholder">🎵</div>';
+                                    });
+                            } else {
+                                console.log(`❌ Pas de données artiste/titre, utilisation placeholder`);
+                                albumCover.innerHTML = '<div class="placeholder">🎵</div>';
+                            }
+                        } else {
+                            // Pour les autres radios, utilisation normale
+                            albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
+                            // Mettre à jour la pochette de la radio actuelle dans la grille
+                            updateCurrentRadioCover(data.cover_url);
+                        }
                     } else {
                         albumCover.innerHTML = '<div class="placeholder">🎵</div>';
                     }
