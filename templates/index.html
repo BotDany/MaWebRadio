@@ -1722,6 +1722,22 @@
                                                         console.log(`🖼️ img.onload - img.offsetHeight:`, this.offsetHeight);
                                                         console.log(`🖼️ img.onload - naturalWidth:`, this.naturalWidth);
                                                         console.log(`🖼️ img.onload - naturalHeight:`, this.naturalHeight);
+                                                        
+                                                        // Test visuel direct
+                                                        console.log(`🎨 Test visuel - img.complete:`, this.complete);
+                                                        console.log(`🎨 Test visuel - img.naturalWidth > 0:`, this.naturalWidth > 0);
+                                                        console.log(`🎨 Test visuel - img.parentElement:`, this.parentElement);
+                                                        console.log(`🎨 Test visuel - img.parentElement.offsetWidth:`, this.parentElement ? this.parentElement.offsetWidth : 'no parent');
+                                                        console.log(`🎨 Test visuel - img.parentElement.offsetHeight:`, this.parentElement ? this.parentElement.offsetHeight : 'no parent');
+                                                        
+                                                        // Forcer un style de test
+                                                        this.style.border = '2px solid red';
+                                                        this.style.backgroundColor = 'yellow';
+                                                        
+                                                        setTimeout(() => {
+                                                            console.log(`🎨 Test après 500ms - img.offsetWidth:`, this.offsetWidth);
+                                                            console.log(`🎨 Test après 500ms - img.offsetHeight:`, this.offsetHeight);
+                                                        }, 500);
                                                     };
                                                     img.onerror = function() {
                                                         console.log(`❌ Erreur pochette iTunes, utilisation logo par défaut`);
