@@ -1701,125 +1701,25 @@
                 
                 console.log(`🖼️ Mise à jour pochette pour "${stationName}":`, coverUrl);
                 
-                // Pour les radios avec "100%", essayer iTunes si l'URL centpourcent échoue
+                // Pour 100% Radio 80, garder toujours le logo officiel
                 if (stationName && stationName.includes("100%")) {
-                    console.log(`🎵 Radio "${stationName}" active, test si pochette accessible...`);
+                    console.log(`🎵 Radio "${stationName}" active, conservation du logo officiel`);
                     
-                    // Vérifier si c'est une URL centpourcent
-                    if (coverUrl && coverUrl.includes('centpourcent.com')) {
-                        console.log(`🔗 URL centpourcent détectée, essai iTunes directement...`);
-                        
-                        // Récupérer les métadonnées actuelles pour utiliser iTunes
-                        fetch(`/api/metadata?station=${encodeURIComponent(stationName)}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.artist && data.title) {
-                                    console.log(`🎵 Recherche iTunes pour: ${data.artist} - ${data.title}`);
-                                    
-                                    const query = encodeURIComponent(`${data.artist} ${data.title}`);
-                                    const iTunesUrl = `https://itunes.apple.com/search?term=${query}&entity=song&limit=1`;
-                                    
-                                    fetch(iTunesUrl)
-                                        .then(response => response.json())
-                                        .then(iTunesData => {
-                                            if (iTunesData.results && iTunesData.results.length > 0) {
-                                                const result = iTunesData.results[0];
-                                                const artworkUrl100 = result.artworkUrl100;
-                                                
-                                                if (artworkUrl100) {
-                                                    const iTunesCover = artworkUrl100.replace('100x100', '600x600');
-                                                    console.log(`✅ Pochette iTunes trouvée: ${iTunesCover}`);
-                                                    
-                                                    // Debug avant affectation
-                                                    console.log(`🖼️ img.src avant:`, img.src);
-                                                    console.log(`🖼️ img.style.display avant:`, img.style.display);
-                                                    console.log(`🖼️ img.style.visibility avant:`, img.style.visibility);
-                                                    console.log(`🖼️ img.offsetWidth avant:`, img.offsetWidth);
-                                                    console.log(`🖼️ img.offsetHeight avant:`, img.offsetHeight);
-                                                    
-                                                    img.onload = function() {
-                                                        console.log(`✅ Pochette iTunes mise à jour avec succès pour "${stationName}"`);
-                                                        console.log(`🖼️ img.onload - img.src:`, this.src);
-                                                        console.log(`🖼️ img.onload - img.style.display:`, this.style.display);
-                                                        console.log(`🖼️ img.onload - img.offsetWidth:`, this.offsetWidth);
-                                                        console.log(`🖼️ img.onload - img.offsetHeight:`, this.offsetHeight);
-                                                        console.log(`🖼️ img.onload - naturalWidth:`, this.naturalWidth);
-                                                        console.log(`🖼️ img.onload - naturalHeight:`, this.naturalHeight);
-                                                        
-                                                        // Test visuel direct
-                                                        console.log(`🎨 Test visuel - img.complete:`, this.complete);
-                                                        console.log(`🎨 Test visuel - img.naturalWidth > 0:`, this.naturalWidth > 0);
-                                                        console.log(`🎨 Test visuel - img.parentElement:`, this.parentElement);
-                                                        console.log(`🎨 Test visuel - img.parentElement.offsetWidth:`, this.parentElement ? this.parentElement.offsetWidth : 'no parent');
-                                                        console.log(`🎨 Test visuel - img.parentElement.offsetHeight:`, this.parentElement ? this.parentElement.offsetHeight : 'no parent');
-                                                        
-                                                        // Forcer un style de test
-                                                        this.style.border = '2px solid red';
-                                                        this.style.backgroundColor = 'yellow';
-                                                        
-                                                        setTimeout(() => {
-                                                            console.log(`🎨 Test après 500ms - img.offsetWidth:`, this.offsetWidth);
-                                                            console.log(`🎨 Test après 500ms - img.offsetHeight:`, this.offsetHeight);
-                                                        }, 500);
-                                                    };
-                                                    img.onerror = function() {
-                                                        console.log(`❌ Erreur pochette iTunes, utilisation logo par défaut`);
-                                                        console.log(`🔗 URL qui a échoué:`, this.src);
-                                                        img.src = defaultLogos["100% Radio 80"];
-                                                    };
-                                                    
-                                                    // Forcer l'affichage
-                                                    img.style.display = 'block';
-                                                    img.style.visibility = 'visible';
-                                                    
-                                                    console.log(`🖼️ Affectation img.src:`, iTunesCover);
-                                                    img.src = iTunesCover;
-                                                    
-                                                    // Debug après affectation
-                                                    setTimeout(() => {
-                                                        console.log(`🖼️ img.src après:`, img.src);
-                                                        console.log(`🖼️ img.style.display après:`, img.style.display);
-                                                        console.log(`🖼️ img.offsetWidth après:`, img.offsetWidth);
-                                                        console.log(`🖼️ img.offsetHeight après:`, img.offsetHeight);
-                                                    }, 100);
-                                                } else {
-                                                    console.log(`❌ Pas de artworkUrl100, utilisation logo par défaut`);
-                                                    img.src = defaultLogos["100% Radio 80"];
-                                                }
-                                            } else {
-                                                console.log(`❌ Pas de résultats iTunes, utilisation logo par défaut`);
-                                                img.src = defaultLogos["100% Radio 80"];
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.log(`❌ Erreur recherche iTunes: ${error}, utilisation logo par défaut`);
-                                            img.src = defaultLogos["100% Radio 80"];
-                                        });
-                                } else {
-                                    console.log(`❌ Pas de données artiste/titre, utilisation logo par défaut`);
-                                    img.src = defaultLogos["100% Radio 80"];
-                                }
-                            })
-                            .catch(error => {
-                                console.log(`❌ Erreur métadonnées: ${error}, utilisation logo par défaut`);
-                                img.src = defaultLogos["100% Radio 80"];
-                            });
-                        
-                        return; // Ne pas continuer avec le comportement normal
-                    }
+                    // Garder le logo officiel et ne pas changer
+                    const officialLogo = defaultLogos["100% Radio 80"];
+                    img.src = officialLogo;
+                    console.log(`� Logo officiel conservé:`, officialLogo);
                     
-                    img.onerror = function() {
-                        console.log(`❌ Erreur pochette pour "${stationName}", URL:`, this.src);
-                        // Pour les autres erreurs, ne rien faire
-                    };
+                    return; // Ne pas continuer avec le comportement normal
                 }
+                
+                img.onerror = function() {
+                    console.log(`❌ Erreur pochette pour "${stationName}", URL:`, this.src);
+                    // Pour les autres erreurs, ne rien faire
+                };
                 
                 img.onload = function() {
                     console.log(`✅ Pochette mise à jour avec succès pour "${stationName}"`);
-                };
-                img.onerror = function() {
-                    console.log(`❌ Erreur mise à jour pochette pour "${stationName}", URL:`, this.src);
-                    // Pour les autres radios, ne rien faire (garder l'ancienne pochette)
                 };
                 
                 img.src = coverUrl;
