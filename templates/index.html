@@ -9,6 +9,16 @@
     <meta property="og:title" content="🎵 Lecteur Radio - Reprise Instantanée">
     <meta property="og:description" content="17 radios françaises avec reprise instantanée en direct">
     <meta property="og:type" content="website">
+    
+    <!-- PWA Support pour Android TV Box -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Radio Player">
+    
+    <!-- Manifest pour PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    
     <title>🎵 Lecteur Radio - Reprise Instantanée en Direct</title>
     <style>
         * {
@@ -654,6 +664,8 @@
         let currentStation = null;
         let currentUrl = null;
         let isPlaying = false;
+        let backgroundNotification = null;
+        let serviceWorkerRegistration = null;
 
         // Éléments DOM
         const stationSelect = document.getElementById('stationSelect');
@@ -783,6 +795,9 @@
                 isPlaying = false;
                 updateStatus('paused', 'Pause');
                 console.log('⏸️ Pause:', currentStation);
+                
+                // Masquer la notification en arrière-plan
+                hideBackgroundNotification();
             } catch (error) {
                 console.error('❌ Erreur pause:', error);
             }
@@ -802,6 +817,9 @@
             station.textContent = 'Station: --';
             albumCover.innerHTML = '<div class="placeholder">🎵</div>';
             urlDisplay.textContent = 'Aucune radio sélectionnée';
+            
+            // Masquer la notification en arrière-plan
+            hideBackgroundNotification();
             
             // Effacer les métadonnées du Media Session pour iPhone
             if ('mediaSession' in navigator) {
@@ -839,6 +857,11 @@
                     
                     // Mettre à jour les métadonnées pour le centre de notifications iPhone
                     updateMediaMetadata(data.artist, data.title, data.cover_url, currentStation);
+                    
+                    // Afficher la notification en arrière-plan pour Android TV Box
+                    if (isPlaying) {
+                        showBackgroundNotification(data.artist, data.title, data.cover_url, currentStation);
+                    }
                 } else if (data.status === 'no_data' && data.station) {
                     // Afficher la station même si pas de métadonnées
                     artist.textContent = data.station;
@@ -848,9 +871,99 @@
                     
                     // Mettre à jour les métadonnées pour le centre de notifications iPhone
                     updateMediaMetadata(data.station, 'En direct', '', data.station);
+                    
+                    // Afficher la notification en arrière-plan pour Android TV Box
+                    if (isPlaying) {
+                        showBackgroundNotification(data.station, 'En direct', '', data.station);
+                    }
                 }
             } catch (error) {
                 console.error('Erreur de métadonnées:', error);
+            }
+        }
+
+        // Fonctions pour les notifications en arrière-plan (Android TV Box)
+        async function initBackgroundNotifications() {
+            if ('serviceWorker' in navigator && 'Notification' in window) {
+                try {
+                    // Enregistrer le service worker
+                    const registration = await navigator.serviceWorker.register('/static/sw.js');
+                    serviceWorkerRegistration = registration;
+                    console.log('📱 Service Worker enregistré pour les notifications');
+                    
+                    // Demander la permission pour les notifications
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        console.log('✅ Permission de notification accordée');
+                    }
+                } catch (error) {
+                    console.log('⚠️ Service Worker non disponible:', error);
+                }
+            }
+        }
+
+        async function showBackgroundNotification(artist, title, coverUrl, station) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') {
+                return;
+            }
+
+            // Fermer la notification précédente
+            if (backgroundNotification) {
+                backgroundNotification.close();
+            }
+
+            try {
+                const options = {
+                    body: `${artist} - ${title}`,
+                    icon: coverUrl || '/static/icon-192x192.png',
+                    badge: '/static/icon-192x192.png',
+                    image: coverUrl,
+                    tag: 'radio-player',
+                    requireInteraction: true,
+                    silent: false,
+                    actions: [
+                        {
+                            action: 'play',
+                            title: '▶️ Play'
+                        },
+                        {
+                            action: 'pause',
+                            title: '⏸️ Pause'
+                        },
+                        {
+                            action: 'stop',
+                            title: '⏹️ Stop'
+                        }
+                    ],
+                    data: {
+                        station: station,
+                        artist: artist,
+                        title: title,
+                        coverUrl: coverUrl
+                    }
+                };
+
+                backgroundNotification = new Notification(`🎵 ${station}`, options);
+                
+                // Gérer les clics sur les actions
+                backgroundNotification.onclick = () => {
+                    window.focus();
+                };
+
+                backgroundNotification.onclose = () => {
+                    backgroundNotification = null;
+                };
+
+                console.log('📱 Notification en arrière-plan affichée');
+            } catch (error) {
+                console.log('❌ Erreur notification:', error);
+            }
+        }
+
+        function hideBackgroundNotification() {
+            if (backgroundNotification) {
+                backgroundNotification.close();
+                backgroundNotification = null;
             }
         }
 
@@ -1154,11 +1267,34 @@
         // Démarrer le rafraîchissement des métadonnées
         setInterval(updateMetadata, 5000); // Toutes les 5 secondes
         
+        // Initialiser les notifications en arrière-plan pour Android TV Box
+        initBackgroundNotifications();
+        
+        // Écouter les messages du Service Worker (contrôle depuis les notifications)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.action) {
+                    switch(event.data.action) {
+                        case 'play':
+                            onPlay();
+                            break;
+                        case 'pause':
+                            onPause();
+                            break;
+                        case 'stop':
+                            onStop();
+                            break;
+                    }
+                }
+            });
+        }
+        
         // Initialisation
         updateMetadata();
         console.log('🎵 Lecteur Radio HTML5 avec Reprise Instantanée en Direct prêt!');
         console.log('🔊 Audio HTML5 activé');
         console.log('⚡ Pause → Play = Reprise instantanée en direct!');
+        console.log('📱 Notifications en arrière-plan activées pour Android TV Box');
     </script>
 </body>
 </html>
