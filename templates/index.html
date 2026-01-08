@@ -680,12 +680,17 @@
 
         <div class="player-card">
             <div class="station-selector">
-                <select id="stationSelect">
-                    <option value="">-- Choisissez une radio --</option>
+                <div class="radio-grid" id="radioGrid">
                     {% for station, url in stations %}
-                    <option value="{{ station }}|{{ url }}">{{ station }}</option>
+                    <div class="radio-card" data-station="{{ station }}" data-url="{{ url }}">
+                        <div class="radio-logo">
+                            <img src="" alt="{{ station }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="logo-placeholder">🎵</div>
+                        </div>
+                        <div class="radio-name">{{ station }}</div>
+                    </div>
                     {% endfor %}
-                </select>
+                </div>
             </div>
 
             <!-- Lecteur Audio HTML5 caché -->
@@ -789,7 +794,6 @@
         let serviceWorkerRegistration = null;
 
         // Éléments DOM
-        const stationSelect = document.getElementById('stationSelect');
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
@@ -810,7 +814,27 @@
         const progressBar = document.getElementById('progressBar');
 
         // Gestionnaires d'événements
-        stationSelect.addEventListener('change', onStationChange);
+        // Remplacer l'événement stationSelect par les clics sur les cartes
+        document.querySelectorAll('.radio-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Retirer la classe active de toutes les cartes
+                document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('active'));
+                // Ajouter la classe active à la carte cliquée
+                this.classList.add('active');
+                
+                // Mettre à jour la station actuelle
+                currentStation = this.dataset.station;
+                currentUrl = this.dataset.url;
+                
+                // Configurer le lecteur audio
+                audioPlayer.src = currentUrl;
+                audioPlayer.load();
+                
+                console.log('📻 Radio sélectionnée:', currentStation);
+                console.log('🔗 URL audio:', currentUrl);
+            });
+        });
+        
         playBtn.addEventListener('click', onPlay);
         pauseBtn.addEventListener('click', onPause);
         stopBtn.addEventListener('click', onStop);
@@ -821,7 +845,9 @@
         playPauseBtn.addEventListener('click', togglePlayPause);
         muteBtn.addEventListener('click', toggleMute);
 
-        // Événements audio
+        // Charger les logos des radios
+        loadRadioLogos();
+
         audioPlayer.addEventListener('play', () => {
             isPlaying = true;
             updateStatus('playing', `Lecture de ${currentStation}`);
@@ -1449,6 +1475,9 @@
                 img.src = coverUrl;
             }
         }
+        
+        // Charger les logos des radios
+        loadRadioLogos();
         
         // Écouter les messages du Service Worker (contrôle depuis les notifications)
         if ('serviceWorker' in navigator) {
