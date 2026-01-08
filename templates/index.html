@@ -1599,7 +1599,14 @@
                 
                 console.log(`🔍 Chargement logo pour: "${stationName}"`);
                 
-                // Essayer d'abord l'API
+                // Pour 100% Radio 80, utiliser directement le logo par défaut (comparaison flexible)
+                if (stationName && stationName.includes("100%") && stationName.includes("Radio") && stationName.includes("80")) {
+                    console.log(`📋 Logo direct pour "${stationName}":`, defaultLogos["100% Radio 80"]);
+                    img.src = defaultLogos["100% Radio 80"];
+                    return;
+                }
+                
+                // Pour les autres radios, essayer l'API
                 fetch(`/api/metadata?station=${encodeURIComponent(stationName)}`)
                     .then(response => {
                         console.log(`📡 Réponse API pour "${stationName}":`, response.status);
