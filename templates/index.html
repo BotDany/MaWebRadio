@@ -1479,20 +1479,51 @@
         function loadRadioLogos() {
             const radioCards = document.querySelectorAll('.radio-card');
             
+            // Logos par défaut connus
+            const defaultLogos = {
+                "100% Radio 80": "https://www.centpourcent.com/img/logo-100radio80.png",
+                "Bide Et Musique": "https://www.bide-et-musique.com/wp-content/uploads/2021/05/logo-bm-2021.png",
+                "Chansons Oubliées Où Presque": "https://www.radio.net/images/broadcasts/4b/6b/14164/1/c300.png",
+                "Flash 80 Radio": "https://www.flash80.com/images/logo/2024/logo-flash80-2024.png",
+                "Génération Dorothée": "https://generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png",
+                "RFM": "https://images.rfm.pt/logo-rfm-1200x1200.png",
+                "RTL": "https://www.rtl.fr/favicon-192x192.png",
+                "Superloustic": "https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
+            };
+            
             radioCards.forEach(card => {
                 const stationName = card.dataset.station;
                 const img = card.querySelector('.radio-logo img');
                 
-                // URL de l'API pour récupérer les métadonnées (incluant les logos)
+                console.log(`🔍 Chargement logo pour: "${stationName}"`);
+                
+                // Essayer d'abord l'API
                 fetch(`/api/metadata?station=${encodeURIComponent(stationName)}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log(`📡 Réponse API pour "${stationName}":`, response.status);
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log(`📊 Données reçues pour "${stationName}":`, data);
                         if (data.cover_url && data.cover_url !== '') {
+                            console.log(`✅ Pochette trouvée pour "${stationName}":`, data.cover_url);
                             img.src = data.cover_url;
+                        } else {
+                            console.log(`❌ Pas de pochette pour "${stationName}", essai logo par défaut`);
+                            // Fallback vers le logo par défaut
+                            if (defaultLogos[stationName]) {
+                                console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
+                                img.src = defaultLogos[stationName];
+                            }
                         }
                     })
                     .catch(error => {
-                        console.log(`Erreur logo pour ${stationName}:`, error);
+                        console.log(`❌ Erreur API pour "${stationName}", essai logo par défaut:`, error);
+                        // Fallback vers le logo par défaut
+                        if (defaultLogos[stationName]) {
+                            console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
+                            img.src = defaultLogos[stationName];
+                        }
                     });
             });
         }
