@@ -99,18 +99,26 @@ def save_radios(radios):
         # Vider la table
         cursor.execute("DELETE FROM radios")
         
-        # Insérer les nouvelles radios
+        # Insérer les nouvelles radios avec gestion des conflits
         for name, url in radios:
-            cursor.execute("INSERT INTO radios (name, url) VALUES (%s, %s)", (name, url))
+            cursor.execute("""
+                INSERT INTO radios (name, url) 
+                VALUES (%s, %s) 
+                ON CONFLICT (name) DO UPDATE SET 
+                    url = EXCLUDED.url,
+                    created_at = CURRENT_TIMESTAMP
+            """, (name, url))
         
         conn.commit()
         cursor.close()
         conn.close()
         
         print(f"✅ {len(radios)} radios sauvegardées dans PostgreSQL")
+        return True
         
     except Exception as e:
         print(f"❌ Erreur sauvegarde radios PostgreSQL: {e}")
+        return False
 
 def init_database():
     """Initialiser la base de données et créer la table si nécessaire"""
