@@ -1708,15 +1708,42 @@
                                                     const iTunesCover = artworkUrl100.replace('100x100', '600x600');
                                                     console.log(`✅ Pochette iTunes trouvée: ${iTunesCover}`);
                                                     
+                                                    // Debug avant affectation
+                                                    console.log(`🖼️ img.src avant:`, img.src);
+                                                    console.log(`🖼️ img.style.display avant:`, img.style.display);
+                                                    console.log(`🖼️ img.style.visibility avant:`, img.style.visibility);
+                                                    console.log(`🖼️ img.offsetWidth avant:`, img.offsetWidth);
+                                                    console.log(`🖼️ img.offsetHeight avant:`, img.offsetHeight);
+                                                    
                                                     img.onload = function() {
                                                         console.log(`✅ Pochette iTunes mise à jour avec succès pour "${stationName}"`);
+                                                        console.log(`🖼️ img.onload - img.src:`, this.src);
+                                                        console.log(`🖼️ img.onload - img.style.display:`, this.style.display);
+                                                        console.log(`🖼️ img.onload - img.offsetWidth:`, this.offsetWidth);
+                                                        console.log(`🖼️ img.onload - img.offsetHeight:`, this.offsetHeight);
+                                                        console.log(`🖼️ img.onload - naturalWidth:`, this.naturalWidth);
+                                                        console.log(`🖼️ img.onload - naturalHeight:`, this.naturalHeight);
                                                     };
                                                     img.onerror = function() {
                                                         console.log(`❌ Erreur pochette iTunes, utilisation logo par défaut`);
+                                                        console.log(`🔗 URL qui a échoué:`, this.src);
                                                         img.src = defaultLogos["100% Radio 80"];
                                                     };
                                                     
+                                                    // Forcer l'affichage
+                                                    img.style.display = 'block';
+                                                    img.style.visibility = 'visible';
+                                                    
+                                                    console.log(`🖼️ Affectation img.src:`, iTunesCover);
                                                     img.src = iTunesCover;
+                                                    
+                                                    // Debug après affectation
+                                                    setTimeout(() => {
+                                                        console.log(`🖼️ img.src après:`, img.src);
+                                                        console.log(`🖼️ img.style.display après:`, img.style.display);
+                                                        console.log(`🖼️ img.offsetWidth après:`, img.offsetWidth);
+                                                        console.log(`🖼️ img.offsetHeight après:`, img.offsetHeight);
+                                                    }, 100);
                                                 } else {
                                                     console.log(`❌ Pas de artworkUrl100, utilisation logo par défaut`);
                                                     img.src = defaultLogos["100% Radio 80"];
