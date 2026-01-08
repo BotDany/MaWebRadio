@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "final_app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "final_app.py",
+      "dest": "api"
+    },
+    {
+      "src": "static",
+      "dest": "static"
+    },
+    {
+      "src": "templates",
+      "dest": "templates"
+    }
+  ],
+  "env": {
+    "PYTHON_VERSION": "3.11"
+  }
+}
