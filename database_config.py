@@ -3,14 +3,37 @@ import psycopg
 import os
 from psycopg.rows import dict_row
 
-# Configuration de la base de données - Configuration Railway
-DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'postgres.railway.internal'),
-    'dbname': os.environ.get('DB_NAME', 'railway'),
-    'user': os.environ.get('DB_USER', 'postgres'),
-    'password': os.environ.get('DB_PASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
-    'port': os.environ.get('DB_PORT', '5432')
-}
+# Configuration de la base de données - Utiliser DATABASE_URL de Railway
+def get_db_config():
+    """Récupérer la configuration depuis DATABASE_URL ou variables séparées"""
+    database_url = os.environ.get('DATABASE_URL')
+    
+    if database_url:
+        # Parser DATABASE_URL de Railway
+        # Format: postgresql://username:password@host:port/database
+        import re
+        match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', database_url)
+        if match:
+            print(f"🔌 Utilisation DATABASE_URL: {match.group(3)}:{match.group(4)}")
+            return {
+                'host': match.group(3),
+                'dbname': match.group(5),
+                'user': match.group(1),
+                'password': match.group(2),
+                'port': match.group(4)
+            }
+    
+    # Fallback sur les variables séparées (configuration actuelle Railway)
+    print(f"🔌 Utilisation variables séparées: {os.environ.get('DB_HOST')}:{os.environ.get('DB_PORT')}")
+    return {
+        'host': os.environ.get('DB_HOST', 'trolley.proxy.rlwy.net'),
+        'dbname': os.environ.get('DB_NAME', 'railway'),
+        'user': os.environ.get('DB_USER', 'postgres'),
+        'password': os.environ.get('DB_PASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
+        'port': os.environ.get('DB_PORT', '27920')
+    }
+
+DB_CONFIG = get_db_config()
 
 def get_db_connection():
     """Établir une connexion à la base de données PostgreSQL"""
