@@ -3,18 +3,19 @@ import psycopg
 import os
 from psycopg.rows import dict_row
 
-# Configuration de la base de données - Utiliser DATABASE_URL de Railway
+# Configuration de la base de données - Utiliser les vraies variables Railway
 def get_db_config():
-    """Récupérer la configuration depuis DATABASE_URL ou variables séparées"""
+    """Récupérer la configuration depuis les variables Railway"""
+    # Utiliser DATABASE_URL déjà résolu par Railway
     database_url = os.environ.get('DATABASE_URL')
     
-    if database_url:
+    if database_url and not '${' in database_url:
         # Parser DATABASE_URL de Railway
         # Format: postgresql://username:password@host:port/database
         import re
         match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', database_url)
         if match:
-            print(f"🔌 Utilisation DATABASE_URL: {match.group(3)}:{match.group(4)}")
+            print(f"🔌 Utilisation DATABASE_URL résolu: {match.group(3)}:{match.group(4)}")
             return {
                 'host': match.group(3),
                 'dbname': match.group(5),
@@ -23,14 +24,31 @@ def get_db_config():
                 'port': match.group(4)
             }
     
-    # Fallback sur les variables séparées (configuration actuelle Railway)
-    print(f"🔌 Utilisation variables séparées: {os.environ.get('DB_HOST')}:{os.environ.get('DB_PORT')}")
+    # Utiliser les variables individuelles Railway
+    pguser = os.environ.get('PGUSER')
+    pgpassword = os.environ.get('PGPASSWORD')
+    pghost = os.environ.get('PGHOST')
+    pgport = os.environ.get('PGPORT')
+    pgdatabase = os.environ.get('PGDATABASE')
+    
+    if pguser and pgpassword and pghost and pgdatabase:
+        print(f"🔌 Utilisation variables Railway: {pghost}:{pgport}")
+        return {
+            'host': pghost,
+            'dbname': pgdatabase,
+            'user': pguser,
+            'password': pgpassword,
+            'port': pgport or '5432'
+        }
+    
+    # Fallback ultime
+    print("🔌 Utilisation configuration fallback")
     return {
-        'host': os.environ.get('DB_HOST', 'trolley.proxy.rlwy.net'),
-        'dbname': os.environ.get('DB_NAME', 'railway'),
-        'user': os.environ.get('DB_USER', 'postgres'),
-        'password': os.environ.get('DB_PASSWORD', 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe'),
-        'port': os.environ.get('DB_PORT', '27920')
+        'host': 'localhost',
+        'dbname': 'railway',
+        'user': 'postgres',
+        'password': 'password',
+        'port': '5432'
     }
 
 DB_CONFIG = get_db_config()
