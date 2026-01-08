@@ -265,6 +265,77 @@
             margin: 10px 0;
         }
 
+        .custom-controls {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .progress-container {
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #667eea);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .play-btn.playing {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .mute-btn {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
         .info-box {
             background: rgba(255,255,255,0.1);
             padding: 20px;
@@ -573,11 +644,22 @@
                 </select>
             </div>
 
-            <!-- Lecteur Audio HTML5 -->
-            <div class="audio-player">
-                <audio id="audioPlayer" controls style="width: 100%; margin: 20px 0;">
-                    Votre navigateur ne supporte pas l'élément audio.
-                </audio>
+            <!-- Lecteur Audio HTML5 caché -->
+            <audio id="audioPlayer" style="display: none;">
+                Votre navigateur ne supporte pas l'élément audio.
+            </audio>
+
+            <!-- Contrôles personnalisés -->
+            <div class="custom-controls">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="progressBar"></div>
+                    </div>
+                </div>
+                <div class="control-buttons">
+                    <button id="playPauseBtn" class="control-btn play-btn">▶️</button>
+                    <button id="muteBtn" class="control-btn mute-btn">🔊</button>
+                </div>
             </div>
 
             <div class="controls">
@@ -599,10 +681,6 @@
                     <div id="title" class="title">Titre: --</div>
                     <div id="station" class="station">Station: --</div>
                 </div>
-            </div>
-
-            <div class="url-display">
-                <strong>URL du flux:</strong> <span id="urlDisplay">Aucune radio sélectionnée</span>
             </div>
         </div>
 
@@ -682,11 +760,15 @@
         const title = document.getElementById('title');
         const station = document.getElementById('station');
         const albumCover = document.getElementById('albumCover');
-        const urlDisplay = document.getElementById('urlDisplay');
         const historyModal = document.getElementById('historyModal');
         const historyContent = document.getElementById('historyContent');
         const closeBtn = document.getElementsByClassName('close')[0];
         const audioPlayer = document.getElementById('audioPlayer');
+        
+        // Contrôles personnalisés
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const progressBar = document.getElementById('progressBar');
 
         // Gestionnaires d'événements
         stationSelect.addEventListener('change', onStationChange);
@@ -695,11 +777,17 @@
         stopBtn.addEventListener('click', onStop);
         historyBtn.addEventListener('click', showHistory);
         closeBtn.addEventListener('click', () => historyModal.style.display = 'none');
+        
+        // Contrôles personnalisés
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        muteBtn.addEventListener('click', toggleMute);
 
         // Événements audio
         audioPlayer.addEventListener('play', () => {
             isPlaying = true;
             updateStatus('playing', `Lecture de ${currentStation}`);
+            playPauseBtn.textContent = '⏸️';
+            playPauseBtn.classList.add('playing');
             console.log('🔊 Audio HTML5 démarré');
             
             // Mettre à jour le Media Session pour iPhone
@@ -711,6 +799,8 @@
         audioPlayer.addEventListener('pause', () => {
             isPlaying = false;
             updateStatus('paused', 'Pause');
+            playPauseBtn.textContent = '▶️';
+            playPauseBtn.classList.remove('playing');
             console.log('🔇 Audio HTML5 en pause');
             
             // Mettre à jour le Media Session pour iPhone
@@ -734,6 +824,23 @@
             }
         });
 
+        audioPlayer.addEventListener('timeupdate', () => {
+            // Mettre à jour la barre de progression (simulée pour les flux radio)
+            if (isPlaying) {
+                progressBar.style.width = '100%';
+            } else {
+                progressBar.style.width = '0%';
+            }
+        });
+
+        audioPlayer.addEventListener('volumechange', () => {
+            if (audioPlayer.muted) {
+                muteBtn.textContent = '🔇';
+            } else {
+                muteBtn.textContent = '🔊';
+            }
+        });
+
         window.addEventListener('click', (event) => {
             if (event.target == historyModal) {
                 historyModal.style.display = 'none';
@@ -744,7 +851,6 @@
             const value = stationSelect.value;
             if (value) {
                 [currentStation, currentUrl] = value.split('|');
-                urlDisplay.textContent = currentUrl;
                 
                 // Configurer le lecteur audio
                 audioPlayer.src = currentUrl;
@@ -755,9 +861,9 @@
             } else {
                 currentStation = null;
                 currentUrl = null;
-                urlDisplay.textContent = 'Aucune radio sélectionnée';
                 audioPlayer.src = '';
                 audioPlayer.load();
+                progressBar.style.width = '0%';
             }
         }
 
@@ -820,7 +926,7 @@
             title.textContent = 'Titre: --';
             station.textContent = 'Station: --';
             albumCover.innerHTML = '<div class="placeholder">🎵</div>';
-            urlDisplay.textContent = 'Aucune radio sélectionnée';
+            progressBar.style.width = '0%';
             
             // Masquer la notification en arrière-plan
             hideBackgroundNotification();
@@ -837,6 +943,24 @@
             }
             
             console.log('⏹️ Stop');
+        }
+
+        // Fonctions pour les contrôles personnalisés
+        function togglePlayPause() {
+            if (!currentStation) {
+                alert('Veuillez sélectionner une radio d\'abord!');
+                return;
+            }
+
+            if (isPlaying) {
+                onPause();
+            } else {
+                onPlay();
+            }
+        }
+
+        function toggleMute() {
+            audioPlayer.muted = !audioPlayer.muted;
         }
 
         async function updateMetadata() {
