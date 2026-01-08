@@ -162,17 +162,21 @@ def add_radio():
     """Ajouter une nouvelle radio"""
     name = request.form.get('name')
     url = request.form.get('url')
+    logo = request.form.get('logo')
     
     if name and url:
         radios = load_radios()
-        radios.append([name, url])
+        if logo:
+            radios.append([name, url, logo])
+        else:
+            radios.append([name, url])
         
         if save_radios(radios):
             flash(f'Radio "{name}" ajoutée avec succès!', 'success')
         else:
             flash(f'Erreur lors de l\'ajout de la radio "{name}"', 'error')
     else:
-        flash('Veuillez remplir tous les champs', 'error')
+        flash('Veuillez remplir tous les champs obligatoires', 'error')
     
     return redirect(url_for('admin'))
 
@@ -188,13 +192,22 @@ def edit_radio(radio_name):
         radios = load_radios()
         
         # Trouver la radio à modifier
-        for i, (name, url) in enumerate(radios):
-            if name == radio_name:
+        for i, radio_data in enumerate(radios):
+            if radio_data[0] == radio_name:
                 new_name = request.form.get('name')
                 new_url = request.form.get('url')
+                new_logo = request.form.get('logo')
                 
                 if new_name and new_url:
-                    radios[i] = [new_name, new_url]
+                    # Mettre à jour avec le logo si fourni
+                    if new_logo:
+                        radios[i] = [new_name, new_url, new_logo]
+                    else:
+                        # Garder le logo existant si pas de nouveau logo
+                        if len(radio_data) > 2:
+                            radios[i] = [new_name, new_url, radio_data[2]]
+                        else:
+                            radios[i] = [new_name, new_url]
                     
                     if save_radios(radios):
                         flash(f'Radio "{name}" modifiée en "{new_name}" avec succès!', 'success')
