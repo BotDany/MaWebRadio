@@ -1454,19 +1454,16 @@
             adminPanel.style.display = 'none';
         }
 
-        function loadRadiosForAdmin() {
-            // Charger les radios depuis la grille de radios
-            const radioCards = document.querySelectorAll('.radio-card');
-            const radios = [];
-            
-            radioCards.forEach(card => {
-                const station = card.dataset.station;
-                const url = card.dataset.url;
-                radios.push({ station, url });
-            });
-            
-            displayRadioList(radios);
-            document.getElementById('radioCount').textContent = radios.length;
+        async function loadRadiosForAdmin() {
+            // Charger les radios depuis le backend
+            try {
+                const response = await fetch('/admin');
+                const radios = await response.json();
+                displayRadioList(radios);
+            } catch (error) {
+                console.error('Erreur lors du chargement des radios:', error);
+                showFlashMessage('❌ Erreur lors du chargement des radios', 'error');
+            }
         }
 
         function displayRadioList(radios) {

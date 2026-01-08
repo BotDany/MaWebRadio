@@ -155,7 +155,28 @@ def get_history(count=10):
 def admin():
     """Page d'administration des radios"""
     radios = load_radios()
-    return render_template('admin.html', stations=radios)
+    # Convertir les radios au format {station, url, logo}
+    formatted_radios = []
+    for radio in radios:
+        if len(radio) >= 3:
+            formatted_radios.append({
+                'station': radio[0],
+                'url': radio[1], 
+                'logo': radio[2]
+            })
+        elif len(radio) == 2:
+            formatted_radios.append({
+                'station': radio[0],
+                'url': radio[1], 
+                'logo': ''
+            })
+        else:
+            formatted_radios.append({
+                'station': radio[0],
+                'url': radio[1], 
+                'logo': ''
+            })
+    return jsonify(formatted_radios)
 
 @app.route('/admin/add', methods=['POST'])
 def add_radio():
