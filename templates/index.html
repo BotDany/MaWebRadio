@@ -1531,19 +1531,25 @@
             const newUrl = prompt('Nouvelle URL de la radio:', stationUrl);
             if (newUrl === null) return;
             
+            const newLogo = prompt('Nouvelle URL du logo (laisser vide pour ne pas changer):', '');
+            if (newLogo === null) return;
+            
             if (!newName.trim() || !newUrl.trim()) {
                 alert('Le nom et l\'URL sont obligatoires');
                 return;
             }
             
-            updateRadio(stationName, newName.trim(), newUrl.trim());
+            updateRadio(stationName, newName.trim(), newUrl.trim(), newLogo.trim());
         }
 
-        async function updateRadio(oldName, newName, newUrl) {
+        async function updateRadio(oldName, newName, newUrl, newLogo) {
             try {
                 const formData = new FormData();
                 formData.append('name', newName);
                 formData.append('url', newUrl);
+                if (newLogo) {
+                    formData.append('logo', newLogo);
+                }
                 
                 const response = await fetch(`/admin/edit/${encodeURIComponent(oldName)}`, {
                     method: 'POST',
