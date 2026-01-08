@@ -126,10 +126,8 @@ def get_history(count=10):
     """Récupérer l'historique des musiques passées"""
     if radio_state.current_station and radio_state.current_url:
         try:
-            # Importer le fetcher pour utiliser la méthode get_history
-            from radio_metadata_fetcher_fixed_clean import RadioFetcher
-            fetcher = RadioFetcher()
-            history = fetcher.get_history(radio_state.current_station, radio_state.current_url, count)
+            # Utiliser le fetcher global
+            history = radio_state.fetcher.get_history(radio_state.current_station, radio_state.current_url, count)
             
             if history:
                 return jsonify({
@@ -178,7 +176,6 @@ def add_radio():
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/edit/<path:radio_name>', methods=['POST'])
 @app.route('/admin/edit/<radio_name>', methods=['POST'])
 def edit_radio(radio_name):
     """Modifier une radio existante"""
@@ -212,7 +209,6 @@ def edit_radio(radio_name):
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/delete/<path:radio_name>', methods=['POST'])
 @app.route('/admin/delete/<radio_name>', methods=['POST'])
 def delete_radio(radio_name):
     """Supprimer une radio"""
@@ -240,7 +236,6 @@ def delete_radio(radio_name):
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/test/<path:radio_name>')
 @app.route('/admin/test/<radio_name>')
 def test_radio(radio_name):
     """Tester une radio et récupérer les métadonnées"""
@@ -255,12 +250,8 @@ def test_radio(radio_name):
         # Trouver l'URL de la radio
         for name, url in radios:
             if name == radio_name:
-                # Importer le fetcher de métadonnées
-                from radio_metadata_fetcher_fixed_clean import RadioFetcher
-                
-                # Créer une instance et récupérer les métadonnées
-                fetcher = RadioFetcher()
-                metadata = fetcher.get_metadata(name, url)
+                # Utiliser le fetcher global
+                metadata = radio_state.fetcher.get_metadata(name, url)
                 
                 if metadata and metadata.title and metadata.artist:
                     return jsonify({
