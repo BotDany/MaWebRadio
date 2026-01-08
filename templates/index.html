@@ -1158,6 +1158,8 @@
                     
                     // Afficher la pochette d'album
                     if (data.cover_url && data.cover_url !== '') {
+                        console.log(`🖼️ Pochette disponible: ${data.cover_url}`);
+                        
                         // Pour 100% Radio 80, essayer iTunes si l'URL centpourcent ne fonctionne pas
                         if (data.station && data.station.includes("100%") && data.cover_url.includes('centpourcent.com')) {
                             console.log(`🎵 100% Radio 80 détectée, essai iTunes pour album-cover...`);
@@ -1180,6 +1182,7 @@
                                                 console.log(`✅ Pochette iTunes trouvée pour album-cover: ${iTunesCover}`);
                                                 
                                                 albumCover.innerHTML = `<img src="${iTunesCover}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
+                                                console.log(`🖼️ Album-cover mis à jour avec: ${iTunesCover}`);
                                                 // Mettre à jour la pochette de la radio actuelle dans la grille
                                                 updateCurrentRadioCover(iTunesCover);
                                             } else {
@@ -1201,11 +1204,14 @@
                             }
                         } else {
                             // Pour les autres radios, utilisation normale
+                            console.log(`🎵 Autre radio détectée, utilisation pochette: ${data.cover_url}`);
                             albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
+                            console.log(`🖼️ Album-cover mis à jour avec: ${data.cover_url}`);
                             // Mettre à jour la pochette de la radio actuelle dans la grille
                             updateCurrentRadioCover(data.cover_url);
                         }
                     } else {
+                        console.log(`❌ Pas de pochette disponible, utilisation placeholder`);
                         albumCover.innerHTML = '<div class="placeholder">🎵</div>';
                     }
                     
