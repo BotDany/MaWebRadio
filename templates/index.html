@@ -1186,8 +1186,8 @@
                                                 
                                                 albumCover.innerHTML = `<img src="${iTunesCover}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
                                                 console.log(`🖼️ Album-cover mis à jour avec: ${iTunesCover}`);
-                                                // Mettre à jour la pochette de la radio actuelle dans la grille
-                                                updateCurrentRadioCover(iTunesCover);
+                                                // Mettre à jour la pochette de la radio actuelle dans la grille (garder le logo officiel)
+                                                // updateCurrentRadioCover(iTunesCover); // Commenté pour garder le logo officiel dans la grille
                                             } else {
                                                 console.log(`❌ Pas de artworkUrl100, utilisation placeholder`);
                                                 albumCover.innerHTML = '<div class="placeholder">🎵</div>';
