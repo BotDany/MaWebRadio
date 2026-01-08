@@ -2,22 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "final_app.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "final_app.py",
-      "dest": "api"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
-      "src": "static",
-      "dest": "static"
+      "src": "static/(.*)",
+      "dest": "/static/$1"
     },
     {
-      "src": "templates",
-      "dest": "templates"
+      "src": "templates/(.*)",
+      "dest": "/templates/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ],
   "env": {
