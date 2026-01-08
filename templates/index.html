@@ -886,26 +886,6 @@
             }
         });
 
-        function onStationChange() {
-            const value = stationSelect.value;
-            if (value) {
-                [currentStation, currentUrl] = value.split('|');
-                
-                // Configurer le lecteur audio
-                audioPlayer.src = currentUrl;
-                audioPlayer.load(); // Précharger mais ne pas jouer
-                
-                console.log('📻 Radio sélectionnée:', currentStation);
-                console.log('🔗 URL audio:', currentUrl);
-            } else {
-                currentStation = null;
-                currentUrl = null;
-                audioPlayer.src = '';
-                audioPlayer.load();
-                progressBar.style.width = '0%';
-            }
-        }
-
         async function onPlay() {
             if (!currentStation) {
                 alert('Veuillez sélectionner une radio d\'abord!');
@@ -1018,6 +998,8 @@
                     // Afficher la pochette d'album
                     if (data.cover_url && data.cover_url !== '') {
                         albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
+                        // Mettre à jour la pochette de la radio actuelle dans la grille
+                        updateCurrentRadioCover(data.cover_url);
                     } else {
                         albumCover.innerHTML = '<div class="placeholder">🎵</div>';
                     }
@@ -1248,15 +1230,15 @@
         }
 
         function loadRadiosForAdmin() {
-            // Charger les radios depuis le select principal
-            const stationSelect = document.getElementById('stationSelect');
+            // Charger les radios depuis la grille de radios
+            const radioCards = document.querySelectorAll('.radio-card');
             const radios = [];
             
-            for (let i = 1; i < stationSelect.options.length; i++) {
-                const option = stationSelect.options[i];
-                const [station, url] = option.value.split('|');
+            radioCards.forEach(card => {
+                const station = card.dataset.station;
+                const url = card.dataset.url;
                 radios.push({ station, url });
-            }
+            });
             
             displayRadioList(radios);
             document.getElementById('radioCount').textContent = radios.length;
@@ -1436,6 +1418,37 @@
         
         // Initialiser les notifications en arrière-plan pour Android TV Box
         initBackgroundNotifications();
+        
+        // Fonction pour charger les logos des radios
+        function loadRadioLogos() {
+            const radioCards = document.querySelectorAll('.radio-card');
+            
+            radioCards.forEach(card => {
+                const stationName = card.dataset.station;
+                const img = card.querySelector('.radio-logo img');
+                
+                // URL de l'API pour récupérer les métadonnées (incluant les logos)
+                fetch(`/api/metadata?station=${encodeURIComponent(stationName)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.cover_url && data.cover_url !== '') {
+                            img.src = data.cover_url;
+                        }
+                    })
+                    .catch(error => {
+                        console.log(`Erreur logo pour ${stationName}:`, error);
+                    });
+            });
+        }
+        
+        // Fonction pour mettre à jour la pochette de la radio actuelle
+        function updateCurrentRadioCover(coverUrl) {
+            const activeCard = document.querySelector('.radio-card.active');
+            if (activeCard && coverUrl) {
+                const img = activeCard.querySelector('.radio-logo img');
+                img.src = coverUrl;
+            }
+        }
         
         // Écouter les messages du Service Worker (contrôle depuis les notifications)
         if ('serviceWorker' in navigator) {
