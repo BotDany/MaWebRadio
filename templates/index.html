@@ -1683,9 +1683,9 @@
                 if (stationName && stationName.includes("100%")) {
                     console.log(`🎵 Radio "${stationName}" active, test si pochette accessible...`);
                     
-                    img.onerror = function() {
-                        console.log(`❌ Erreur pochette centpourcent, essai iTunes...`);
-                        console.log(`🔗 URL qui a échoué:`, this.src);
+                    // Vérifier si c'est une URL centpourcent
+                    if (coverUrl && coverUrl.includes('centpourcent.com')) {
+                        console.log(`🔗 URL centpourcent détectée, essai iTunes directement...`);
                         
                         // Récupérer les métadonnées actuelles pour utiliser iTunes
                         fetch(`/api/metadata?station=${encodeURIComponent(stationName)}`)
@@ -1739,6 +1739,13 @@
                                 console.log(`❌ Erreur métadonnées: ${error}, utilisation logo par défaut`);
                                 img.src = defaultLogos["100% Radio 80"];
                             });
+                        
+                        return; // Ne pas continuer avec le comportement normal
+                    }
+                    
+                    img.onerror = function() {
+                        console.log(`❌ Erreur pochette pour "${stationName}", URL:`, this.src);
+                        // Pour les autres erreurs, ne rien faire
                     };
                 }
                 
