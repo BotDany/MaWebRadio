@@ -610,13 +610,27 @@ class RadioFetcher:
         """Récupère la pochette d'album via iTunes API"""
         try:
             import urllib.parse
+            
+            # Essayer d'abord avec la requête combinée
             query = urllib.parse.quote_plus(f"{artist} {title}")
             url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"
             response = self.session.get(url, timeout=3)
+            
             if response.status_code == 200:
                 data = response.json()
                 if data.get('results'):
                     return data['results'][0].get('artworkUrl100', '').replace('100x100', '600x600')
+            
+            # Si la requête combinée échoue, essayer avec l'artiste seul
+            query_artist = urllib.parse.quote_plus(artist)
+            url_artist = f"https://itunes.apple.com/search?term={query_artist}&entity=song&limit=1"
+            response = self.session.get(url_artist, timeout=3)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('results'):
+                    return data['results'][0].get('artworkUrl100', '').replace('100x100', '600x600')
+                    
         except Exception:
             pass
         return ""
