@@ -255,6 +255,106 @@
             color: white;
         }
 
+        /* Grille de radios améliorée */
+        .radio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+            padding: 10px;
+        }
+
+        .radio-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .radio-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .radio-card:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .radio-card:hover::before {
+            opacity: 1;
+        }
+
+        .radio-card.active {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.4) 0%, rgba(76, 175, 80, 0.2) 100%);
+            border-color: #4CAF50;
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .radio-card.active::after {
+            content: '🔴';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 12px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .radio-logo {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 15px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .radio-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .radio-card:hover .radio-logo img {
+            transform: scale(1.1);
+        }
+
+        .radio-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            line-height: 1.3;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin-top: 5px;
+        }
+
         .url-display {
             background: rgba(0,0,0,0.3);
             padding: 15px;
@@ -709,8 +809,7 @@
                     {% for station, url in stations %}
                     <div class="radio-card" data-station="{{ station }}" data-url="{{ url }}">
                         <div class="radio-logo">
-                            <img src="" alt="{{ station }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="logo-placeholder">🎵</div>
+                            <img src="" alt="{{ station }}" onerror="this.style.display='none';">
                         </div>
                         <div class="radio-name">{{ station }}</div>
                     </div>
@@ -846,7 +945,7 @@
         // Gestionnaires d'événements
         // Remplacer l'événement stationSelect par les clics sur les cartes
         document.querySelectorAll('.radio-card').forEach(card => {
-            card.addEventListener('click', function() {
+            card.addEventListener('click', async function() {
                 // Retirer la classe active de toutes les cartes
                 document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('active'));
                 // Ajouter la classe active à la carte cliquée
@@ -862,6 +961,9 @@
                 
                 console.log('📻 Radio sélectionnée:', currentStation);
                 console.log('🔗 URL audio:', currentUrl);
+                
+                // Lancer automatiquement la lecture
+                await onPlay();
             });
         });
         
