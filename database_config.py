@@ -3,18 +3,18 @@ import psycopg
 import os
 from psycopg.rows import dict_row
 
-# Configuration de la base de données - Méthode officielle Railway
+# Configuration de la base de données - Utilisation directe des identifiants
 def get_db_config():
-    """Récupérer la configuration depuis DATABASE_URL (méthode Railway)"""
+    """Récupérer la configuration PostgreSQL"""
+    # Essayer DATABASE_URL d'abord (méthode Railway)
     database_url = os.environ.get('DATABASE_URL')
     
     if database_url and not '${' in database_url:
         # Parser DATABASE_URL de Railway
-        # Format: postgresql://username:password@host:port/database
         import re
         match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', database_url)
         if match:
-            print(f"🔌 DATABASE_URL trouvé: {match.group(3)}:{match.group(4)}")
+            print(f"🔌 DATABASE_URL: {match.group(3)}:{match.group(4)}")
             return {
                 'host': match.group(3),
                 'dbname': match.group(5),
@@ -23,32 +23,14 @@ def get_db_config():
                 'port': match.group(4)
             }
     
-    # Si DATABASE_URL n'est pas disponible, essayer les variables individuelles
-    print("⚠️ DATABASE_URL non trouvé, essai des variables individuelles...")
-    pguser = os.environ.get('PGUSER')
-    pgpassword = os.environ.get('PGPASSWORD')
-    pghost = os.environ.get('PGHOST')
-    pgport = os.environ.get('PGPORT')
-    pgdatabase = os.environ.get('PGDATABASE')
-    
-    if pguser and pgpassword and pghost and pgdatabase:
-        print(f"🔌 Variables individuelles: {pghost}:{pgport}")
-        return {
-            'host': pghost,
-            'dbname': pgdatabase,
-            'user': pguser,
-            'password': pgpassword,
-            'port': pgport or '5432'
-        }
-    
-    # Fallback si rien ne fonctionne
-    print("❌ Aucune configuration PostgreSQL trouvée, utilisation fallback")
+    # Utiliser les identifiants fournis
+    print("🔌 Utilisation identifiants PostgreSQL directs")
     return {
-        'host': 'localhost',
-        'dbname': 'railway',
+        'host': os.environ.get('PGHOST', 'trolley.proxy.rlwy.net'),
+        'dbname': os.environ.get('PGDATABASE', 'railway'),
         'user': 'postgres',
-        'password': 'password',
-        'port': '5432'
+        'password': 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe',
+        'port': os.environ.get('PGPORT', '27920')
     }
 
 DB_CONFIG = get_db_config()
