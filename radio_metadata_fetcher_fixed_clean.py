@@ -68,7 +68,7 @@ RADIO_LOGOS = {
     "Flash 80 Radio": "https://www.flash80.com/images/logo/2024/logo-flash80-2024.png",
     "Génération Dorothée": "https://generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png",
     "Générikds": "https://www.radioking.com/api/v2/radio/play/logo/1b8d4f5f-9e5f-4f3d-8e5f-1b8d4f5f9e5f/300/300",
-    "Made In 80": "https://i.ibb.co/4pD4X0x/madein80.png",
+    "Made In 80": "https://www.madein80.com/wp-content/uploads/2021/05/logo-madein80-2021.png",
     "Mega Hits": "https://megahits.sapo.pt/wp-content/uploads/2020/06/logo-megahits.png",
     "Nostalgie-Les 80 Plus Grand Tubes": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
     "Nostalgie-Les Tubes 80 N1": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
@@ -77,9 +77,9 @@ RADIO_LOGOS = {
     "RFM Portugal": "https://images.rfm.pt/logo-rfm-1200x1200.png",
     "Rádio São Miguel": "https://www.radiosaomiguel.pt/images/logo-radiosaomiguel.png",
     "RTL": "https://www.rtl.fr/favicon-192x192.png",
-    "Superloustic": "https://i.ibb.co/4pD4X0x/superloustic.png",
-    "Supernana": "https://i.ibb.co/4pD4X0x/supernana.png",
-    "Top 80 Radio": "https://i.ibb.co/4pD4X0x/top80radio.png"
+    "Superloustic": "https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png",
+    "Supernana": "https://www.generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png",
+    "Top 80 Radio": "https://www.top80radio.com/wp-content/uploads/2021/08/logo-top80-2021.png"
 }
 
 
