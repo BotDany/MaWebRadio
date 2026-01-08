@@ -1583,7 +1583,7 @@
             
             // Logos par défaut connus
             const defaultLogos = {
-                "100% Radio 80": "https://www.centpourcent.com/img/logo-100radio80.png",
+                "100% Radio 80": "https://medias.lesindesradios.fr/t:app(web)/t:r(unknown)/fit-in/300x2000/filters:format(webp)/filters:quality(100)/radios/centpourcent/images/logo_GKtGotj0W8.png",
                 "Bide Et Musique": "https://www.bide-et-musique.com/wp-content/uploads/2021/05/logo-bm-2021.png",
                 "Chansons Oubliées Où Presque": "https://www.radio.net/images/broadcasts/4b/6b/14164/1/c300.png",
                 "Flash 80 Radio": "https://www.flash80.com/images/logo/2024/logo-flash80-2024.png",
@@ -1602,7 +1602,24 @@
                 // Pour 100% Radio 80, utiliser directement le logo par défaut (comparaison flexible)
                 if (stationName && stationName.includes("100%") && stationName.includes("Radio") && stationName.includes("80")) {
                     console.log(`📋 Logo direct pour "${stationName}":`, defaultLogos["100% Radio 80"]);
+                    console.log(`🖼️ Élément img:`, img);
+                    console.log(`🖼️ img.src avant:`, img.src);
+                    console.log(`🖼️ img.style.display avant:`, img.style.display);
+                    
                     img.src = defaultLogos["100% Radio 80"];
+                    
+                    console.log(`🖼️ img.src après:`, img.src);
+                    
+                    // Forcer l'affichage de l'image
+                    img.style.display = 'block';
+                    img.onload = function() {
+                        console.log(`✅ Image chargée avec succès pour "${stationName}"`);
+                    };
+                    img.onerror = function() {
+                        console.log(`❌ Erreur chargement image pour "${stationName}"`);
+                        console.log(`🔗 URL qui a échoué:`, this.src);
+                    };
+                    
                     return;
                 }
                 
