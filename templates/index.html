@@ -1456,12 +1456,16 @@
 
         async function loadRadiosForAdmin() {
             // Charger les radios depuis le backend
+            console.log('🔍 loadRadiosForAdmin: Début du chargement...');
             try {
                 const response = await fetch('/admin');
+                console.log('📡 loadRadiosForAdmin: Response status:', response.status);
                 const radios = await response.json();
+                console.log('📊 loadRadiosForAdmin: Radios reçues:', radios);
+                console.log('📊 loadRadiosForAdmin: Nombre de radios:', radios.length);
                 displayRadioList(radios);
             } catch (error) {
-                console.error('Erreur lors du chargement des radios:', error);
+                console.error('❌ loadRadiosForAdmin: Erreur lors du chargement des radios:', error);
                 showFlashMessage('❌ Erreur lors du chargement des radios', 'error');
             }
         }
@@ -1522,30 +1526,58 @@
         }
 
         function editAdminRadio(stationName, stationUrl, index) {
+            console.log('🔍 editAdminRadio: Début modification pour:', stationName);
+            
             const newName = prompt('Nouveau nom de la radio:', stationName);
-            if (newName === null) return;
+            if (newName === null) {
+                console.log('❌ editAdminRadio: Annulation par utilisateur');
+                return;
+            }
             
             const newUrl = prompt('Nouvelle URL de la radio:', stationUrl);
-            if (newUrl === null) return;
+            if (newUrl === null) {
+                console.log('❌ editAdminRadio: Annulation par utilisateur');
+                return;
+            }
             
             const newLogo = prompt('Nouvelle URL du logo (laisser vide pour ne pas changer):', '');
-            if (newLogo === null) return;
+            if (newLogo === null) {
+                console.log('❌ editAdminRadio: Annulation par utilisateur');
+                return;
+            }
+            
+            console.log('📝 editAdminRadio: Nouvelles valeurs:');
+            console.log('   - Nom:', newName);
+            console.log('   - URL:', newUrl);
+            console.log('   - Logo:', newLogo);
             
             if (!newName.trim() || !newUrl.trim()) {
+                console.log('❌ editAdminRadio: Champs obligatoires manquants');
                 alert('Le nom et l\'URL sont obligatoires');
                 return;
             }
             
+            console.log('🔄 editAdminRadio: Appel de updateRadio...');
             updateRadio(stationName, newName.trim(), newUrl.trim(), newLogo.trim());
         }
 
         async function updateRadio(oldName, newName, newUrl, newLogo) {
+            console.log('🔍 updateRadio: Début mise à jour');
+            console.log('📝 updateRadio: Ancien nom:', oldName);
+            console.log('📝 updateRadio: Nouveau nom:', newName);
+            console.log('📝 updateRadio: Nouvelle URL:', newUrl);
+            console.log('📝 updateRadio: Nouveau logo:', newLogo);
+            
             try {
+                console.log('📡 updateRadio: Envoi vers /admin/edit...');
                 const formData = new FormData();
                 formData.append('name', newName);
                 formData.append('url', newUrl);
                 if (newLogo) {
                     formData.append('logo', newLogo);
+                    console.log('📝 updateRadio: Logo ajouté au FormData');
+                } else {
+                    console.log('📝 updateRadio: Aucun logo à ajouter');
                 }
                 
                 const response = await fetch(`/admin/edit/${encodeURIComponent(oldName)}`, {
@@ -1553,15 +1585,22 @@
                     body: formData
                 });
                 
+                console.log('📡 updateRadio: Response status:', response.status);
+                console.log('📊 updateRadio: Response ok:', response.ok);
+                
                 if (response.ok) {
+                    console.log('✅ updateRadio: Radio modifiée avec succès');
                     showFlashMessage('✅ Radio modifiée avec succès', 'success');
                     setTimeout(() => {
+                        console.log('🔄 updateRadio: Rechargement de la page...');
                         location.reload(); // Recharger pour mettre à jour la liste
                     }, 1500);
                 } else {
+                    console.log('❌ updateRadio: Erreur lors de la modification');
                     showFlashMessage('❌ Erreur lors de la modification', 'error');
                 }
             } catch (error) {
+                console.error('❌ updateRadio: Erreur catch:', error);
                 showFlashMessage('❌ Erreur: ' + error.message, 'error');
             }
         }
@@ -1614,12 +1653,19 @@
             const url = document.getElementById('newRadioUrl').value.trim();
             const logo = document.getElementById('newRadioLogo').value.trim();
             
+            console.log('🔍 addRadioForm: Soumission du formulaire');
+            console.log('📝 addRadioForm: Nom:', name);
+            console.log('📝 addRadioForm: URL:', url);
+            console.log('📝 addRadioForm: Logo:', logo);
+            
             if (!name || !url) {
+                console.log('❌ addRadioForm: Champs obligatoires manquants');
                 showFlashMessage('❌ Le nom et l\'URL sont obligatoires', 'error');
                 return;
             }
             
             try {
+                console.log('📡 addRadioForm: Envoi vers /admin/add...');
                 const formData = new FormData();
                 formData.append('name', name);
                 formData.append('url', url);
@@ -1632,16 +1678,23 @@
                     body: formData
                 });
                 
+                console.log('📡 addRadioForm: Response status:', response.status);
+                console.log('📊 addRadioForm: Response ok:', response.ok);
+                
                 if (response.ok) {
+                    console.log('✅ addRadioForm: Radio ajoutée avec succès');
                     showFlashMessage('✅ Radio ajoutée avec succès', 'success');
                     document.getElementById('addRadioForm').reset();
                     setTimeout(() => {
+                        console.log('🔄 addRadioForm: Rechargement de la page...');
                         location.reload(); // Recharger pour mettre à jour la liste
                     }, 1500);
                 } else {
+                    console.log('❌ addRadioForm: Erreur lors de l\'ajout');
                     showFlashMessage('❌ Erreur lors de l\'ajout', 'error');
                 }
             } catch (error) {
+                console.error('❌ addRadioForm: Erreur catch:', error);
                 showFlashMessage('❌ Erreur: ' + error.message, 'error');
             }
         });
