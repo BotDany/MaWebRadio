@@ -1593,36 +1593,81 @@
                 "Superloustic": "https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
             };
             
+            // Fonction pour rechercher une pochette sur iTunes
+            function getiTunesCover(artist, title) {
+                // Créer une requête de recherche
+                const query = encodeURIComponent(`${artist} ${title}`);
+                const iTunesUrl = `https://itunes.apple.com/search?term=${query}&entity=song&limit=1`;
+                
+                console.log(`🔍 Recherche iTunes pour: ${artist} - ${title}`);
+                
+                // Recherche synchrone simplifiée
+                fetch(iTunesUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.results && data.results.length > 0) {
+                            const coverUrl = data.results[0].artworkUrl100?.replace('100x100', '600x600');
+                            console.log(`✅ Pochette iTunes trouvée: ${coverUrl}`);
+                            return coverUrl;
+                        }
+                    })
+                    .catch(error => {
+                        console.log(`❌ Erreur recherche iTunes: ${error}`);
+                    });
+                
+                return null;
+            }
+            
             radioCards.forEach(card => {
                 const stationName = card.dataset.station;
                 const img = card.querySelector('.radio-logo img');
                 
                 console.log(`🔍 Chargement logo pour: "${stationName}"`);
                 
-                // Pour 100% Radio 80, essayer d'abord l'API pour la pochette dynamique
+                // Pour 100% Radio 80, utiliser directement iTunes pour les pochettes
                 if (stationName && stationName.includes("100%") && stationName.includes("Radio") && stationName.includes("80")) {
-                    console.log(`🎵 100% Radio 80 détectée, essai pochette dynamique...`);
+                    console.log(`🎵 100% Radio 80 détectée, utilisation iTunes pour les pochettes...`);
                     
-                    // Essayer l'API pour la pochette dynamique
+                    // Essayer l'API pour obtenir les métadonnées (artiste/titre)
                     fetch(`/api/metadata?station=${encodeURIComponent(stationName)}`)
                         .then(response => {
-                            console.log(`� Réponse API pour "${stationName}":`, response.status);
+                            console.log(`📡 Réponse API pour "${stationName}":`, response.status);
                             return response.json();
                         })
                         .then(data => {
-                            console.log(`� Données reçues pour "${stationName}":`, data);
-                            if (data.cover_url && data.cover_url !== '') {
-                                console.log(`✅ Pochette dynamique trouvée pour "${stationName}":`, data.cover_url);
-                                img.src = data.cover_url;
-                                img.onload = function() {
-                                    console.log(`✅ Pochette dynamique chargée avec succès pour "${stationName}"`);
-                                };
-                                img.onerror = function() {
-                                    console.log(`❌ Erreur pochette dynamique, fallback logo par défaut`);
-                                    img.src = defaultLogos["100% Radio 80"];
-                                };
+                            console.log(`📊 Données reçues pour "${stationName}":`, data);
+                            if (data.artist && data.title) {
+                                console.log(`🎵 Recherche iTunes pour: ${data.artist} - ${data.title}`);
+                                
+                                // Rechercher la pochette sur iTunes
+                                const query = encodeURIComponent(`${data.artist} ${data.title}`);
+                                const iTunesUrl = `https://itunes.apple.com/search?term=${query}&entity=song&limit=1`;
+                                
+                                fetch(iTunesUrl)
+                                    .then(response => response.json())
+                                    .then(iTunesData => {
+                                        if (iTunesData.results && iTunesData.results.length > 0) {
+                                            const coverUrl = iTunesData.results[0].artworkUrl100?.replace('100x100', '600x600');
+                                            console.log(`✅ Pochette iTunes trouvée: ${coverUrl}`);
+                                            img.src = coverUrl;
+                                            img.onload = function() {
+                                                console.log(`✅ Pochette iTunes chargée avec succès`);
+                                            };
+                                            img.onerror = function() {
+                                                console.log(`❌ Erreur pochette iTunes, utilisation logo par défaut`);
+                                                img.src = defaultLogos["100% Radio 80"];
+                                            };
+                                        } else {
+                                            console.log(`❌ Pas de résultat iTunes, utilisation logo par défaut`);
+                                            img.src = defaultLogos["100% Radio 80"];
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.log(`❌ Erreur recherche iTunes: ${error}, utilisation logo par défaut`);
+                                        img.src = defaultLogos["100% Radio 80"];
+                                    });
                             } else {
-                                console.log(`❌ Pas de pochette dynamique, utilisation logo par défaut`);
+                                console.log(`❌ Pas de données artiste/titre, utilisation logo par défaut`);
                                 img.src = defaultLogos["100% Radio 80"];
                             }
                         })
