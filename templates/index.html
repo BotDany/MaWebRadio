@@ -336,6 +336,50 @@
             background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
         }
 
+        .custom-controls-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .control-buttons-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .control-buttons-bottom .control-btn {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .control-buttons-bottom .play-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .control-buttons-bottom .play-btn.playing {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .control-buttons-bottom .mute-btn {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        /* Espace en bas pour les contrôles fixes */
+        body {
+            padding-bottom: 80px;
+        }
+
         .info-box {
             background: rgba(255,255,255,0.1);
             padding: 20px;
@@ -649,19 +693,6 @@
                 Votre navigateur ne supporte pas l'élément audio.
             </audio>
 
-            <!-- Contrôles personnalisés -->
-            <div class="custom-controls">
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress" id="progressBar"></div>
-                    </div>
-                </div>
-                <div class="control-buttons">
-                    <button id="playPauseBtn" class="control-btn play-btn">▶️</button>
-                    <button id="muteBtn" class="control-btn mute-btn">🔊</button>
-                </div>
-            </div>
-
             <div class="controls">
                 <button id="playBtn" class="btn btn-play">▶️ Play</button>
                 <button id="pauseBtn" class="btn btn-pause">⏸️ Pause</button>
@@ -727,6 +758,14 @@
                     <!-- Les radios seront chargées dynamiquement -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Contrôles personnalisés en bas -->
+    <div class="custom-controls-bottom">
+        <div class="control-buttons-bottom">
+            <button id="playPauseBtn" class="control-btn play-btn">▶️</button>
+            <button id="muteBtn" class="control-btn mute-btn">🔊</button>
         </div>
     </div>
 
