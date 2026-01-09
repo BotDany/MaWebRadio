@@ -23,13 +23,13 @@ def get_db_config():
                 'port': int(match.group(4))
             }
     
-    # Utiliser les identifiants fournis (fallback Railway pour Vercel)
-    print("🔌 Utilisation identifiants Railway externes pour Vercel")
+    # Utiliser les identifiants fournis (fallback Vercel/Neon)
+    print("🔌 Utilisation identifiants Neon pour Vercel")
     return {
-        'host': os.environ.get('PGHOST', 'containers-us-west-1.railway.app'),
-        'dbname': os.environ.get('PGDATABASE', 'railway'),
-        'user': os.environ.get('PGUSER', 'postgres'),
-        'password': os.environ.get('PGPASSWORD', 'HzLaBbcjIevSAerVSgeissWLnCohoyPX'),
+        'host': os.environ.get('PGHOST', 'ep-nameless-cloud-ahkuz006-pooler.c-3.us-east-1.aws.neon.tech'),
+        'dbname': os.environ.get('PGDATABASE', 'neondb'),
+        'user': os.environ.get('PGUSER', 'neondb_owner'),
+        'password': os.environ.get('PGPASSWORD', 'npg_rOwco94kEyLS'),
         'port': int(os.environ.get('PGPORT', '5432'))
     }
 
