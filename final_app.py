@@ -150,6 +150,20 @@ def get_history(count=10):
             'message': 'Aucune radio sélectionnée'
         })
 
+@app.route('/admin/simple-test')
+def simple_test():
+    """Test simple pour vérifier si le backend fonctionne"""
+    try:
+        print("🔍 simple_test: Test simple du backend")
+        return jsonify({
+            'status': 'success',
+            'message': 'Backend fonctionne',
+            'timestamp': time.time()
+        })
+    except Exception as e:
+        print(f"❌ ERREUR simple_test: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/admin/reset-db', methods=['GET', 'POST'])
 def reset_database():
     """Forcer la réinitialisation de la base de données"""
