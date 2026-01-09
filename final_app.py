@@ -154,29 +154,44 @@ def get_history(count=10):
 @app.route('/admin')
 def admin():
     """Page d'administration des radios"""
-    radios = load_radios()
-    # Convertir les radios au format {station, url, logo}
-    formatted_radios = []
-    for radio in radios:
-        if len(radio) >= 3:
-            formatted_radios.append({
-                'station': radio[0],
-                'url': radio[1], 
-                'logo': radio[2]
-            })
-        elif len(radio) == 2:
-            formatted_radios.append({
-                'station': radio[0],
-                'url': radio[1], 
-                'logo': ''
-            })
-        else:
-            formatted_radios.append({
-                'station': radio[0],
-                'url': radio[1], 
-                'logo': ''
-            })
-    return jsonify(formatted_radios)
+    try:
+        print("🔍 API /admin: Début de la requête")
+        radios = load_radios()
+        print(f"📊 API /admin: {len(radios)} radios chargées")
+        
+        # Convertir les radios au format {station, url, logo}
+        formatted_radios = []
+        for radio in radios:
+            print(f"🔍 Traitement radio: {radio}")
+            if len(radio) >= 3:
+                formatted_radios.append({
+                    'station': radio[0],
+                    'url': radio[1], 
+                    'logo': radio[2]
+                })
+                print(f"✅ Radio avec logo: {radio[0]} -> {radio[2]}")
+            elif len(radio) == 2:
+                formatted_radios.append({
+                    'station': radio[0],
+                    'url': radio[1], 
+                    'logo': ''
+                })
+                print(f"✅ Radio sans logo: {radio[0]}")
+            else:
+                formatted_radios.append({
+                    'station': radio[0],
+                    'url': radio[1], 
+                    'logo': ''
+                })
+                print(f"⚠️ Radio format inattendu: {radio}")
+        
+        print(f"📋 API /admin: {len(formatted_radios)} radios formatées")
+        return jsonify(formatted_radios)
+    except Exception as e:
+        print(f"❌ ERREUR API /admin: {str(e)}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/admin/add', methods=['POST'])
 def add_radio():
