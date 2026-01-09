@@ -107,28 +107,31 @@ def get_default_radios():
     ]
 
 def save_radios(radios):
-    """Sauvegarder la liste des radios dans PostgreSQL"""
+    """Sauvegarder la liste des radios dans PostgreSQL - Version radicale"""
     try:
         print(f"🔍 save_radios: Début sauvegarde de {len(radios)} radios")
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Commencer une transaction
-        conn.autocommit = False  # Désactiver l'autocommit pour contrôler manuellement
-        
+        # Approche radicale : recréer complètement la table
         try:
-            # Vider la table
-            cursor.execute("DELETE FROM radios")
-            print(f"🗑️ save_radios: Table radios vidée")
+            # Supprimer la table existante
+            cursor.execute("DROP TABLE IF EXISTS radios")
+            print("🗑️ save_radios: Table radios supprimée")
             
-            # Essayer d'ajouter la colonne logo si elle n'existe pas
-            try:
-                cursor.execute("ALTER TABLE radios ADD COLUMN logo TEXT")
-                print("✅ save_radios: Colonne logo ajoutée")
-            except:
-                print("ℹ️ save_radios: Colonne logo existe déjà")
+            # Recréer la table avec la bonne structure
+            cursor.execute("""
+                CREATE TABLE radios (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) UNIQUE NOT NULL,
+                    url TEXT NOT NULL,
+                    logo TEXT DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            print("✅ save_radios: Table radios recréée")
             
-            # Insérer les nouvelles radios
+            # Insérer toutes les radios
             for i, radio in enumerate(radios):
                 print(f"🔍 save_radios: Traitement radio {i}: {radio}")
                 if len(radio) >= 3:
@@ -143,9 +146,9 @@ def save_radios(radios):
                     INSERT INTO radios (name, url, logo) 
                     VALUES (%s, %s, %s)
                 """, [name, url, logo])
-                print(f"✅ save_radios: Radio {name} insérée/mise à jour")
+                print(f"✅ save_radios: Radio {name} insérée")
             
-            # Commit de la transaction
+            # Commit
             conn.commit()
             print(f"💾 save_radios: Commit effectué")
             
