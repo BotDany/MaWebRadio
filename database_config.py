@@ -51,8 +51,16 @@ def load_radios():
         conn = psycopg.connect(**DB_CONFIG, connect_timeout=1)
         cursor = conn.cursor(row_factory=dict_row)
         
-        cursor.execute("SELECT name, url FROM radios ORDER BY name")
-        radios = cursor.fetchall()
+        # Essayer de charger avec logo, si erreur utiliser sans logo
+        try:
+            cursor.execute("SELECT name, url, logo FROM radios ORDER BY name")
+            radios = cursor.fetchall()
+        except:
+            # Si la colonne logo n'existe pas, utiliser la structure sans logo
+            cursor.execute("SELECT name, url FROM radios ORDER BY name")
+            radios = cursor.fetchall()
+            # Ajouter une colonne logo vide
+            radios = [{'name': radio['name'], 'url': radio['url'], 'logo': ''} for radio in radios]
         
         cursor.close()
         conn.close()
@@ -61,8 +69,8 @@ def load_radios():
             print("⚠️ Aucune radio dans PostgreSQL, utilisation des radios par défaut")
             return get_default_radios()
         
-        # Convertir en liste de tuples pour compatibilité
-        return [[radio['name'], radio['url']] for radio in radios]
+        # Convertir en liste de listes pour compatibilité
+        return [[radio['name'], radio['url'], radio.get('logo', '')] for radio in radios]
         
     except Exception as e:
         print(f"❌ Erreur chargement radios PostgreSQL: {e}")
@@ -99,15 +107,28 @@ def save_radios(radios):
         # Vider la table
         cursor.execute("DELETE FROM radios")
         
+        # Essayer d'ajouter la colonne logo si elle n'existe pas
+        try:
+            cursor.execute("ALTER TABLE radios ADD COLUMN logo TEXT")
+        except:
+            pass  # La colonne existe déjà
+        
         # Insérer les nouvelles radios avec gestion des conflits
-        for name, url in radios:
+        for radio in radios:
+            if len(radio) >= 3:
+                name, url, logo = radio[0], radio[1], radio[2]
+            else:
+                name, url = radio[0], radio[1]
+                logo = ''
+            
             cursor.execute("""
-                INSERT INTO radios (name, url) 
-                VALUES (%s, %s) 
+                INSERT INTO radios (name, url, logo) 
+                VALUES (%s, %s, %s) 
                 ON CONFLICT (name) DO UPDATE SET 
                     url = EXCLUDED.url,
+                    logo = EXCLUDED.logo,
                     created_at = CURRENT_TIMESTAMP
-            """, (name, url))
+            """, (name, url, logo))
         
         conn.commit()
         cursor.close()
