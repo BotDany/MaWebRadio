@@ -1335,15 +1335,15 @@ class RadioFetcher:
             return md
 
         # Spécial: Superloustic - utiliser le logo comme pochette (pas de métadonnées ICY)
-        if "superloustic" in station_name.lower():
-            md = RadioMetadata(
-                station=station_name,
-                title="Spéciale Bernard Denimal",
-                artist="La belle histoire des génériques TL",
-                cover_url=RADIO_LOGOS.get("Superloustic", "")
-            )
-            self.cache[cache_key] = (md, now)
-            return md
+        # if "superloustic" in station_name.lower():
+        #     md = RadioMetadata(
+        #         station=station_name,
+        #         title="Spéciale Bernard Denimal",
+        #         artist="La belle histoire des génériques TL",
+        #         cover_url=RADIO_LOGOS.get("Superloustic", "")
+        #     )
+        #     self.cache[cache_key] = (md, now)
+        #     return md
 
         if station_name.strip().lower() == "100% radio 80":
             md = _fetch_100radio_ws_metas(self.session, station_name)
