@@ -69,8 +69,17 @@ def load_radios():
             print("⚠️ Aucune radio dans PostgreSQL, utilisation des radios par défaut")
             return get_default_radios()
         
-        # Convertir en liste de listes pour compatibilité
-        return [[radio['name'], radio['url'], radio.get('logo', '')] for radio in radios]
+        # Convertir en liste de listes pour compatibilité (toujours 3 éléments)
+        result = []
+        for radio in radios:
+            if len(radio) >= 3:
+                result.append([radio['name'], radio['url'], radio.get('logo', '')])
+            elif len(radio) == 2:
+                result.append([radio['name'], radio['url'], ''])
+            else:
+                # Format inattendu, créer avec logo vide
+                result.append([str(radio), '', ''])
+        return result
         
     except Exception as e:
         print(f"❌ Erreur chargement radios PostgreSQL: {e}")
