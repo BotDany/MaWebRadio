@@ -150,7 +150,7 @@ def get_history(count=10):
             'message': 'Aucune radio sélectionnée'
         })
 
-@app.route('/admin/reset-db', methods=['POST'])
+@app.route('/admin/reset-db', methods=['GET', 'POST'])
 def reset_database():
     """Forcer la réinitialisation de la base de données"""
     try:
