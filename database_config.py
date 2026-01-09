@@ -23,13 +23,13 @@ def get_db_config():
                 'port': int(match.group(4))
             }
     
-    # Utiliser les identifiants fournis (fallback)
-    print("🔌 Utilisation identifiants PostgreSQL directs")
+    # Utiliser les identifiants fournis (fallback Railway)
+    print("🔌 Utilisation identifiants Railway directs")
     return {
-        'host': os.environ.get('PGHOST', 'localhost'),
-        'dbname': os.environ.get('PGDATABASE', 'postgres'),
+        'host': os.environ.get('PGHOST', 'trolley.proxy.rlwy.net'),
+        'dbname': os.environ.get('PGDATABASE', 'railway'),
         'user': os.environ.get('PGUSER', 'postgres'),
-        'password': os.environ.get('PGPASSWORD', ''),
+        'password': os.environ.get('PGPASSWORD', 'HzLaBbcjIevSAerVSgeissWLnCohoyPX'),
         'port': int(os.environ.get('PGPORT', '5432'))
     }
 
