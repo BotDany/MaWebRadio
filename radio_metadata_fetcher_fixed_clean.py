@@ -258,30 +258,24 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
         if artist_el is not None and artist_el.text:
             artist = _normalize_text(artist_el.text)
     
-    # Si pas de musique, extraire les infos de l'animateur
-    if not song or not artist:
+    # Priorité: musique d'abord, animateur ensuite
+    cover_url = ""
+    
+    # Si on a de la musique (DB_SONG_NAME), essayer de récupérer la pochette via iTunes
+    if song and artist:
+        # Essayer de récupérer une pochette d'album via iTunes
+        cover_url = _get_album_cover(artist, song)
+    
+    # Si pas de musique ou si pas de pochette trouvée, utiliser l'image de l'animateur
+    if not song or not artist or not cover_url:
         animador = root.find(".//AnimadorInfo")
         if animador is not None:
-            host_el = animador.find(".//TITLE")
-            show_el = animador.find(".//SHOW_NAME")
-            
-            if host_el is not None and host_el.text:
-                artist = _normalize_text(host_el.text)
-            if show_el is not None and show_el.text:
-                song = _normalize_text(show_el.text)
-            else:
-                song = "En direct"
-    
-    cover_url = ""
-    # Essayer de récupérer l'image de l'animateur
-    animador = root.find(".//AnimadorInfo")
-    if animador is not None:
-        img_el = animador.find(".//IMAGE")
-        if img_el is not None and img_el.text:
-            img = _normalize_text(img_el.text)
-            if img and not img.startswith("http"):
-                img = f"https://radiocomercial.pt{img}"
-            cover_url = img
+            img_el = animador.find(".//IMAGE")
+            if img_el is not None and img_el.text:
+                img = _normalize_text(img_el.text)
+                if img and not img.startswith("http"):
+                    img = f"https://radiocomercial.pt{img}"
+                cover_url = img
     
     if not artist:
         artist = "Radio Comercial"
