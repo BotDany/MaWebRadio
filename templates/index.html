@@ -1489,7 +1489,7 @@
                         <button class="btn btn-info btn-sm" onclick="testAdminRadio('${radio.station}', ${index})">
                             🧪 Tester
                         </button>
-                        <button class="btn btn-warning btn-sm" onclick="editAdminRadio('${radio.station}', '${radio.url}', ${index})">
+                        <button class="btn btn-warning btn-sm" onclick="editAdminRadio('${radio.station}', '${radio.url}', '${radio.logo || ''}', ${index})">
                             ✏️ Modifier
                         </button>
                         <button class="btn btn-danger btn-sm" onclick="deleteAdminRadio('${radio.station}', ${index})">
@@ -1525,8 +1525,9 @@
             }
         }
 
-        function editAdminRadio(stationName, stationUrl, index) {
+        function editAdminRadio(stationName, stationUrl, stationLogo, index) {
             console.log('🔍 editAdminRadio: Début modification pour:', stationName);
+            console.log('📝 editAdminRadio: Logo existant:', stationLogo);
             
             const newName = prompt('Nouveau nom de la radio:', stationName);
             if (newName === null) {
@@ -1540,7 +1541,7 @@
                 return;
             }
             
-            const newLogo = prompt('Nouvelle URL du logo (laisser vide pour ne pas changer):', '');
+            const newLogo = prompt('Nouvelle URL du logo (laisser vide pour ne pas changer):', stationLogo || '');
             if (newLogo === null) {
                 console.log('❌ editAdminRadio: Annulation par utilisateur');
                 return;
@@ -1775,36 +1776,10 @@
         
         // Fonction pour mettre à jour la pochette de la radio actuelle
         function updateCurrentRadioCover(coverUrl) {
-            const activeCard = document.querySelector('.radio-card.active');
-            if (activeCard && coverUrl) {
-                const img = activeCard.querySelector('.radio-logo img');
-                const stationName = activeCard.dataset.station;
-                
-                console.log(`🖼️ Mise à jour pochette pour "${stationName}":`, coverUrl);
-                
-                // Pour 100% Radio 80, garder toujours le logo officiel
-                if (stationName && stationName.includes("100%")) {
-                    console.log(`🎵 Radio "${stationName}" active, conservation du logo officiel`);
-                    
-                    // Garder le logo officiel et ne pas changer
-                    const officialLogo = defaultLogos["100% Radio 80"];
-                    img.src = officialLogo;
-                    console.log(`� Logo officiel conservé:`, officialLogo);
-                    
-                    return; // Ne pas continuer avec le comportement normal
-                }
-                
-                img.onerror = function() {
-                    console.log(`❌ Erreur pochette pour "${stationName}", URL:`, this.src);
-                    // Pour les autres erreurs, ne rien faire
-                };
-                
-                img.onload = function() {
-                    console.log(`✅ Pochette mise à jour avec succès pour "${stationName}"`);
-                };
-                
-                img.src = coverUrl;
-            }
+            // NE RIEN FAIRE - On ne veut pas de pochettes d'album dans la grille
+            // Seulement les logos officiels doivent s'afficher dans la grille
+            console.log(`🖼️ updateCurrentRadioCover: Ignoré - pas de pochette dans la grille (${coverUrl})`);
+            return;
         }
         
         // Charger les logos des radios
