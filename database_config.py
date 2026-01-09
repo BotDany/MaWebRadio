@@ -100,25 +100,31 @@ def get_default_radios():
 def save_radios(radios):
     """Sauvegarder la liste des radios dans PostgreSQL"""
     try:
+        print(f"🔍 save_radios: Début sauvegarde de {len(radios)} radios")
         conn = get_db_connection()
         cursor = conn.cursor()
         
         # Vider la table
         cursor.execute("DELETE FROM radios")
+        print(f"🗑️ save_radios: Table radios vidée")
         
         # Essayer d'ajouter la colonne logo si elle n'existe pas
         try:
             cursor.execute("ALTER TABLE radios ADD COLUMN logo TEXT")
+            print("✅ save_radios: Colonne logo ajoutée")
         except:
-            pass  # La colonne existe déjà
+            print("ℹ️ save_radios: Colonne logo existe déjà")
         
         # Insérer les nouvelles radios avec gestion des conflits
-        for radio in radios:
+        for i, radio in enumerate(radios):
+            print(f"🔍 save_radios: Traitement radio {i}: {radio}")
             if len(radio) >= 3:
                 name, url, logo = radio[0], radio[1], radio[2]
+                print(f"📝 save_radios: Radio avec logo: {name}, {url}, {logo}")
             else:
                 name, url = radio[0], radio[1]
                 logo = ''
+                print(f"📝 save_radios: Radio sans logo: {name}, {url}")
             
             cursor.execute("""
                 INSERT INTO radios (name, url, logo) 
@@ -128,8 +134,10 @@ def save_radios(radios):
                     logo = EXCLUDED.logo,
                     created_at = CURRENT_TIMESTAMP
             """, (name, url, logo))
+            print(f"✅ save_radios: Radio {name} insérée/mise à jour")
         
         conn.commit()
+        print(f"💾 save_radios: Commit effectué")
         cursor.close()
         conn.close()
         
@@ -138,6 +146,8 @@ def save_radios(radios):
         
     except Exception as e:
         print(f"❌ Erreur sauvegarde radios PostgreSQL: {e}")
+        import traceback
+        print(f"❌ Traceback save_radios: {traceback.format_exc()}")
         return False
 
 def init_database():
