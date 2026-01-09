@@ -183,7 +183,25 @@ def init_database():
             conn.commit()
             print(f"✅ {len(default_radios)} radios insérées automatiquement !")
         else:
-            print(f"✅ {count} radios déjà présentes dans la base")
+            print(f"✅ {count} radios déjà présentes, mise à jour avec la nouvelle liste...")
+            
+            # Vider la table et réinsérer avec la nouvelle liste
+            cursor.execute("DELETE FROM radios")
+            
+            # Utiliser la même liste que get_default_radios()
+            default_radios = get_default_radios()
+            
+            # Insérer toutes les radios avec logo vide par défaut
+            for radio in default_radios:
+                if len(radio) >= 3:
+                    name, url, logo = radio[0], radio[1], radio[2]
+                else:
+                    name, url = radio[0], radio[1]
+                    logo = ''
+                cursor.execute("INSERT INTO radios (name, url, logo) VALUES (%s, %s, %s)", (name, url, logo))
+            
+            conn.commit()
+            print(f"✅ {len(default_radios)} radios mises à jour avec la nouvelle liste !")
         
         conn.commit()
         cursor.close()
