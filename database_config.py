@@ -102,8 +102,8 @@ def get_default_radios():
         ["Top 80 Radio", "https://securestreams6.autopo.st:2321/", ""],
         ["Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream", ""],
         ["Générikds", "https://listen.radioking.com/radio/497599/stream/554719", ""],
-        ["Nostalgie-Les 80 Plus Grand Tubes", "https://stream.nostalgie.fr/nostalgie-les-80-plus-grand-tubes?id=radio", ""],
-        ["Nostalgie-Les Tubes 80 N1", "https://stream.nostalgie.fr/nostalgie-les-tubes-80-n1?id=radio", ""]
+        ["Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d?origine=radio.net&aw_0_1st.station=Nostalgie-Les-80-Plus-Grands-Tubes-80", ""],
+        ["Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk?origine=radio.net&aw_0_1st.station=Nostalgie-80-Les-Tubes-N-1", ""]
     ]
 
 def save_radios(radios):
