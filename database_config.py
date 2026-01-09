@@ -23,10 +23,10 @@ def get_db_config():
                 'port': int(match.group(4))
             }
     
-    # Utiliser les identifiants fournis (fallback Railway)
-    print("🔌 Utilisation identifiants Railway directs")
+    # Utiliser les identifiants fournis (fallback Railway pour Vercel)
+    print("🔌 Utilisation identifiants Railway externes pour Vercel")
     return {
-        'host': os.environ.get('PGHOST', 'trolley.proxy.rlwy.net'),
+        'host': os.environ.get('PGHOST', 'containers-us-west-1.railway.app'),
         'dbname': os.environ.get('PGDATABASE', 'railway'),
         'user': os.environ.get('PGUSER', 'postgres'),
         'password': os.environ.get('PGPASSWORD', 'HzLaBbcjIevSAerVSgeissWLnCohoyPX'),
