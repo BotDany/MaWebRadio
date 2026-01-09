@@ -235,52 +235,78 @@ def add_radio():
         flash('Veuillez remplir tous les champs obligatoires', 'error')
     
     return redirect(url_for('admin'))
-
-@app.route('/admin/edit/<radio_name>', methods=['POST'])
 def edit_radio(radio_name):
     """Modifier une radio existante"""
     try:
+        print(f"🔍 edit_radio: Début modification pour '{radio_name}'")
+        
         # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
         import urllib.parse
         radio_name = urllib.parse.unquote(radio_name)
+        print(f"🔍 edit_radio: Nom décodé: '{radio_name}'")
         
         # Charger les radios existantes
         radios = load_radios()
+        print(f"📊 edit_radio: {len(radios)} radios chargées depuis la base")
         
         # Trouver la radio à modifier
         for i, radio_data in enumerate(radios):
+            print(f"🔍 edit_radio: Vérification radio {i}: {radio_data}")
             if radio_data[0] == radio_name:
+                print(f"✅ edit_radio: Radio trouvée à l'index {i}: {radio_data}")
+                
                 new_name = request.form.get('name')
                 new_url = request.form.get('url')
                 new_logo = request.form.get('logo')
                 
+                print(f"📝 edit_radio: Données reçues:")
+                print(f"   - new_name: '{new_name}'")
+                print(f"   - new_url: '{new_url}'")
+                print(f"   - new_logo: '{new_logo}'")
+                
                 if new_name and new_url:
                     # Mettre à jour avec le logo si fourni
                     if new_logo:
+                        print(f"📝 edit_radio: Mise à jour avec logo: {new_name}, {new_url}, {new_logo}")
                         radios[i] = [new_name, new_url, new_logo]
                     else:
+                        print(f"📝 edit_radio: Mise à jour sans logo: {new_name}, {new_url}")
                         # Garder le logo existant si pas de nouveau logo
                         if len(radio_data) > 2:
                             radios[i] = [new_name, new_url, radio_data[2]]
+                            print(f"📝 edit_radio: Logo existant conservé: {radio_data[2]}")
                         else:
-                            radios[i] = [new_name, new_url]
+                            radios[i] = [new_name, new_url, '']
+                            print(f"📝 edit_radio: Aucun logo existant, création vide")
                     
+                    print(f"💾 edit_radio: Tentative de sauvegarde de {len(radios)} radios...")
                     if save_radios(radios):
-                        flash(f'Radio "{name}" modifiée en "{new_name}" avec succès!', 'success')
+                        print(f"✅ edit_radio: Sauvegarde réussie pour '{radio_name}'")
+                        flash(f'Radio "{radio_name}" modifiée en "{new_name}" avec succès!', 'success')
                     else:
-                        flash(f'Erreur lors de la modification de la radio "{name}"', 'error')
+                        print(f"❌ edit_radio: Erreur lors de la sauvegarde pour '{radio_name}'")
+                        flash(f'Erreur lors de la modification de la radio "{radio_name}"', 'error')
+                else:
+                    print(f"❌ edit_radio: Champs obligatoires manquants pour '{radio_name}'")
+                    flash('Le nom et l\'URL sont obligatoires', 'error')
                 break
         else:
+            print(f"❌ edit_radio: Radio '{radio_name}' non trouvée dans {len(radios)} radios")
+            for i, (name, url) in enumerate(radios):
+                print(f"   - Radio {i}: '{name}'")
             flash(f'Radio "{radio_name}" non trouvée', 'error')
             
     except Exception as e:
+        print(f"❌ ERREUR edit_radio: {str(e)}")
+        import traceback
+        print(f"❌ Traceback edit_radio: {traceback.format_exc()}")
         flash(f'Erreur lors de la modification: {str(e)}', 'error')
     
     return redirect(url_for('admin'))
 
 @app.route('/admin/delete/<radio_name>', methods=['POST'])
-def delete_radio(radio_name):
-    """Supprimer une radio"""
+def delete_admin_radio(radio_name):
+    """Supprimer une radio existante"""
     try:
         # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
         import urllib.parse
@@ -290,7 +316,7 @@ def delete_radio(radio_name):
         radios = load_radios()
         
         # Filtrer pour supprimer la radio
-        updated_radios = [(name, url) for name, url in radios if name != radio_name]
+        updated_radios = [radio for radio in radios if radio[0] != radio_name]
         
         if len(updated_radios) < len(radios):
             if save_radios(updated_radios):
