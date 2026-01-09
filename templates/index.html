@@ -1265,7 +1265,10 @@
                         } else {
                             // Pour les autres radios, utilisation normale
                             console.log(`🎵 Autre radio détectée, utilisation pochette: ${data.cover_url}`);
+                            console.log(`🔍 Élément albumCover trouvé:`, albumCover);
+                            console.log(`🔍 Contenu actuel albumCover:`, albumCover.innerHTML);
                             albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="if(this.parentElement) this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
+                            console.log(`🔍 Contenu après mise à jour:`, albumCover.innerHTML);
                             console.log(`🖼️ Album-cover mis à jour avec: ${data.cover_url}`);
                             // Mettre à jour la pochette de la radio actuelle dans la grille
                             updateCurrentRadioCover(data.cover_url);
