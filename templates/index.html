@@ -1460,44 +1460,55 @@
             try {
                 const response = await fetch('/admin');
                 console.log('📡 loadRadiosForAdmin: Response status:', response.status);
+                console.log('📡 loadRadiosForAdmin: Response headers:', response.headers);
+                
                 const radios = await response.json();
-                console.log('📊 loadRadiosForAdmin: Radios reçues:', radios);
+                console.log('📊 loadRadiosForAdmin: Radios reçues du backend:', radios);
+                console.log('📊 loadRadiosForAdmin: Type de radios:', typeof radios);
                 console.log('📊 loadRadiosForAdmin: Nombre de radios:', radios.length);
-                displayRadioList(radios);
+                
+                // Afficher chaque radio en détail
+                radios.forEach((radio, index) => {
+                    console.log(`🔍 loadRadiosForAdmin: Radio ${index}:`, radio);
+                    console.log(`   - station: "${radio.station}"`);
+                    console.log(`   - url: "${radio.url}"`);
+                    console.log(`   - logo: "${radio.logo}"`);
+                    console.log(`   - logo type: ${typeof radio.logo}`);
+                    console.log(`   - logo length: ${radio.logo ? radio.logo.length : 'null'}`);
+                });
+                
+                const radioList = document.getElementById('radioList');
+                
+                radioList.innerHTML = radios.map((radio, index) => `
+                    <div class="radio-item" id="adminRadio-${index}">
+                        <div class="radio-header">
+                            <div>
+                                <div class="radio-name">${radio.station}</div>
+                                <div class="radio-url">${radio.url}</div>
+                                ${radio.logo ? `<div class="radio-logo-url">🖼️ Logo: ${radio.logo}</div>` : ''}
+                            </div>
+                            <div class="radio-status status-warning" id="adminStatus-${index}">
+                                ❓ Non testé
+                            </div>
+                        </div>
+                        <div class="radio-actions">
+                            <button class="btn btn-info btn-sm" onclick="testAdminRadio('${radio.station}', ${index})">
+                                🧪 Tester
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="editAdminRadio('${radio.station}', '${radio.url}', '${radio.logo || ''}', ${index})">
+                                ✏️ Modifier
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteAdminRadio('${radio.station}', ${index})">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
             } catch (error) {
                 console.error('❌ loadRadiosForAdmin: Erreur lors du chargement des radios:', error);
+                console.error('❌ loadRadiosForAdmin: Détails de l\'erreur:', error.message);
                 showFlashMessage('❌ Erreur lors du chargement des radios', 'error');
             }
-        }
-
-        function displayRadioList(radios) {
-            const radioList = document.getElementById('radioList');
-            
-            radioList.innerHTML = radios.map((radio, index) => `
-                <div class="radio-item" id="adminRadio-${index}">
-                    <div class="radio-header">
-                        <div>
-                            <div class="radio-name">${radio.station}</div>
-                            <div class="radio-url">${radio.url}</div>
-                            ${radio.logo ? `<div class="radio-logo-url">🖼️ Logo: ${radio.logo}</div>` : ''}
-                        </div>
-                        <div class="radio-status status-warning" id="adminStatus-${index}">
-                            ❓ Non testé
-                        </div>
-                    </div>
-                    <div class="radio-actions">
-                        <button class="btn btn-info btn-sm" onclick="testAdminRadio('${radio.station}', ${index})">
-                            🧪 Tester
-                        </button>
-                        <button class="btn btn-warning btn-sm" onclick="editAdminRadio('${radio.station}', '${radio.url}', '${radio.logo || ''}', ${index})">
-                            ✏️ Modifier
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteAdminRadio('${radio.station}', ${index})">
-                            🗑️ Supprimer
-                        </button>
-                    </div>
-                </div>
-            `).join('');
         }
 
         async function testAdminRadio(stationName, index) {
