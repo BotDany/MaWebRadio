@@ -268,16 +268,24 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
     
     print(f"🔍 Song: '{song}', Artist: '{artist}'")  # Debug
     
-    # Si on a de la musique (DB_SONG_NAME), essayer de récupérer la pochette via iTunes
-    if song and artist:
-        print(f"🎵 Musique détectée, recherche pochette iTunes pour: {artist} - {song}")  # Debug
-        # Essayer de récupérer une pochette d'album via iTunes
-        cover_url = _get_album_cover(artist, song)
-        print(f"🖼️ Pochette iTunes trouvée: {cover_url}")  # Debug
-    
-    # Si pas de musique ou si pas de pochette trouvée, utiliser l'image de l'animateur
-    if not song or not artist or not cover_url:
-        print(f"🎙️ Pas de musique ou pas de pochette, utilisation image animateur")  # Debug
+    # Si on a de la musique (DB_SONG_NAME), utiliser la pochette d'album du XML
+    if song:
+        print(f"🎵 Musique détectée, utilisation pochette album XML")  # Debug
+        
+        # Extraire la pochette d'album depuis le XML
+        album_image_el = table.find(".//DB_ALBUM_IMAGE")
+        if album_image_el is not None and album_image_el.text:
+            album_image = _normalize_text(album_image_el.text)
+            if album_image:
+                cover_url = f"https://radiocomercial.pt/wp-content/uploads/2025/02/{album_image}"
+                print(f"🖼️ Pochette album XML trouvée: {cover_url}")  # Debug
+        else:
+            print(f"🔍 Pas de pochette album dans XML")  # Debug
+            # Fallback: essayer iTunes
+            cover_url = _get_album_cover(artist or "", song)
+            print(f"🖼️ Pochette iTunes trouvée: {cover_url}")  # Debug
+    else:
+        print(f"🎙️ Pas de musique, utilisation image animateur")  # Debug
         animador = root.find(".//AnimadorInfo")
         if animador is not None:
             img_el = animador.find(".//IMAGE")
