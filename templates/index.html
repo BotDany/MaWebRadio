@@ -1714,17 +1714,22 @@
             try {
                 console.log('🔍 loadRadioLogos: Chargement des radios depuis le backend...');
                 const response = await fetch('/admin');
+                console.log('📡 loadRadioLogos: Response status:', response.status);
                 const radios = await response.json();
                 console.log('📊 loadRadioLogos: Radios reçues du backend:', radios);
                 
                 // Créer un objet avec les logos du backend
                 const backendLogos = {};
                 radios.forEach(radio => {
+                    console.log(`🔍 loadRadioLogos: Radio "${radio.station}" - Logo: "${radio.logo}"`);
                     if (radio.logo) {
                         backendLogos[radio.station] = radio.logo;
+                        console.log(`✅ loadRadioLogos: Logo backend ajouté pour "${radio.station}":`, radio.logo);
+                    } else {
+                        console.log(`❌ loadRadioLogos: Pas de logo backend pour "${radio.station}"`);
                     }
                 });
-                console.log('📋 loadRadioLogos: Logos du backend:', backendLogos);
+                console.log('📋 loadRadioLogos: Logos du backend finaux:', backendLogos);
                 
                 // Logos par défaut connus (fallback)
                 const defaultLogos = {
@@ -1757,14 +1762,19 @@
                     
                     // Priorité: logo backend > logo par défaut
                     if (backendLogos[stationName]) {
-                        console.log(`� Logo backend pour "${stationName}":`, backendLogos[stationName]);
+                        console.log(`📋 Logo backend pour "${stationName}":`, backendLogos[stationName]);
                         img.src = backendLogos[stationName];
+                        console.log(`✅ Logo backend appliqué pour "${stationName}"`);
                     } else if (defaultLogos[stationName]) {
                         console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
                         img.src = defaultLogos[stationName];
+                        console.log(`✅ Logo par défaut appliqué pour "${stationName}"`);
                     } else {
                         console.log(`❌ Pas de logo pour "${stationName}"`);
                     }
+                    
+                    // Vérifier ce qui est réellement appliqué
+                    console.log(`🎯 Logo final pour "${stationName}":`, img.src);
                 });
             } catch (error) {
                 console.error('❌ loadRadioLogos: Erreur lors du chargement des logos:', error);
