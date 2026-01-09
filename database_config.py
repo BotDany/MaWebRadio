@@ -142,7 +142,7 @@ def save_radios(radios):
                 cursor.execute("""
                     INSERT INTO radios (name, url, logo) 
                     VALUES (%s, %s, %s)
-                """, (name, url, logo))
+                """, [name, url, logo])
                 print(f"✅ save_radios: Radio {name} insérée/mise à jour")
             
             # Commit de la transaction
