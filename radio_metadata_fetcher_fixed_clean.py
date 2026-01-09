@@ -228,7 +228,7 @@ def _parse_centpourcent_metas_payload(text: str) -> Optional[Tuple[str, str, str
     return None
 
 
-def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, str]]:
+def _parse_radiocomercial_radioinfo_xml(text: str, fetcher_instance=None) -> Optional[Tuple[str, str, str]]:
     s = _normalize_text(text)
     if not s:
         return None
@@ -268,22 +268,39 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
     
     print(f"🔍 Song: '{song}', Artist: '{artist}'")  # Debug
     
-    # Si on a de la musique (DB_SONG_NAME), utiliser la pochette d'album du XML
+    # Si on a de la musique (DB_SONG_NAME), utiliser la pochette iTunes en priorité
     if song:
-        print(f"🎵 Musique détectée, utilisation pochette album XML")  # Debug
+        print(f"🎵 Musique détectée, recherche pochette iTunes en priorité")  # Debug
         
-        # Extraire la pochette d'album depuis le XML
-        album_image_el = table.find(".//DB_ALBUM_IMAGE")
-        if album_image_el is not None and album_image_el.text:
-            album_image = _normalize_text(album_image_el.text)
-            if album_image:
-                cover_url = f"https://radiocomercial.pt/wp-content/uploads/2025/02/{album_image}"
-                print(f"🖼️ Pochette album XML trouvée: {cover_url}")  # Debug
+        # Toujours essayer iTunes en premier pour Radio Comercial
+        if fetcher_instance:
+            cover_url = fetcher_instance._get_album_cover(artist or "", song)
         else:
-            print(f"🔍 Pas de pochette album dans XML")  # Debug
-            # Fallback: essayer iTunes
-            cover_url = _get_album_cover(artist or "", song)
-            print(f"🖼️ Pochette iTunes trouvée: {cover_url}")  # Debug
+            cover_url = ""
+        print(f"🖼️ Pochette iTunes trouvée: {cover_url}")  # Debug
+        
+        # Si iTunes échoue, utiliser la pochette album du XML
+        if not cover_url:
+            print(f"🔍 iTunes échoué, essai pochette album XML")  # Debug
+            album_image_el = table.find(".//DB_ALBUM_IMAGE")
+            if album_image_el is not None and album_image_el.text:
+                album_image = _normalize_text(album_image_el.text)
+                if album_image:
+                    cover_url = f"https://radiocomercial.pt/wp-content/uploads/2025/02/{album_image}"
+                    print(f"🖼️ Pochette album XML trouvée: {cover_url}")  # Debug
+        
+        # Si toujours pas de pochette, utiliser image animateur
+        if not cover_url:
+            print(f"🎙️ Pas de pochette, utilisation image animateur")  # Debug
+            animador = root.find(".//AnimadorInfo")
+            if animador is not None:
+                img_el = animador.find(".//IMAGE")
+                if img_el is not None and img_el.text:
+                    img = _normalize_text(img_el.text)
+                    if img and not img.startswith("http"):
+                        img = f"https://radiocomercial.pt{img}"
+                    cover_url = img
+                    print(f"🖼️ Image animateur utilisée: {cover_url}")  # Debug
     else:
         print(f"🎙️ Pas de musique, utilisation image animateur")  # Debug
         animador = root.find(".//AnimadorInfo")
@@ -1018,7 +1035,7 @@ class RadioFetcher:
                         title = _normalize_text(t)
                     else:
                         # Certains flux renvoient un XML complet dans StreamTitle (ex: Radio Comercial)
-                        parsed_xml = _parse_radiocomercial_radioinfo_xml(stream_title)
+                        parsed_xml = _parse_radiocomercial_radioinfo_xml(stream_title, self)
                         if parsed_xml:
                             title, artist, cover_url2 = parsed_xml
                             if cover_url2:
