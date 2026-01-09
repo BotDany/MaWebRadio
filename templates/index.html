@@ -1707,71 +1707,68 @@
         initBackgroundNotifications();
         
         // Fonction pour charger les logos des radios
-        function loadRadioLogos() {
+        async function loadRadioLogos() {
             const radioCards = document.querySelectorAll('.radio-card');
             
-            // Logos par défaut connus
-            const defaultLogos = {
-                "100% Radio 80": "https://medias.lesindesradios.fr/t:app(web)/t:r(98lIT4zPKC)/fit-in/300x2000/filters:format(webp)/radios/centpourcent/radiostream/sz9KS9uVGI/vignette_eePvE5Vu1o.png",
-                "Bide Et Musique": "https://www.bide-et-musique.com/images/logo.png",
-                "Chansons Oubliées Où Presque": "https://static.wixstatic.com/media/d6936f_f558dd3a9c0c4807a1cdf71a0e329e54~mv2.png/v1/fill/w_497,h_497,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Capture%20d'%C3%A9cran%202024-04-16%20212006.png",
-                "Flash 80 Radio": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
-                "Génération Dorothée": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
-                "RFM": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
-                "RTL": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
-                "Superloustic": "https://www.liveradio.ie/files/images/361213/resized/180x172c/logosl.jpg",
-                "Chante France-80s": "https://www.chante.fr/src/assets/logo-dovendi.png",
-                "Générikds": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
-                "Mega Hits": "https://megasite-images.azureedge.net/images/webradios/logo-megahits-w-xl.svg",
-                "Nostalgie-Les 80 Plus Grand Tubes": "https://players.nrjaudio.fm/live-metadata/player/img/player-files/nosta/logos/173x173/NOSTA_WR_BEST-OF-80.jpg",
-                "Nostalgie-Les Tubes 80 N1": "https://players.nrjaudio.fm/live-metadata/player/img/player-files/nosta/logos/173x173/NOSTA_WR_MINI-MIX.jpg",
-                "Radio Comercial": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPakNfQWw2DLir11Y47PSQUw2qGJj_OSuxmw&s",
-                "Top 80 Radio": "https://www.top80radio.com/wp-content/uploads/2023/09/Logo-carre-transparent-1000.png"
-            };
-            
-            // Fonction pour rechercher une pochette sur iTunes
-            function getiTunesCover(artist, title) {
-                // Créer une requête de recherche
-                const query = encodeURIComponent(`${artist} ${title}`);
-                const iTunesUrl = `https://itunes.apple.com/search?term=${query}&entity=song&limit=1`;
+            // Charger les radios depuis le backend pour avoir les logos personnalisés
+            try {
+                console.log('🔍 loadRadioLogos: Chargement des radios depuis le backend...');
+                const response = await fetch('/admin');
+                const radios = await response.json();
+                console.log('📊 loadRadioLogos: Radios reçues du backend:', radios);
                 
-                console.log(`🔍 Recherche iTunes pour: ${artist} - ${title}`);
+                // Créer un objet avec les logos du backend
+                const backendLogos = {};
+                radios.forEach(radio => {
+                    if (radio.logo) {
+                        backendLogos[radio.station] = radio.logo;
+                    }
+                });
+                console.log('📋 loadRadioLogos: Logos du backend:', backendLogos);
                 
-                // Recherche synchrone simplifiée
-                fetch(iTunesUrl)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.results && data.results.length > 0) {
-                            const coverUrl = data.results[0].artworkUrl100?.replace('100x100', '600x600');
-                            console.log(`✅ Pochette iTunes trouvée: ${coverUrl}`);
-                            return coverUrl;
-                        }
-                    })
-                    .catch(error => {
-                        console.log(`❌ Erreur recherche iTunes: ${error}`);
-                    });
+                // Logos par défaut connus (fallback)
+                const defaultLogos = {
+                    "100% Radio 80": "https://medias.lesindesradios.fr/t:app(web)/t:r(98lIT4zPKC)/fit-in/300x2000/filters:format(webp)/radios/centpourcent/radiostream/sz9KS9uVGI/vignette_eePvE5Vu1o.png",
+                    "Bide Et Musique": "https://www.bide-et-musique.com/images/logo.png",
+                    "Chansons Oubliées Où Presque": "https://static.wixstatic.com/media/d6936f_f558dd3a9c0c4807a1cdf71a0e329e54~mv2.png/v1/fill/w_497,h_497,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Capture%20d'%C3%A9cran%202024-04-16%20212006.png",
+                    "Flash 80 Radio": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
+                    "Génération Dorothée": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
+                    "RFM": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
+                    "RTL": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
+                    "Superloustic": "https://www.liveradio.ie/files/images/361213/resized/180x172c/logosl.jpg",
+                    "Chante France-80s": "https://www.chante.fr/src/assets/logo-dovendi.png",
+                    "Générikds": "https://cdn-icons-png.flaticon.com/512/2965/2965274.png",
+                    "Mega Hits": "https://megasite-images.azureedge.net/images/webradios/logo-megahits-w-xl.svg",
+                    "Nostalgie-Les 80 Plus Grand Tubes": "https://players.nrjaudio.fm/live-metadata/player/img/player-files/nosta/logos/173x173/NOSTA_WR_BEST-OF-80.jpg",
+                    "Nostalgie-Les Tubes 80 N1": "https://players.nrjaudio.fm/live-metadata/player/img/player-files/nosta/logos/173x173/NOSTA_WR_MINI-MIX.jpg",
+                    "Radio Comercial": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPakNfQWw2DLir11Y47PSQUw2qGJj_OSuxmw&s",
+                    "Top 80 Radio": "https://www.top80radio.com/wp-content/uploads/2023/09/Logo-carre-transparent-1000.png"
+                };
                 
-                return null;
+                radioCards.forEach(card => {
+                    const stationName = card.dataset.station;
+                    const img = card.querySelector('.radio-logo img');
+                    
+                    console.log(`🔍 Chargement logo pour: "${stationName}"`);
+                    
+                    // Forcer l'affichage de l'image pour toutes les radios
+                    img.style.display = 'block';
+                    img.style.visibility = 'visible';
+                    
+                    // Priorité: logo backend > logo par défaut
+                    if (backendLogos[stationName]) {
+                        console.log(`� Logo backend pour "${stationName}":`, backendLogos[stationName]);
+                        img.src = backendLogos[stationName];
+                    } else if (defaultLogos[stationName]) {
+                        console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
+                        img.src = defaultLogos[stationName];
+                    } else {
+                        console.log(`❌ Pas de logo pour "${stationName}"`);
+                    }
+                });
+            } catch (error) {
+                console.error('❌ loadRadioLogos: Erreur lors du chargement des logos:', error);
             }
-            
-            radioCards.forEach(card => {
-                const stationName = card.dataset.station;
-                const img = card.querySelector('.radio-logo img');
-                
-                console.log(`🔍 Chargement logo pour: "${stationName}"`);
-                
-                // Forcer l'affichage de l'image pour toutes les radios
-                img.style.display = 'block';
-                img.style.visibility = 'visible';
-                
-                // Utiliser le logo par défaut pour toutes les radios au chargement
-                if (defaultLogos[stationName]) {
-                    console.log(`📋 Logo par défaut pour "${stationName}":`, defaultLogos[stationName]);
-                    img.src = defaultLogos[stationName];
-                } else {
-                    console.log(`❌ Pas de logo par défaut pour "${stationName}"`);
-                }
-            });
         }
         
         // Fonction pour mettre à jour la pochette de la radio actuelle
