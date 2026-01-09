@@ -166,30 +166,19 @@ def init_database():
         count = cursor.fetchone()[0]
         
         if count == 0:
-            print("📻 Table vide, insertion automatique des 15 radios...")
+            print("📻 Table vide, insertion automatique des radios par défaut...")
             
-            # Liste complète des radios par défaut
-            default_radios = [
-                ("RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128"),
-                ("Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3"),
-                ("100% Radio 80", "http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3"),
-                ("RFM 80-90", "http://rfm-live-mp3-128.scdn.arkena.com/rfm.mp3"),
-                ("RTL2 80s", "http://streaming.radio.rtl2.fr/rtl2-1-44-128"),
-                ("Virgin Radio 80s", "https://ais-live.cloud-services.asso.fr/virginradio.mp3"),
-                ("Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3"),
-                ("Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream"),
-                ("Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC"),
-                ("Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3"),
-                ("Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC"),
-                ("Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"),
-                ("Top 80 Radio", "https://securestreams6.autopo.st:2321/"),
-                ("Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"),
-                ("Générikds", "https://listen.radioking.com/radio/497599/stream/554719")
-            ]
+            # Utiliser la même liste que get_default_radios()
+            default_radios = get_default_radios()
             
-            # Insérer toutes les radios
-            for name, url in default_radios:
-                cursor.execute("INSERT INTO radios (name, url) VALUES (%s, %s)", (name, url))
+            # Insérer toutes les radios avec logo vide par défaut
+            for radio in default_radios:
+                if len(radio) >= 3:
+                    name, url, logo = radio[0], radio[1], radio[2]
+                else:
+                    name, url = radio[0], radio[1]
+                    logo = ''
+                cursor.execute("INSERT INTO radios (name, url, logo) VALUES (%s, %s, %s)", (name, url, logo))
             
             conn.commit()
             print(f"✅ {len(default_radios)} radios insérées automatiquement !")
