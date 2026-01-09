@@ -248,21 +248,17 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
     artist = ""
     
     if table is not None:
-        # Debug: afficher tous les tags disponibles
-        for elem in table:
-            print(f"🔍 Tag trouvé: {elem.tag} = {elem.text}")
-        
         song_el = table.find(".//DB_SONG_NAME") or table.find(".//DB_DALET_TITLE_NAME")  # Ajout DB_DALET_TITLE_NAME
         title_el = table.find(".//DB_DALET_TITLE_NAME")
         artist_el = table.find(".//DB_DALET_ARTIST_NAME")
         
-        print(f"🔍 song_el: {song_el}, title_el: {title_el}, artist_el: {artist_el}")  # Debug
-        
         # Priorité: DB_SONG_NAME > DB_DALET_TITLE_NAME
         if song_el is not None and song_el.text:
             song = _normalize_text(song_el.text)
+            print(f"✅ DB_SONG_NAME trouvé: {song}")  # Debug
         elif title_el is not None and title_el.text:
             song = _normalize_text(title_el.text)
+            print(f"✅ DB_DALET_TITLE_NAME trouvé: {song}")  # Debug
             
         if artist_el is not None and artist_el.text:
             artist = _normalize_text(artist_el.text)
