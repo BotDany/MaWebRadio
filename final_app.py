@@ -235,6 +235,34 @@ def add_radio():
         flash('Veuillez remplir tous les champs obligatoires', 'error')
     
     return redirect(url_for('admin'))
+@app.route('/admin/test-debug', methods=['POST'])
+def test_debug():
+    """Route de test pour vérifier la réception des données"""
+    try:
+        print("🔍 test_debug: Début test de réception des données")
+        
+        # Afficher toutes les données du formulaire
+        print("📝 test_debug: Données reçues:")
+        for key, value in request.form.items():
+            print(f"   - {key}: '{value}'")
+        
+        # Afficher les fichiers
+        print("📁 test_debug: Fichiers reçus:")
+        for key, file in request.files.items():
+            print(f"   - {key}: {file.filename}")
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Test réussi',
+            'form_data': dict(request.form),
+            'files': {key: file.filename for key, file in request.files.items()}
+        })
+    except Exception as e:
+        print(f"❌ ERREUR test_debug: {str(e)}")
+        import traceback
+        print(f"❌ Traceback test_debug: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/admin/edit/<radio_name>', methods=['POST'])
 def edit_radio(radio_name):
     """Modifier une radio existante"""
