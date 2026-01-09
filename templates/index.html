@@ -1596,7 +1596,7 @@
                     console.log('📝 updateRadio: Aucun logo à ajouter');
                 }
                 
-                const response = await fetch(`/admin/edit-simple/${encodeURIComponent(oldName)}`, {
+                const response = await fetch(`/admin/edit/${encodeURIComponent(oldName)}`, {
                     method: 'POST',
                     body: formData
                 });
