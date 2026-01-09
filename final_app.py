@@ -279,78 +279,63 @@ def test_debug():
 
 @app.route('/admin/edit/<radio_name>', methods=['POST'])
 def edit_radio(radio_name):
-    """Modifier une radio existante"""
+    """Modifier une radio existante - Version directe Neon"""
     try:
         print(f"🔍 edit_radio: Début modification pour '{radio_name}'")
         
-        # Décoder le nom de la radio (gère les deux cas: encodé et non encodé)
+        # Décoder le nom de la radio
         import urllib.parse
         radio_name = urllib.parse.unquote(radio_name)
         print(f"🔍 edit_radio: Nom décodé: '{radio_name}'")
         
-        # Charger les radios existantes
-        radios = load_radios()
-        print(f"📊 edit_radio: {len(radios)} radios chargées depuis la base")
+        # Récupérer les données du formulaire
+        new_name = request.form.get('name')
+        new_url = request.form.get('url')
+        new_logo = request.form.get('logo')
         
-        # Trouver la radio à modifier
-        for i, radio_data in enumerate(radios):
-            print(f"🔍 edit_radio: Vérification radio {i}: {radio_data}")
-            if radio_data[0] == radio_name:
-                print(f"✅ edit_radio: Radio trouvée à l'index {i}: {radio_data}")
+        print(f"📝 edit_radio: Données reçues:")
+        print(f"   - new_name: '{new_name}'")
+        print(f"   - new_url: '{new_url}'")
+        print(f"   - new_logo: '{new_logo}'")
+        
+        # Sauvegarder directement dans Neon
+        from database_config import get_db_connection
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            
+            # Mettre à jour directement la radio dans la base
+            cursor.execute("""
+                UPDATE radios 
+                SET name = %s, url = %s, logo = %s 
+                WHERE name = %s
+            """, [new_name, new_url, new_logo, radio_name])
+            
+            if cursor.rowcount > 0:
+                conn.commit()
+                print(f"✅ edit_radio: Radio '{radio_name}' mise à jour en '{new_name}'")
+                cursor.close()
+                conn.close()
                 
-                new_name = request.form.get('name')
-                new_url = request.form.get('url')
-                new_logo = request.form.get('logo')
-                
-                print(f"📝 edit_radio: Données reçues:")
-                print(f"   - new_name: '{new_name}'")
-                print(f"   - new_url: '{new_url}'")
-                print(f"   - new_logo: '{new_logo}'")
-                
-                if new_name and new_url:
-                    # Mettre à jour avec le logo si fourni
-                    if new_logo:
-                        print(f"📝 edit_radio: Mise à jour avec logo: {new_name}, {new_url}, {new_logo}")
-                        radios[i] = [new_name, new_url, new_logo]
-                    else:
-                        print(f"📝 edit_radio: Mise à jour sans logo: {new_name}, {new_url}")
-                        # Garder le logo existant si pas de nouveau logo
-                        if len(radio_data) > 2:
-                            radios[i] = [new_name, new_url, radio_data[2]]
-                            print(f"📝 edit_radio: Logo existant conservé: {radio_data[2]}")
-                        else:
-                            radios[i] = [new_name, new_url, '']
-                            print(f"📝 edit_radio: Aucun logo existant, création vide")
-                    
-                    print(f"💾 edit_radio: Tentative de sauvegarde de {len(radios)} radios...")
-                    if save_radios(radios):
-                        print(f"✅ edit_radio: Sauvegarde réussie pour '{radio_name}'")
-                        return jsonify({
-                            'status': 'success',
-                            'message': f'Radio "{radio_name}" modifiée en "{new_name}" avec succès!'
-                        })
-                    else:
-                        print(f"❌ edit_radio: Erreur lors de la sauvegarde pour '{radio_name}'")
-                        return jsonify({
-                            'status': 'error',
-                            'message': f'Erreur lors de la modification de la radio "{radio_name}"'
-                        }), 500
-                else:
-                    print(f"❌ edit_radio: Champs obligatoires manquants pour '{radio_name}'")
-                    return jsonify({
-                        'status': 'error',
-                        'message': 'Le nom et l\'URL sont obligatoires'
-                    }), 400
-                break
+                return jsonify({
+                    'status': 'success',
+                    'message': f'Radio "{radio_name}" modifiée en "{new_name}" avec succès!'
+                })
+            else:
+                cursor.close()
+                conn.close()
+                print(f"❌ edit_radio: Radio '{radio_name}' non trouvée")
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Radio "{radio_name}" non trouvée'
+                }), 404
         else:
-            print(f"❌ edit_radio: Radio '{radio_name}' non trouvée dans {len(radios)} radios")
-            for i, (name, url) in enumerate(radios):
-                print(f"   - Radio {i}: '{name}'")
+            print(f"❌ edit_radio: Erreur de connexion à la base")
             return jsonify({
                 'status': 'error',
-                'message': f'Radio "{radio_name}" non trouvée'
-            }), 404
-            
+                'message': 'Erreur de connexion à la base de données'
+            }), 500
+        
     except Exception as e:
         print(f"❌ ERREUR edit_radio: {str(e)}")
         import traceback
