@@ -311,27 +311,40 @@ def edit_radio(radio_name):
                     print(f"💾 edit_radio: Tentative de sauvegarde de {len(radios)} radios...")
                     if save_radios(radios):
                         print(f"✅ edit_radio: Sauvegarde réussie pour '{radio_name}'")
-                        flash(f'Radio "{radio_name}" modifiée en "{new_name}" avec succès!', 'success')
+                        return jsonify({
+                            'status': 'success',
+                            'message': f'Radio "{radio_name}" modifiée en "{new_name}" avec succès!'
+                        })
                     else:
                         print(f"❌ edit_radio: Erreur lors de la sauvegarde pour '{radio_name}'")
-                        flash(f'Erreur lors de la modification de la radio "{radio_name}"', 'error')
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'Erreur lors de la modification de la radio "{radio_name}"'
+                        }), 500
                 else:
                     print(f"❌ edit_radio: Champs obligatoires manquants pour '{radio_name}'")
-                    flash('Le nom et l\'URL sont obligatoires', 'error')
+                    return jsonify({
+                        'status': 'error',
+                        'message': 'Le nom et l\'URL sont obligatoires'
+                    }), 400
                 break
         else:
             print(f"❌ edit_radio: Radio '{radio_name}' non trouvée dans {len(radios)} radios")
             for i, (name, url) in enumerate(radios):
                 print(f"   - Radio {i}: '{name}'")
-            flash(f'Radio "{radio_name}" non trouvée', 'error')
+            return jsonify({
+                'status': 'error',
+                'message': f'Radio "{radio_name}" non trouvée'
+            }), 404
             
     except Exception as e:
         print(f"❌ ERREUR edit_radio: {str(e)}")
         import traceback
         print(f"❌ Traceback edit_radio: {traceback.format_exc()}")
-        flash(f'Erreur lors de la modification: {str(e)}', 'error')
-    
-    return redirect(url_for('admin'))
+        return jsonify({
+            'status': 'error',
+            'message': f'Erreur lors de la modification: {str(e)}'
+        }), 500
 
 @app.route('/admin/delete/<radio_name>', methods=['POST'])
 def delete_admin_radio(radio_name):
