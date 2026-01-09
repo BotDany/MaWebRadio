@@ -2,7 +2,7 @@ import json
 import os
 import time
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
-from radio_metadata_fetcher import RadioFetcher
+from radio_metadata_fetcher_fixed_clean import RadioFetcher
 from database_config import load_radios, save_radios
 
 class RadioState:
