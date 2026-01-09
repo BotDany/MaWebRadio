@@ -150,6 +150,26 @@ def get_history(count=10):
             'message': 'Aucune radio sélectionnée'
         })
 
+@app.route('/admin/reset-db', methods=['POST'])
+def reset_database():
+    """Forcer la réinitialisation de la base de données"""
+    try:
+        print("🔄 API /admin/reset-db: Réinitialisation forcée de la base de données...")
+        from database_config import init_database
+        success = init_database()
+        
+        if success:
+            print("✅ Base de données réinitialisée avec succès")
+            return jsonify({'status': 'success', 'message': 'Base de données réinitialisée'})
+        else:
+            print("❌ Erreur lors de la réinitialisation")
+            return jsonify({'status': 'error', 'message': 'Erreur lors de la réinitialisation'}), 500
+    except Exception as e:
+        print(f"❌ ERREUR API /admin/reset-db: {str(e)}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
 # Routes d'administration
 @app.route('/admin')
 def admin():
