@@ -235,6 +235,7 @@ def add_radio():
         flash('Veuillez remplir tous les champs obligatoires', 'error')
     
     return redirect(url_for('admin'))
+@app.route('/admin/edit/<radio_name>', methods=['POST'])
 def edit_radio(radio_name):
     """Modifier une radio existante"""
     try:
