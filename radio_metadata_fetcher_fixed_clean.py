@@ -234,6 +234,9 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
         return None
     if not (s.startswith("<?xml") or s.startswith("<RadioInfo")):
         return None
+    
+    print(f"🔍 Radio Comercial XML reçu: {s[:200]}...")  # Debug
+    
     try:
         root = ET.fromstring(s)
     except Exception:
@@ -245,9 +248,15 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
     artist = ""
     
     if table is not None:
-        song_el = table.find(".//DB_SONG_NAME")
+        # Debug: afficher tous les tags disponibles
+        for elem in table:
+            print(f"🔍 Tag trouvé: {elem.tag} = {elem.text}")
+        
+        song_el = table.find(".//DB_SONG_NAME") or table.find(".//DB_DALET_TITLE_NAME")  # Ajout DB_DALET_TITLE_NAME
         title_el = table.find(".//DB_DALET_TITLE_NAME")
         artist_el = table.find(".//DB_DALET_ARTIST_NAME")
+        
+        print(f"🔍 song_el: {song_el}, title_el: {title_el}, artist_el: {artist_el}")  # Debug
         
         # Priorité: DB_SONG_NAME > DB_DALET_TITLE_NAME
         if song_el is not None and song_el.text:
@@ -261,13 +270,18 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
     # Priorité: musique d'abord, animateur ensuite
     cover_url = ""
     
+    print(f"🔍 Song: '{song}', Artist: '{artist}'")  # Debug
+    
     # Si on a de la musique (DB_SONG_NAME), essayer de récupérer la pochette via iTunes
     if song and artist:
+        print(f"🎵 Musique détectée, recherche pochette iTunes pour: {artist} - {song}")  # Debug
         # Essayer de récupérer une pochette d'album via iTunes
         cover_url = _get_album_cover(artist, song)
+        print(f"🖼️ Pochette iTunes trouvée: {cover_url}")  # Debug
     
     # Si pas de musique ou si pas de pochette trouvée, utiliser l'image de l'animateur
     if not song or not artist or not cover_url:
+        print(f"🎙️ Pas de musique ou pas de pochette, utilisation image animateur")  # Debug
         animador = root.find(".//AnimadorInfo")
         if animador is not None:
             img_el = animador.find(".//IMAGE")
@@ -276,11 +290,15 @@ def _parse_radiocomercial_radioinfo_xml(text: str) -> Optional[Tuple[str, str, s
                 if img and not img.startswith("http"):
                     img = f"https://radiocomercial.pt{img}"
                 cover_url = img
+                print(f"🖼️ Image animateur utilisée: {cover_url}")  # Debug
     
+    # Ne pas écraser les valeurs détectées
     if not artist:
         artist = "Radio Comercial"
     if not song:
         song = "En direct"
+    
+    print(f"🎯 Résultat final - Song: '{song}', Artist: '{artist}', Cover: '{cover_url}'")  # Debug
     
     return song, artist, cover_url
 
