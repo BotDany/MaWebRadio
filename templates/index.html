@@ -1467,6 +1467,10 @@
                 console.log('📊 loadRadiosForAdmin: Type de radios:', typeof radios);
                 console.log('📊 loadRadiosForAdmin: Nombre de radios:', radios.length);
                 
+                // Mettre à jour le compteur
+                document.getElementById('radioCount').textContent = radios.length;
+                console.log('📊 loadRadiosForAdmin: Compteur mis à jour:', radios.length);
+                
                 // Afficher chaque radio en détail
                 radios.forEach((radio, index) => {
                     console.log(`🔍 loadRadiosForAdmin: Radio ${index}:`, radio);
