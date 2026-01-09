@@ -113,42 +113,51 @@ def save_radios(radios):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Vider la table
-        cursor.execute("DELETE FROM radios")
-        print(f"🗑️ save_radios: Table radios vidée")
+        # Commencer une transaction
+        conn.autocommit = False  # Désactiver l'autocommit pour contrôler manuellement
         
-        # Essayer d'ajouter la colonne logo si elle n'existe pas
         try:
-            cursor.execute("ALTER TABLE radios ADD COLUMN logo TEXT")
-            print("✅ save_radios: Colonne logo ajoutée")
-        except:
-            print("ℹ️ save_radios: Colonne logo existe déjà")
-        
-        # Insérer les nouvelles radios avec gestion des conflits
-        for i, radio in enumerate(radios):
-            print(f"🔍 save_radios: Traitement radio {i}: {radio}")
-            if len(radio) >= 3:
-                name, url, logo = radio[0], radio[1], radio[2]
-                print(f"📝 save_radios: Radio avec logo: {name}, {url}, {logo}")
-            else:
-                name, url = radio[0], radio[1]
-                logo = ''
-                print(f"📝 save_radios: Radio sans logo: {name}, {url}")
+            # Vider la table
+            cursor.execute("DELETE FROM radios")
+            print(f"🗑️ save_radios: Table radios vidée")
             
-            cursor.execute("""
-                INSERT INTO radios (name, url, logo) 
-                VALUES (%s, %s, %s) 
-                ON CONFLICT (name) DO UPDATE SET 
-                    url = EXCLUDED.url,
-                    logo = EXCLUDED.logo,
-                    created_at = CURRENT_TIMESTAMP
-            """, (name, url, logo))
-            print(f"✅ save_radios: Radio {name} insérée/mise à jour")
-        
-        conn.commit()
-        print(f"💾 save_radios: Commit effectué")
-        cursor.close()
-        conn.close()
+            # Essayer d'ajouter la colonne logo si elle n'existe pas
+            try:
+                cursor.execute("ALTER TABLE radios ADD COLUMN logo TEXT")
+                print("✅ save_radios: Colonne logo ajoutée")
+            except:
+                print("ℹ️ save_radios: Colonne logo existe déjà")
+            
+            # Insérer les nouvelles radios
+            for i, radio in enumerate(radios):
+                print(f"🔍 save_radios: Traitement radio {i}: {radio}")
+                if len(radio) >= 3:
+                    name, url, logo = radio[0], radio[1], radio[2]
+                    print(f"📝 save_radios: Radio avec logo: {name}, {url}, {logo}")
+                else:
+                    name, url = radio[0], radio[1]
+                    logo = ''
+                    print(f"📝 save_radios: Radio sans logo: {name}, {url}")
+                
+                cursor.execute("""
+                    INSERT INTO radios (name, url, logo) 
+                    VALUES (%s, %s, %s)
+                """, (name, url, logo))
+                print(f"✅ save_radios: Radio {name} insérée/mise à jour")
+            
+            # Commit de la transaction
+            conn.commit()
+            print(f"💾 save_radios: Commit effectué")
+            
+        except Exception as e:
+            # Rollback en cas d'erreur
+            conn.rollback()
+            print(f"❌ save_radios: Rollback effectué: {e}")
+            raise e
+            
+        finally:
+            cursor.close()
+            conn.close()
         
         print(f"✅ {len(radios)} radios sauvegardées dans PostgreSQL")
         return True
