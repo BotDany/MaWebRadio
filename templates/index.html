@@ -1265,6 +1265,7 @@
                         } else {
                             // Pour les autres radios, utilisation normale
                             console.log(`🎵 Autre radio détectée, utilisation pochette: ${data.cover_url}`);
+                            const albumCover = document.querySelector('#albumCover');
                             console.log(`🔍 Élément albumCover trouvé:`, albumCover);
                             console.log(`🔍 Contenu actuel albumCover:`, albumCover.innerHTML);
                             albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="if(this.parentElement) this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
