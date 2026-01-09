@@ -95,7 +95,9 @@ def get_default_radios():
         ["Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3"],
         ["Top 80 Radio", "https://securestreams6.autopo.st:2321/"],
         ["Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream"],
-        ["Générikds", "https://listen.radioking.com/radio/497599/stream/554719"]
+        ["Générikds", "https://listen.radioking.com/radio/497599/stream/554719"],
+        ["Nostalgie-Les 80 Plus Grand Tubes", "https://stream.nostalgie.fr/nostalgie-les-80-plus-grand-tubes?id=radio"],
+        ["Nostalgie-Les Tubes 80 N1", "https://stream.nostalgie.fr/nostalgie-les-tubes-80-n1?id=radio"]
     ]
 
 def save_radios(radios):
