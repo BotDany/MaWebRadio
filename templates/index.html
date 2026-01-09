@@ -1798,10 +1798,13 @@
         
         // Fonction pour mettre à jour la pochette de la radio actuelle
         function updateCurrentRadioCover(coverUrl) {
-            // NE RIEN FAIRE - On ne veut pas de pochettes d'album dans la grille
-            // Seulement les logos officiels doivent s'afficher dans la grille
-            console.log(`🖼️ updateCurrentRadioCover: Ignoré - pas de pochette dans la grille (${coverUrl})`);
-            return;
+            // Mettre à jour la pochette principale du lecteur (pas la grille)
+            const albumCover = document.getElementById('albumCover');
+            if (albumCover && coverUrl && coverUrl !== '') {
+                albumCover.innerHTML = `<img src="${coverUrl}" alt="Pochette d'album" onerror="this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'">`;
+                console.log(`🖼️ Pochette principale mise à jour: ${coverUrl}`);
+            }
+            // La grille garde les logos officiels - pas de modification
         }
         
         // Charger les logos des radios
