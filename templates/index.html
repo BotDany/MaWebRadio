@@ -819,7 +819,7 @@
         <div class="player-card">
             <div class="station-selector">
                 <div class="radio-grid" id="radioGrid">
-                    {% for station, url in stations %}
+                    {% for station, url, logo in stations %}
                     <div class="radio-card" data-station="{{ station }}" data-url="{{ url }}">
                         <div class="radio-logo">
                             <img src="" alt="{{ station }}" onerror="this.style.display='none';">
