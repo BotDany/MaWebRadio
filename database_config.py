@@ -6,11 +6,11 @@ from psycopg.rows import dict_row
 # Configuration de la base de données - Utilisation directe des identifiants
 def get_db_config():
     """Récupérer la configuration PostgreSQL"""
-    # Essayer DATABASE_URL d'abord (méthode Railway)
+    # Essayer DATABASE_URL d'abord (méthode Railway/Vercel)
     database_url = os.environ.get('DATABASE_URL')
     
     if database_url and not '${' in database_url:
-        # Parser DATABASE_URL de Railway
+        # Parser DATABASE_URL
         import re
         match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', database_url)
         if match:
@@ -20,17 +20,17 @@ def get_db_config():
                 'dbname': match.group(5),
                 'user': match.group(1),
                 'password': match.group(2),
-                'port': match.group(4)
+                'port': int(match.group(4))
             }
     
-    # Utiliser les identifiants fournis
+    # Utiliser les identifiants fournis (fallback)
     print("🔌 Utilisation identifiants PostgreSQL directs")
     return {
-        'host': os.environ.get('PGHOST', 'trolley.proxy.rlwy.net'),
-        'dbname': os.environ.get('PGDATABASE', 'railway'),
-        'user': 'postgres',
-        'password': 'LwAVoXBRvbvKpZKDLVBojSQXqFzNGeoe',
-        'port': os.environ.get('PGPORT', '27920')
+        'host': os.environ.get('PGHOST', 'localhost'),
+        'dbname': os.environ.get('PGDATABASE', 'postgres'),
+        'user': os.environ.get('PGUSER', 'postgres'),
+        'password': os.environ.get('PGPASSWORD', ''),
+        'port': int(os.environ.get('PGPORT', '5432'))
     }
 
 DB_CONFIG = get_db_config()
