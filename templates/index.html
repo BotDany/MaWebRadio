@@ -1241,7 +1241,7 @@
                                                 const iTunesCover = artworkUrl100.replace('100x100', '600x600');
                                                 console.log(`✅ Pochette iTunes trouvée pour album-cover: ${iTunesCover}`);
                                                 
-                                                albumCover.innerHTML = `<img src="${iTunesCover}" alt="Pochette d'album" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'" style="width:100%; height:100%; object-fit:cover;">`;
+                                                albumCover.innerHTML = `<img src="${iTunesCover}" alt="Pochette d'album" onerror="this.onerror=null; if(this.parentElement) this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'" style="width:100%; height:100%; object-fit:cover;">`;
                                                 console.log(`🖼️ Album-cover mis à jour avec: ${iTunesCover}`);
                                                 // Mettre à jour la pochette de la radio actuelle dans la grille (garder le logo officiel)
                                                 // updateCurrentRadioCover(iTunesCover); // Commenté pour garder le logo officiel dans la grille
@@ -1268,7 +1268,7 @@
                             const albumCover = document.querySelector('#albumCover');
                             console.log(`🔍 Élément albumCover trouvé:`, albumCover);
                             console.log(`🔍 Contenu actuel albumCover:`, albumCover.innerHTML);
-                            albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'" style="width:100%; height:100%; object-fit:cover;">`;
+                            albumCover.innerHTML = `<img src="${data.cover_url}" alt="Pochette d'album" onerror="this.onerror=null; if(this.parentElement) this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'" style="width:100%; height:100%; object-fit:cover;">`;
                             console.log(`🔍 Contenu après mise à jour:`, albumCover.innerHTML);
                             console.log(`🖼️ Album-cover mis à jour avec: ${data.cover_url}`);
                             // Mettre à jour la pochette de la radio actuelle dans la grille
@@ -1851,7 +1851,7 @@
             // Mettre à jour la pochette principale du lecteur (pas la grille)
             const albumCover = document.getElementById('albumCover');
             if (albumCover && coverUrl && coverUrl !== '') {
-                albumCover.innerHTML = `<img src="${coverUrl}" alt="Pochette d'album" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'" style="width:100%; height:100%; object-fit:cover;">`;
+                albumCover.innerHTML = `<img src="${coverUrl}" alt="Pochette d'album" onerror="this.onerror=null; if(this.parentElement) this.parentElement.innerHTML='<div class=\\'placeholder\\'>🎵</div>'" style="width:100%; height:100%; object-fit:cover;">`;
                 console.log(`🖼️ Pochette principale mise à jour: ${coverUrl}`);
             }
             // La grille garde les logos officiels - pas de modification
