@@ -622,33 +622,44 @@ class RadioFetcher:
             print(f"Erreur parsing HLS: {e}")
             return None
 
-    def _get_album_cover(self, artist: str, title: str) -> str:
+    def _get_album_cover(self, artist: str, song: str) -> str:
         """Récupère la pochette d'album via iTunes API"""
+        print(f"🔍 Recherche iTunes pour: '{artist}' - '{song}'")  # Debug
+        
         try:
             import urllib.parse
             
-            # Essayer d'abord avec la requête combinée
-            query = urllib.parse.quote_plus(f"{artist} {title}")
+            # Utiliser urllib.parse.quote_plus pour gérer correctement les caractères spéciaux
+            query = urllib.parse.quote_plus(f"{artist} {song}")
             url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"
-            response = self.session.get(url, timeout=3)
+            print(f"🔍 URL iTunes: '{url}'")  # Debug
+            
+            response = self.session.get(url, timeout=5)
+            print(f"🔍 Status iTunes API: {response.status_code}")  # Debug
             
             if response.status_code == 200:
                 data = response.json()
-                if data.get('results'):
-                    return data['results'][0].get('artworkUrl100', '').replace('100x100', '600x600')
-            
-            # Si la requête combinée échoue, essayer avec l'artiste seul
-            query_artist = urllib.parse.quote_plus(artist)
-            url_artist = f"https://itunes.apple.com/search?term={query_artist}&entity=song&limit=1"
-            response = self.session.get(url_artist, timeout=3)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('results'):
-                    return data['results'][0].get('artworkUrl100', '').replace('100x100', '600x600')
+                print(f"🔍 Réponse iTunes: {data}")  # Debug
+                
+                if data.get("results") and len(data["results"]) > 0:
+                    result = data["results"][0]
+                    artwork_url = result.get("artworkUrl100")
                     
-        except Exception:
-            pass
+                    if artwork_url:
+                        final_url = artwork_url.replace("100x100", "600x600")
+                        print(f"✅ Pochette iTunes trouvée: {final_url}")  # Debug
+                        return final_url
+                    else:
+                        print(f"❌ Pas d'artwork dans la réponse iTunes")  # Debug
+                else:
+                    print(f"❌ Aucun résultat dans la réponse iTunes")  # Debug
+            else:
+                print(f"❌ Erreur HTTP iTunes API: {response.status_code}")  # Debug
+                
+        except Exception as e:
+            print(f"❌ Erreur recherche iTunes: {e}")  # Debug
+        
+        print(f"🔍 Fallback iTunes - pas de pochette trouvée")  # Debug
         return ""
 
     def _get_bide_musique_metadata(self, station_name: str) -> Optional[RadioMetadata]:
