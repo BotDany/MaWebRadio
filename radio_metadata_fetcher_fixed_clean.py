@@ -1100,6 +1100,68 @@ class RadioFetcher:
             print(f"❌ Erreur lors de l'enregistrement du fichier : {e}")
             return False
 
+    def _get_superloustic_metadata(self, station_name: str, url: str) -> Optional[RadioMetadata]:
+        """Récupère les métadonnées pour Superloustic depuis le site web"""
+        try:
+            # Désactiver les avertissements SSL
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            
+            # Récupérer les métadonnées ICY standard d'abord
+            md = self._get_icy_metadata(url, station_name)
+            
+            if not md or not md.title or md.title.lower() == "en direct":
+                # Si pas de titre ou juste "en direct", utiliser des valeurs par défaut
+                return RadioMetadata(
+                    station=station_name,
+                    title="En direct",
+                    artist="Superloustic",
+                    cover_url="https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
+                )
+            
+            # Essayer d'extraire la pochette depuis le site Superloustic
+            try:
+                response = self.session.get("https://www.superloustic.com/", timeout=10, verify=False)
+                if response.status_code == 200:
+                    content = response.text
+                    # Chercher la pochette dans le code source
+                    import re
+                    cover_match = re.search(r'<div id="qtmplayer__cover"[^>]*>.*?<img[^>]+src="([^"]+)"', content, re.DOTALL)
+                    if cover_match:
+                        cover_url = cover_match.group(1)
+                        # S'assurer que l'URL est absolue
+                        if cover_url.startswith('//'):
+                            cover_url = 'https:' + cover_url
+                        elif cover_url.startswith('/'):
+                            cover_url = 'https://www.superloustic.com' + cover_url
+                        
+                        print(f"🖼️ Pochette Superloustic trouvée: {cover_url}")
+                        return RadioMetadata(
+                            station=station_name,
+                            title=md.title,
+                            artist=md.artist if md.artist else "Superloustic",
+                            cover_url=cover_url
+                        )
+            except Exception as e:
+                print(f"❌ Erreur lors de la récupération de la pochette Superloustic: {e}")
+            
+            # Retourner les métadonnées ICY avec le logo par défaut si la pochette n'est pas trouvée
+            return RadioMetadata(
+                station=station_name,
+                title=md.title,
+                artist=md.artist if md.artist else "Superloustic",
+                cover_url="https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
+            )
+            
+        except Exception as e:
+            print(f"❌ Erreur dans _get_superloustic_metadata: {e}")
+            return RadioMetadata(
+                station=station_name,
+                title="En direct",
+                artist="Superloustic",
+                cover_url="https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
+            )
+
     def _get_generation_doree_metadata(self, station_name: str) -> Optional[RadioMetadata]:
         """
         Récupère les métadonnées pour Génération Dorothée
@@ -1583,7 +1645,7 @@ class RadioFetcher:
 
         # Spécial: Superloustic - récupérer les métadonnées depuis le site web
         if "superloustic" in station_name.lower():
-            md = self._get_superloustic_metadata(station_name)
+            md = self._get_superloustic_metadata(station_name, url)
             if md:
                 self.cache[cache_key] = (md, now)
                 return md
