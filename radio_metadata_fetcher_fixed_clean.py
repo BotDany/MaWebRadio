@@ -1244,7 +1244,41 @@ class RadioFetcher:
             print(f"Erreur inattendue lors de la récupération des métadonnées de Génération Dorothée: {e}")
             return None
 
-    def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
+    def _get_top80radio_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """Récupère les métadonnées depuis le site de Top 80 Radio"""
+        try:
+            # URL de l'API de Top 80 Radio pour la chanson en cours
+            api_url = "https://www.top80radio.com/now_playing.php"
+            
+            # Faire la requête pour obtenir les informations actuelles
+            response = self.session.get(api_url, timeout=5)
+            response.raise_for_status()
+            
+            # Le site renvoie du JSON avec les informations
+            data = response.json()
+            
+            if not data or 'title' not in data or not data['title']:
+                return None
+                
+            # Extraire le titre et l'artiste
+            title = data.get('title', '').strip()
+            artist = data.get('artist', '').strip()
+            
+            # Créer l'objet de métadonnées
+            metadata = RadioMetadata(
+                station=station_name,
+                title=title,
+                artist=artist,
+                cover_url=data.get('cover', '')
+            )
+            
+            return metadata
+            
+        except Exception as e:
+            print(f"Erreur lors de la récupération des métadonnées Top 80 Radio: {e}")
+            return None
+
+    def _get_icy_metadata(self, url: str, station_name: str) -> Optional[RadioMetadata]:
         try:
             headers = {
                 "Icy-MetaData": "1",
@@ -1687,6 +1721,13 @@ class RadioFetcher:
                     self.cache[cache_key] = (md, now)
                     return md
 
+        # Spécial: Top 80 Radio - récupérer les métadonnées depuis leur API
+        if "top80radio" in station_name.lower() or "top 80 radio" in station_name.lower():
+            md = self._get_top80radio_metadata(station_name)
+            if md:
+                self.cache[cache_key] = (md, now)
+                return md
+                
         # Spécial: RadioKing - essayer de récupérer le vrai flux et les métadonnées
         if "radioking.com" in url:
             md = self._get_radioking_metadata(station_name, url)
