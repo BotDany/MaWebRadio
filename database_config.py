@@ -97,7 +97,7 @@ def get_default_radios():
         ["Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream", ""],
         ["Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC", ""],
         ["Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3", ""],
-        ["Superloustic", "https://radio6.pro-fhi.net/live/SUPERLOUSTIC", ""],
+        ["Superloustic", "https://radio6.pro-fhi.net/radio/9004/stream", ""],
         ["Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3", ""],
         ["Top 80 Radio", "https://securestreams6.autopo.st:2321/", ""],
         ["Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream", ""],

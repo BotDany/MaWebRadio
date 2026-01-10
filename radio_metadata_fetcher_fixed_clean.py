@@ -1100,6 +1100,56 @@ class RadioFetcher:
             print(f"❌ Erreur lors de l'enregistrement du fichier : {e}")
             return False
 
+    def _get_generation_doree_metadata(self, station_name: str) -> Optional[RadioMetadata]:
+        """
+        Récupère les métadonnées pour Génération Dorothée
+        
+        Args:
+            station_name: Nom de la station
+            
+        Returns:
+            Objet RadioMetadata ou None en cas d'erreur
+        """
+        try:
+            # URL de l'API de métadonnées
+            url = "https://votreradiosurlenet.fr/titreradiojunior2.php"
+            
+            # Faire la requête avec un timestamp pour éviter le cache
+            timestamp = int(time.time() * 1000)
+            response = self.session.get(f"{url}?_={timestamp}", timeout=5)
+            response.raise_for_status()
+            
+            # Parser la réponse HTML
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Extraire le texte qui contient l'artiste et le titre
+            text = soup.find('font', color='#FFFFFF')
+            if not text:
+                return None
+                
+            # Nettoyer et séparer l'artiste et le titre
+            track_info = text.get_text(strip=True)
+            if ' - ' not in track_info:
+                return None
+                
+            artist, title = track_info.split(' - ', 1)
+            
+            # URL de la pochette
+            cover_url = "https://www.votreradiosurlenet.fr/player_html5/pochettegenerationdorothee.php"
+            
+            return RadioMetadata(
+                station=station_name,
+                title=title.strip(),
+                artist=artist.strip(),
+                cover_url=cover_url,
+                host=""
+            )
+            
+        except Exception as e:
+            print(f"Erreur lors de la récupération des métadonnées de Génération Dorothée: {e}")
+            return None
+
     def _get_superloustic_metadata(self, station_name: str, save_to_file: bool = True) -> Optional[RadioMetadata]:
         """
         Récupère les métadonnées depuis le site de Superloustic
@@ -1573,6 +1623,13 @@ class RadioFetcher:
         # Spécial: Superloustic - récupérer les métadonnées depuis le site web
         if "superloustic" in station_name.lower():
             md = self._get_superloustic_metadata(station_name)
+            if md:
+                self.cache[cache_key] = (md, now)
+                return md
+                    
+        # Spécial: Génération Dorothée - récupérer les métadonnées depuis l'API
+        if "génération dorothée" in station_name.lower() or "generation doree" in station_name.lower():
+            md = self._get_generation_doree_metadata(station_name)
             if md:
                 self.cache[cache_key] = (md, now)
                 return md
