@@ -1264,14 +1264,21 @@ class RadioFetcher:
             title = data.get('title', '').strip()
             artist = data.get('artist', '').strip()
             
+            # Créer l'URL de la pochette d'album
+            # Format de l'URL : https://www.top80radio.com/_pochettes/index.php?song=nom-de-la-chanson
+            safe_title = title.lower().replace(' ', '-').replace("'", "").replace('&', 'and')
+            safe_artist = artist.lower().replace(' ', '-').replace("'", "").replace('&', 'and')
+            cover_url = f"https://www.top80radio.com/_pochettes/index.php?song={safe_artist}-{safe_title}"
+            
             # Créer l'objet de métadonnées
             metadata = RadioMetadata(
                 station=station_name,
                 title=title,
                 artist=artist,
-                cover_url=data.get('cover', '')
+                cover_url=cover_url
             )
             
+            print(f"Métadonnées Top 80 Radio - Artiste: {artist}, Titre: {title}, Pochette: {cover_url}")
             return metadata
             
         except Exception as e:
