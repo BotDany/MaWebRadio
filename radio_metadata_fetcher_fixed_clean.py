@@ -640,7 +640,7 @@ class RadioFetcher:
             return None
 
     def _get_album_cover(self, artist: str, song: str) -> str:
-        """Récupère la pochette d'album via iTunes API"""
+        """Récupère la pochette d'album via iTunes API en évitant les versions karaoké"""
         print(f"🔍 Recherche iTunes pour: '{artist}' - '{song}'")  # Debug
         
         try:
@@ -648,7 +648,8 @@ class RadioFetcher:
             
             # Utiliser urllib.parse.quote_plus pour gérer correctement les caractères spéciaux
             query = urllib.parse.quote_plus(f"{artist} {song}")
-            url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"
+            # Augmenter la limite à 10 résultats pour avoir plus de choix
+            url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=10"
             print(f"🔍 URL iTunes: '{url}'")  # Debug
             
             response = self.session.get(url, timeout=5)
@@ -656,20 +657,41 @@ class RadioFetcher:
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"🔍 Réponse iTunes: {data}")  # Debug
+                print(f"🔍 {len(data.get('results', []))} résultats trouvés")  # Debug
                 
-                if data.get("results") and len(data["results"]) > 0:
-                    result = data["results"][0]
-                    artwork_url = result.get("artworkUrl100")
+                if data.get("results"):
+                    # Parcourir les résultats pour trouver une version qui n'est pas du karaoké
+                    for result in data["results"]:
+                        track_name = result.get("trackName", "").lower()
+                        collection_name = result.get("collectionName", "").lower()
+                        artist_name = result.get("artistName", "").lower()
+                        
+                        # Éviter les versions karaoké et les reprises
+                        if ("karaoké" not in track_name and 
+                            "karaoke" not in track_name and
+                            "karaoké" not in collection_name and 
+                            "karaoke" not in collection_name and
+                            "version" not in track_name and
+                            "reprise" not in track_name and
+                            "cover" not in track_name and
+                            "tribute" not in track_name and
+                            "originally performed" not in track_name.lower()):
+                            
+                            artwork_url = result.get("artworkUrl100")
+                            if artwork_url:
+                                final_url = artwork_url.replace("100x100", "600x600")
+                                print(f"✅ Pochette iTunes trouvée (version originale): {final_url}")  # Debug
+                                return final_url
                     
-                    if artwork_url:
-                        final_url = artwork_url.replace("100x100", "600x600")
-                        print(f"✅ Pochette iTunes trouvée: {final_url}")  # Debug
-                        return final_url
-                    else:
-                        print(f"❌ Pas d'artwork dans la réponse iTunes")  # Debug
-                else:
-                    print(f"❌ Aucun résultat dans la réponse iTunes")  # Debug
+                    # Si on arrive ici, on n'a pas trouvé de version non-karaoké, on prend la première
+                    if data["results"]:
+                        artwork_url = data["results"][0].get("artworkUrl100")
+                        if artwork_url:
+                            final_url = artwork_url.replace("100x100", "600x600")
+                            print(f"⚠️  Utilisation d'une pochette potentiellement karaoké: {final_url}")
+                            return final_url
+                
+                print(f"❌ Aucun résultat valide dans la réponse iTunes")  # Debug
             else:
                 print(f"❌ Erreur HTTP iTunes API: {response.status_code}")  # Debug
                 
@@ -969,6 +991,179 @@ class RadioFetcher:
             print(f"Erreur extraction RFM Portugal: {e}")
             return None
 
+    def _save_metadata_to_neon(self, metadata) -> bool:
+        """
+        Enregistre les métadonnées dans la base de données NEON
+        
+        Args:
+            metadata: Objet RadioMetadata à enregistrer
+            
+        Returns:
+            bool: True si l'enregistrement a réussi, False sinon
+        """
+        try:
+            import psycopg
+            from datetime import datetime
+            
+            # URL de connexion à Neon (à remplacer par votre propre URL)
+            database_url = 'postgresql://neondb_owner:npg_rOwco94kEyLS@ep-nameless-cloud-ahkuz006-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require'
+            
+            # Se connecter à la base de données
+            conn = psycopg.connect(database_url)
+            cursor = conn.cursor()
+            
+            # Récupérer l'ID de la radio
+            cursor.execute(
+                "SELECT id FROM radios WHERE LOWER(name) = LOWER(%s)",
+                (metadata.station,)
+            )
+            result = cursor.fetchone()
+            
+            if not result:
+                print(f"❌ Radio '{metadata.station}' non trouvée dans la base de données")
+                return False
+                
+            radio_id = result[0]
+            
+            # Mettre à jour le statut des anciennes entrées pour cette radio
+            cursor.execute(
+                "UPDATE radio_metadata SET is_playing = FALSE, last_played = %s "
+                "WHERE radio_id = %s AND is_playing = TRUE",
+                (datetime.now(), radio_id)
+            )
+            
+            # Insérer ou mettre à jour les métadonnées actuelles
+            cursor.execute(
+                """
+                INSERT INTO radio_metadata (radio_id, title, artist, cover_url, is_playing, last_played)
+                VALUES (%s, %s, %s, %s, TRUE, %s)
+                ON CONFLICT (radio_id, title, artist) 
+                DO UPDATE SET 
+                    cover_url = EXCLUDED.cover_url,
+                    is_playing = TRUE,
+                    last_played = EXCLUDED.last_played
+                RETURNING id
+                """,
+                (radio_id, metadata.title, metadata.artist, metadata.cover_url, datetime.now())
+            )
+            
+            # Valider les changements
+            conn.commit()
+            print(f"✅ Métadonnées enregistrées dans NEON pour {metadata.station}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Erreur lors de l'enregistrement dans NEON: {e}")
+            if 'conn' in locals():
+                conn.rollback()
+            return False
+            
+        finally:
+            if 'cursor' in locals():
+                cursor.close()
+            if 'conn' in locals():
+                conn.close()
+
+    def _save_metadata_to_file(self, metadata, filename: str = "superloustic_metadata.json") -> bool:
+        """
+        Enregistre les métadonnées dans un fichier JSON
+        
+        Args:
+            metadata: Objet RadioMetadata à enregistrer
+            filename: Nom du fichier de sortie
+            
+        Returns:
+            bool: True si l'enregistrement a réussi, False sinon
+        """
+        try:
+            import json
+            from datetime import datetime
+            
+            # Convertir l'objet en dictionnaire
+            data = {
+                'station': metadata.station,
+                'title': metadata.title,
+                'artist': metadata.artist,
+                'cover_url': metadata.cover_url,
+                'host': metadata.host,
+                'last_updated': datetime.now().isoformat()
+            }
+            
+            # Écrire dans le fichier
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+                
+            print(f"✅ Métadonnées enregistrées dans {filename}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Erreur lors de l'enregistrement du fichier : {e}")
+            return False
+
+    def _get_superloustic_metadata(self, station_name: str, save_to_file: bool = True) -> Optional[RadioMetadata]:
+        """
+        Récupère les métadonnées depuis le site de Superloustic
+        
+        Args:
+            station_name: Nom de la station
+            save_to_file: Si True, enregistre les métadonnées dans un fichier
+            
+        Returns:
+            Objet RadioMetadata ou None en cas d'erreur
+        """
+        try:
+            url = "https://www.superloustic.com/cover.html"
+            response = self.session.get(url, timeout=5)
+            response.raise_for_status()
+            
+            # Analyser le contenu HTML
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Trouver le lien avec l'image de la pochette
+            link = soup.find('a')
+            if not link:
+                return None
+                
+            # Extraire les informations
+            img = link.find('img')
+            if not img:
+                return None
+                
+            alt_text = img.get('alt', '')
+            cover_url = img.get('src', '')
+            
+            # Si l'URL de l'image est relative, la convertir en absolue
+            if cover_url.startswith('/'):
+                cover_url = f"https://www.superloustic.com{cover_url}"
+            
+            # Extraire l'artiste et le titre du texte alternatif
+            if ' - ' in alt_text:
+                artist, title = alt_text.split(' - ', 1)
+            else:
+                artist = "Inconnu"
+                title = alt_text or "Titre inconnu"
+            
+            metadata = RadioMetadata(
+                station=station_name,
+                title=title.strip(),
+                artist=artist.strip(),
+                cover_url=cover_url,
+                host=""
+            )
+            
+            # Enregistrer dans un fichier et dans NEON si demandé
+            if save_to_file:
+                self._save_metadata_to_file(metadata)
+                # Enregistrer dans NEON
+                self._save_metadata_to_neon(metadata)
+                
+            return metadata
+            
+        except Exception as e:
+            print(f"Erreur lors de la récupération des métadonnées Superloustic: {e}")
+            return None
+
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
         try:
             headers = {
@@ -1064,41 +1259,38 @@ class RadioFetcher:
     def _get_radioking_metadata(self, station_name: str, url: str) -> Optional[RadioMetadata]:
         """Récupérer les métadonnées pour les radios RadioKing"""
         try:
-            if "generikids" in station_name.lower():
+            if "generikds" in station_name.lower():
                 print(" Générikds: Test API RadioKing")
-                api_url = "https://api.radioking.io/widget/radio/generikids/track/current"
+                api_url = "https://api.radioking.io/widget/radio/generikds/track/current"
                 headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Accept": "application/json",
-                    "Referer": "https://www.radioking.com/"
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
                 
-                # Ajouter un petit délai pour laisser le temps à l'API de répondre
-                time.sleep(0.5)
-                
-                response = self.session.get(api_url, headers=headers, timeout=10)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    if data and 'title' in data and 'artist' in data:
-                        title = data['title'].strip()
-                        artist = data['artist'].strip()
-                        cover_url = data.get('cover', '')
-                        
-                        if title and artist:
-                            print(f" RadioKing API: {artist} - {title}")
-                            return RadioMetadata(
-                                station=station_name,
-                                title=title,
-                                artist=artist,
-                                cover_url=cover_url,
-                                host=""
-                            )
-                
-                # Fallback sur ICY direct
-                print(" Fallback sur ICY direct")
-                return self._get_icy_metadata(url, station_name)
-                
+                try:
+                    response = self.session.get(api_url, headers=headers, timeout=5)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if isinstance(data, dict):
+                            title = _normalize_text(data.get('title', ''))
+                            artist = _normalize_text(data.get('artist', ''))
+                            cover_url = _normalize_text(data.get('cover_url', ''))
+                            
+                            if title and artist:
+                                print(f" RadioKing API: {artist} - {title}")
+                                return RadioMetadata(
+                                    station=station_name,
+                                    title=title,
+                                    artist=artist,
+                                    cover_url=cover_url,
+                                    host=""
+                                )
+                except Exception as e:
+                    print(f" Erreur API RadioKing: {e}")
+            
+            # Fallback sur ICY direct
+            print(" Fallback sur ICY direct")
+            return self._get_icy_metadata(url, station_name)
+            
         except Exception as e:
             print(f" Erreur RadioKing: {e}")
             return None
@@ -1378,16 +1570,12 @@ class RadioFetcher:
             self.cache[cache_key] = (md, now)
             return md
 
-        # Spécial: Superloustic - utiliser le logo comme pochette (pas de métadonnées ICY)
-        # if "superloustic" in station_name.lower():
-        #     md = RadioMetadata(
-        #         station=station_name,
-        #         title="Spéciale Bernard Denimal",
-        #         artist="La belle histoire des génériques TL",
-        #         cover_url=RADIO_LOGOS.get("Superloustic", "")
-        #     )
-        #     self.cache[cache_key] = (md, now)
-        #     return md
+        # Spécial: Superloustic - récupérer les métadonnées depuis le site web
+        if "superloustic" in station_name.lower():
+            md = self._get_superloustic_metadata(station_name)
+            if md:
+                self.cache[cache_key] = (md, now)
+                return md
 
         if station_name.strip().lower() == "100% radio 80":
             md = _fetch_100radio_ws_metas(self.session, station_name)

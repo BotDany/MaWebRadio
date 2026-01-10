@@ -26,6 +26,22 @@ try:
     """)
     print('✅ Table radios créée!')
     
+    # Créer la table radio_metadata
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS radio_metadata (
+            id SERIAL PRIMARY KEY,
+            radio_id INTEGER REFERENCES radios(id) ON DELETE CASCADE,
+            title VARCHAR(255) NOT NULL,
+            artist VARCHAR(255) NOT NULL,
+            cover_url TEXT,
+            is_playing BOOLEAN DEFAULT TRUE,
+            last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(radio_id, title, artist)
+        )
+    """)
+    print('✅ Table radio_metadata créée!')
+    
     # Vérifier si la table est vide
     cursor.execute("SELECT COUNT(*) FROM radios")
     count = cursor.fetchone()[0]
