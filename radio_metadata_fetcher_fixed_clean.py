@@ -1097,69 +1097,76 @@ class RadioFetcher:
             return True
             
         except Exception as e:
-            print(f"❌ Erreur lors de l'enregistrement du fichier : {e}")
+            print(f" Erreur lors de l'enregistrement du fichier : {e}")
             return False
 
     def _get_superloustic_metadata(self, station_name: str, url: str) -> Optional[RadioMetadata]:
-        """Récupère les métadonnées pour Superloustic depuis le site web"""
+        """Récupère les métadonnées pour Superloustic"""
         try:
             # Désactiver les avertissements SSL
             import urllib3
+            from bs4 import BeautifulSoup
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
             
             # Récupérer les métadonnées ICY standard d'abord
             md = self._get_icy_metadata(url, station_name)
             
+            # URL par défaut de l'image de couverture
+            cover_url = "https://www.superloustic.com/live/pictures/marche_seul.jpg"
+            
+            # Essayer de récupérer l'image de couverture depuis la page cover.html
+            try:
+                cover_page_url = "https://www.superloustic.com/cover.html"
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+                
+                response = self.session.get(cover_page_url, headers=headers, timeout=10, verify=False)
+                response.raise_for_status()
+                
+                # Parser la page pour trouver l'image
+                soup = BeautifulSoup(response.text, 'html.parser')
+                img_tag = soup.find('img')
+                
+                if img_tag and img_tag.get('src'):
+                    img_src = img_tag['src']
+                    # S'assurer que l'URL est absolue
+                    if img_src.startswith('//'):
+                        cover_url = 'https:' + img_src
+                    elif img_src.startswith('/'):
+                        cover_url = 'https://www.superloustic.com' + img_src
+                    else:
+                        cover_url = img_src
+                    
+                    print(f" Pochette Superloustic trouvée: {cover_url}")
+                    
+            except Exception as e:
+                print(f" Impossible de récupérer la pochette depuis cover.html: {e}")
+            
+            # Si pas de métadonnées ICY ou titre vide, utiliser des valeurs par défaut
             if not md or not md.title or md.title.lower() == "en direct":
-                # Si pas de titre ou juste "en direct", utiliser des valeurs par défaut
                 return RadioMetadata(
                     station=station_name,
                     title="En direct",
                     artist="Superloustic",
-                    cover_url="https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
+                    cover_url=cover_url
                 )
             
-            # Essayer d'extraire la pochette depuis le site Superloustic
-            try:
-                response = self.session.get("https://www.superloustic.com/", timeout=10, verify=False)
-                if response.status_code == 200:
-                    content = response.text
-                    # Chercher la pochette dans le code source
-                    import re
-                    cover_match = re.search(r'<div id="qtmplayer__cover"[^>]*>.*?<img[^>]+src="([^"]+)"', content, re.DOTALL)
-                    if cover_match:
-                        cover_url = cover_match.group(1)
-                        # S'assurer que l'URL est absolue
-                        if cover_url.startswith('//'):
-                            cover_url = 'https:' + cover_url
-                        elif cover_url.startswith('/'):
-                            cover_url = 'https://www.superloustic.com' + cover_url
-                        
-                        print(f"🖼️ Pochette Superloustic trouvée: {cover_url}")
-                        return RadioMetadata(
-                            station=station_name,
-                            title=md.title,
-                            artist=md.artist if md.artist else "Superloustic",
-                            cover_url=cover_url
-                        )
-            except Exception as e:
-                print(f"❌ Erreur lors de la récupération de la pochette Superloustic: {e}")
-            
-            # Retourner les métadonnées ICY avec le logo par défaut si la pochette n'est pas trouvée
+            # Retourner les métadonnées avec la pochette trouvée
             return RadioMetadata(
                 station=station_name,
                 title=md.title,
                 artist=md.artist if md.artist else "Superloustic",
-                cover_url="https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
+                cover_url=cover_url
             )
-            
+                
         except Exception as e:
             print(f"❌ Erreur dans _get_superloustic_metadata: {e}")
             return RadioMetadata(
                 station=station_name,
                 title="En direct",
                 artist="Superloustic",
-                cover_url="https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png"
+                cover_url="https://www.superloustic.com/live/pictures/marche_seul.jpg"
             )
 
     def _get_generation_doree_metadata(self, station_name: str) -> Optional[RadioMetadata]:
@@ -1710,6 +1717,12 @@ class RadioFetcher:
                 artist=md.artist,
                 cover_url=RADIO_LOGOS[station_name]
             )
+        
+        # Sauvegarder les métadonnées dans la base de données NEON
+        try:
+            self._save_metadata_to_neon(md)
+        except Exception as e:
+            print(f"⚠️ Erreur lors de la sauvegarde des métadonnées dans NEON: {e}")
         
         self.cache[cache_key] = (md, now)
         return md

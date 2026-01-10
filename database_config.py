@@ -88,23 +88,50 @@ def load_radios():
 
 def get_default_radios():
     """Retourner la liste des radios par défaut avec 3 éléments (name, url, logo)"""
-    return [
-        ["RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128", ""],
-        ["Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3", ""],
-        ["100% Radio 80", "http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3", ""],
-        ["RFM", "https://29043.live.streamtheworld.com/RFMAAC.aac?dist=triton-widget&tdsdk=js-2.9&swm=false&pname=tdwidgets&pversion=2.9&banners=300x250%2C728x90&gdpr=1&gdpr_consent=CQdTAsAQdTAsAAKA9APTCLFgAAAAAAAAAB6YAAAXsgLAA4AGaAZ8BHgCVQHbAQUAjSBIgCSgEowJkgUWAo4BVICrIFYAK5gV9AtWBbwC9gAA.IAAA.YAAAAAAAAAAA&burst-time=15", ""],
-        ["Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3", "https://www.bide-et-musique.com/images/logo.png"],
-        ["Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream", ""],
-        ["Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC", ""],
-        ["Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3", ""],
-        ["Superloustic", "https://radio6.pro-fhi.net/radio/9004/stream", ""],
-        ["Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3", ""],
-        ["Top 80 Radio", "https://securestreams6.autopo.st:2321/", ""],
-        ["Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream", ""],
-        ["Générikds", "https://listen.radioking.com/radio/497599/stream/554719", ""],
-        ["Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d?origine=radio.net&aw_0_1st.station=Nostalgie-Les-80-Plus-Grands-Tubes-80", ""],
-        ["Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk?origine=radio.net&aw_0_1st.station=Nostalgie-80-Les-Tubes-N-1", ""]
+    # Dictionnaire des logos par défaut pour chaque radio
+    RADIO_LOGOS = {
+        "100% Radio 80": "https://www.centpourcent.com/img/logo-100radio80.png",
+        "Bide Et Musique": "https://www.bide-et-musique.com/wp-content/uploads/2021/05/logo-bm-2021.png",
+        "Chansons Oubliées Où Presque": "https://www.radio.net/images/broadcasts/4b/6b/14164/1/c300.png",
+        "Chante France-80s": "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.jpg",
+        "Flash 80 Radio": "https://www.flash80.com/images/logo/2024/logo-flash80-2024.png",
+        "Génération Dorothée": "https://generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png",
+        "Générikds": "https://www.radioking.com/api/v2/radio/play/logo/1b8d4f5f-9e5f-4f3d-8e5f-1b8d4f5f9e5f/300/300",
+        "Made In 80": "https://www.madein80.com/wp-content/uploads/2021/05/logo-madein80-2021.png",
+        "Mega Hits": "https://megahits.sapo.pt/wp-content/uploads/2020/06/logo-megahits.png",
+        "Nostalgie-Les 80 Plus Grand Tubes": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
+        "Nostalgie-Les Tubes 80 N1": "https://cdn.nrjaudio.fm/radio/200/nostalgie-1.png",
+        "Radio Comercial": "https://radiocomercial.pt/wp-content/uploads/2020/06/cropped-rc-favicon-192x192.png",
+        "Radio Gérard": "https://radiosurle.net:8765/radiogerard/cover.jpg",
+        "RFM": "https://images.rfm.pt/logo-rfm-1200x1200.png",
+        "RFM Portugal": "https://images.rfm.pt/logo-rfm-1200x1200.png",
+        "Rádio São Miguel": "https://www.radiosaomiguel.pt/images/logo-radiosaomiguel.png",
+        "RTL": "https://www.rtl.fr/favicon-192x192.png",
+        "Superloustic": "https://www.superloustic.com/wp-content/uploads/2021/09/logo-superloustic-2021.png",
+        "Supernana": "https://www.generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png",
+        "Top 80 Radio": "https://www.top80radio.com/wp-content/uploads/2021/08/logo-top80-2021.png"
+    }
+    
+    # Liste des radios avec leurs URLs et logos
+    radios = [
+        ["RTL", "http://streaming.radio.rtl.fr/rtl-1-44-128", RADIO_LOGOS.get("RTL", "")],
+        ["Chante France-80s", "https://chantefrance80s.ice.infomaniak.ch/chantefrance80s-128.mp3", RADIO_LOGOS.get("Chante France-80s", "")],
+        ["100% Radio 80", "http://100radio-80.ice.infomaniak.ch/100radio-80-128.mp3", RADIO_LOGOS.get("100% Radio 80", "")],
+        ["RFM", "https://29043.live.streamtheworld.com/RFMAAC.aac?dist=triton-widget&tdsdk=js-2.9&swm=false&pname=tdwidgets&pversion=2.9&banners=300x250%2C728x90&gdpr=1&gdpr_consent=CQdTAsAQdTAsAAKA9APTCLFgAAAAAAAAAB6YAAAXsgLAA4AGaAZ8BHgCVQHbAQUAjSBIgCSgEowJkgUWAo4BVICrIFYAK5gV9AtWBbwC9gAA.IAAA.YAAAAAAAAAAA&burst-time=15", RADIO_LOGOS.get("RFM", "")],
+        ["Bide Et Musique", "https://relay1.bide-et-musique.com:9300/bm.mp3", RADIO_LOGOS.get("Bide Et Musique", "")],
+        ["Flash 80 Radio", "https://manager7.streamradio.fr:1985/stream", RADIO_LOGOS.get("Flash 80 Radio", "")],
+        ["Mega Hits", "https://playerservices.streamtheworld.com/api/livestream-redirect/MEGA_HITSAAC_SC", RADIO_LOGOS.get("Mega Hits", "")],
+        ["Radio Comercial", "https://stream-icy.bauermedia.pt/comercial.mp3", RADIO_LOGOS.get("Radio Comercial", "")],
+        ["Superloustic", "https://radio6.pro-fhi.net/radio/9004/stream", RADIO_LOGOS.get("Superloustic", "")],
+        ["Génération Dorothée", "https://stream.votreradiosurlenet.eu/generationdorothee.mp3", RADIO_LOGOS.get("Génération Dorothée", "")],
+        ["Top 80 Radio", "https://securestreams6.autopo.st:2321/", RADIO_LOGOS.get("Top 80 Radio", "")],
+        ["Chansons Oubliées Où Presque", "https://manager7.streamradio.fr:2850/stream", RADIO_LOGOS.get("Chansons Oubliées Où Presque", "")],
+        ["Générikds", "https://listen.radioking.com/radio/497599/stream/554719", RADIO_LOGOS.get("Générikds", "")],
+        ["Nostalgie-Les 80 Plus Grand Tubes", "https://streaming.nrjaudio.fm/ouwg8usk6j4d?origine=radio.net&aw_0_1st.station=Nostalgie-Les-80-Plus-Grands-Tubes-80", RADIO_LOGOS.get("Nostalgie-Les 80 Plus Grand Tubes", "")],
+        ["Nostalgie-Les Tubes 80 N1", "https://streaming.nrjaudio.fm/ouo6im7nfibk?origine=radio.net&aw_0_1st.station=Nostalgie-80-Les-Tubes-N-1", RADIO_LOGOS.get("Nostalgie-Les Tubes 80 N1", "")]
     ]
+    
+    return radios
 
 def save_radios(radios):
     """Sauvegarder la liste des radios dans PostgreSQL - Version radicale"""
