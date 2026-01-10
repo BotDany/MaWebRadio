@@ -1265,9 +1265,11 @@ class RadioFetcher:
             artist = data.get('artist', '').strip()
             
             # Créer l'URL de la pochette d'album
-            # Format de l'URL : https://www.top80radio.com/_pochettes/index.php?song=nom-de-la-chanson
-            safe_title = title.lower().replace(' ', '-').replace("'", "").replace('&', 'and')
-            safe_artist = artist.lower().replace(' ', '-').replace("'", "").replace('&', 'and')
+            # Format de l'URL : https://www.top80radio.com/_pochettes/index.php?song=artist-title
+            safe_title = title.lower().replace("'", "").replace('&', 'and').replace(' ', '-').replace('(', '').replace(')', '')
+            safe_artist = artist.lower().replace("'", "").replace('&', 'and').replace(' ', '-').replace('(', '').replace(')', '')
+            
+            # Construire l'URL de la pochette
             cover_url = f"https://www.top80radio.com/_pochettes/index.php?song={safe_artist}-{safe_title}"
             
             # Créer l'objet de métadonnées
