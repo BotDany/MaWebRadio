@@ -1139,19 +1139,23 @@ class RadioFetcher:
                 
             artist, title = track_info.split(' - ', 1)
             
-            # URL de la pochette - Utilisation d'une URL statique fiable
-            cover_url = "https://www.radio.net/images/broadcasts/7b/6f/11125/c300.png"
+            # Construction de l'URL de la pochette basée sur l'artiste et le titre
+            # Format: https://votreradiosurlenet.fr/player_html5/covers/ARTISTE_TITRE.jpg
+            safe_artist = artist.upper().replace(' ', '_').replace("'", "'")
+            safe_title = title.upper().replace(' ', '_').replace("'", "'")
+            cover_url = f"https://votreradiosurlenet.fr/player_html5/covers/{safe_artist}_{safe_title}.jpg"
             
             # Vérifier si l'URL de la pochette est accessible
             try:
-                cover_response = self.session.head(cover_url, timeout=3, allow_redirects=True)
+                cover_response = self.session.head(cover_url, timeout=3, allow_redirects=True, verify=False)
                 if cover_response.status_code != 200:
                     print(f"L'URL de la pochette n'est pas accessible: {cover_url}")
-                    # Utiliser une image de remplacement si disponible
-                    cover_url = "https://via.placeholder.com/300/1e3a8a/ffffff?text=Génération+Dorothée"
+                    # Utiliser le logo par défaut de la radio si la pochette n'est pas disponible
+                    cover_url = "https://generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png"
             except Exception as e:
                 print(f"Erreur lors de la vérification de l'URL de la pochette: {e}")
-                cover_url = "https://via.placeholder.com/300/1e3a8a/ffffff?text=Génération+Dorothée"
+                # En cas d'erreur, utiliser le logo par défaut de la radio
+                cover_url = "https://generationdoree.fr/wp-content/uploads/2020/06/logo-generation-doree-2020.png"
             
             metadata = RadioMetadata(
                 station=station_name,
