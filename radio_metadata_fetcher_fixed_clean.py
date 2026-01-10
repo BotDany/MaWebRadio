@@ -1745,17 +1745,19 @@ class RadioFetcher:
         md = self._get_icy_metadata(url, station_name)
         
         # Pour les chansons, essayer de trouver une pochette d'album si pas déjà fait
-        if md.title and md.artist and md.title.lower() != "en direct":
-            # Si pas de pochette ou si c'est juste le logo par défaut
-            if not md.cover_url or md.cover_url == RADIO_LOGOS.get(station_name, ""):
-                album_cover = self._get_album_cover(md.artist, md.title)
-                if album_cover:
-                    md = RadioMetadata(
-                        station=md.station,
-                        title=md.title,
-                        artist=md.artist,
-                        cover_url=album_cover
-                    )
+        # Ne pas remplacer la pochette pour Top 80 Radio
+        if not ("top80radio" in station_name.lower() or "top 80 radio" in station_name.lower()):
+            if md.title and md.artist and md.title.lower() != "en direct":
+                # Si pas de pochette ou si c'est juste le logo par défaut
+                if not md.cover_url or md.cover_url == RADIO_LOGOS.get(station_name, ""):
+                    album_cover = self._get_album_cover(md.artist, md.title)
+                    if album_cover:
+                        md = RadioMetadata(
+                            station=md.station,
+                            title=md.title,
+                            artist=md.artist,
+                            cover_url=album_cover
+                        )
         
         # Pour toutes les radios, s'assurer qu'on a au moins le logo par défaut
         if not md.cover_url and station_name in RADIO_LOGOS:
