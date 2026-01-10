@@ -470,12 +470,24 @@
             overflow: hidden;
             background: rgba(255,255,255,0.1);
             flex-shrink: 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .album-cover-bottom img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .album-cover-bottom .placeholder {
+            font-size: 24px;
+            color: rgba(255,255,255,0.5);
         }
 
         .track-info-bottom {
