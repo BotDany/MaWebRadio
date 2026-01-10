@@ -1116,7 +1116,7 @@ class RadioFetcher:
             
             # Faire la requête avec un timestamp pour éviter le cache
             timestamp = int(time.time() * 1000)
-            response = self.session.get(f"{url}?_={timestamp}", timeout=5)
+            response = self.session.get(f"{url}?_{timestamp}", timeout=5)
             response.raise_for_status()
             
             # Parser la réponse HTML
@@ -1126,73 +1126,32 @@ class RadioFetcher:
             # Extraire le texte qui contient l'artiste et le titre
             text = soup.find('font', color='#FFFFFF')
             if not text:
+                print("Aucune balise font avec color='#FFFFFF' trouvée dans la réponse")
                 return None
                 
             # Nettoyer et séparer l'artiste et le titre
             track_info = text.get_text(strip=True)
+            print(f"Track info extrait: {track_info}")
+            
             if ' - ' not in track_info:
+                print(f"Format de piste inattendu: {track_info}")
                 return None
                 
             artist, title = track_info.split(' - ', 1)
             
-            # URL de la pochette
-            cover_url = "https://www.votreradiosurlenet.fr/player_html5/pochettegenerationdorothee.php"
+            # URL de la pochette - Utilisation d'une URL statique fiable
+            cover_url = "https://www.radio.net/images/broadcasts/7b/6f/11125/c300.png"
             
-            return RadioMetadata(
-                station=station_name,
-                title=title.strip(),
-                artist=artist.strip(),
-                cover_url=cover_url,
-                host=""
-            )
-            
-        except Exception as e:
-            print(f"Erreur lors de la récupération des métadonnées de Génération Dorothée: {e}")
-            return None
-
-    def _get_superloustic_metadata(self, station_name: str, save_to_file: bool = True) -> Optional[RadioMetadata]:
-        """
-        Récupère les métadonnées depuis le site de Superloustic
-        
-        Args:
-            station_name: Nom de la station
-            save_to_file: Si True, enregistre les métadonnées dans un fichier
-            
-        Returns:
-            Objet RadioMetadata ou None en cas d'erreur
-        """
-        try:
-            url = "https://www.superloustic.com/cover.html"
-            response = self.session.get(url, timeout=5)
-            response.raise_for_status()
-            
-            # Analyser le contenu HTML
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # Trouver le lien avec l'image de la pochette
-            link = soup.find('a')
-            if not link:
-                return None
-                
-            # Extraire les informations
-            img = link.find('img')
-            if not img:
-                return None
-                
-            alt_text = img.get('alt', '')
-            cover_url = img.get('src', '')
-            
-            # Si l'URL de l'image est relative, la convertir en absolue
-            if cover_url.startswith('/'):
-                cover_url = f"https://www.superloustic.com{cover_url}"
-            
-            # Extraire l'artiste et le titre du texte alternatif
-            if ' - ' in alt_text:
-                artist, title = alt_text.split(' - ', 1)
-            else:
-                artist = "Inconnu"
-                title = alt_text or "Titre inconnu"
+            # Vérifier si l'URL de la pochette est accessible
+            try:
+                cover_response = self.session.head(cover_url, timeout=3, allow_redirects=True)
+                if cover_response.status_code != 200:
+                    print(f"L'URL de la pochette n'est pas accessible: {cover_url}")
+                    # Utiliser une image de remplacement si disponible
+                    cover_url = "https://via.placeholder.com/300/1e3a8a/ffffff?text=Génération+Dorothée"
+            except Exception as e:
+                print(f"Erreur lors de la vérification de l'URL de la pochette: {e}")
+                cover_url = "https://via.placeholder.com/300/1e3a8a/ffffff?text=Génération+Dorothée"
             
             metadata = RadioMetadata(
                 station=station_name,
@@ -1202,16 +1161,14 @@ class RadioFetcher:
                 host=""
             )
             
-            # Enregistrer dans un fichier et dans NEON si demandé
-            if save_to_file:
-                self._save_metadata_to_file(metadata)
-                # Enregistrer dans NEON
-                self._save_metadata_to_neon(metadata)
-                
+            print(f"Métadonnées récupérées avec succès: {metadata}")
             return metadata
             
+        except requests.RequestException as e:
+            print(f"Erreur de requête pour les métadonnées de Génération Dorothée: {e}")
+            return None
         except Exception as e:
-            print(f"Erreur lors de la récupération des métadonnées Superloustic: {e}")
+            print(f"Erreur inattendue lors de la récupération des métadonnées de Génération Dorothée: {e}")
             return None
 
     def _get_icy_metadata(self, url: str, station_name: str) -> RadioMetadata:
